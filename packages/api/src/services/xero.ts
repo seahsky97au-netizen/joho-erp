@@ -1175,14 +1175,41 @@ export async function syncContactToXero(customer: CustomerForXeroSync): Promise<
       return { success: true, contactId: response.Contacts[0].ContactID };
     }
 
-    // Create new contact in Xero (always create, never match by email)
-    const response = await xeroApiRequest<XeroContactsResponse>('/Contacts', {
-      method: 'POST',
-      body: { Contacts: [contactPayload] },
-    });
+    // Create new contact in Xero using PUT (Xero's reversed REST: PUT = create-only,
+    // POST = upsert by Name which can silently overwrite existing contacts)
+    try {
+      const response = await xeroApiRequest<XeroContactsResponse>('/Contacts', {
+        method: 'PUT',
+        body: { Contacts: [contactPayload] },
+      });
 
-    xeroLogger.sync.contactCreated(response.Contacts[0].ContactID!, customer.id, customer.businessName);
-    return { success: true, contactId: response.Contacts[0].ContactID };
+      xeroLogger.sync.contactCreated(response.Contacts[0].ContactID!, customer.id, customer.businessName);
+      return { success: true, contactId: response.Contacts[0].ContactID };
+    } catch (createError) {
+      // If PUT fails due to duplicate Name, retry with a disambiguated name
+      if (
+        createError instanceof XeroApiError &&
+        createError.statusCode === 400 &&
+        createError.responseBody.toLowerCase().includes('existing active contact')
+      ) {
+        const shortId = customer.id.slice(-6);
+        const disambiguatedName = `${customer.businessName} (#${shortId})`;
+        xeroLogger.warn(
+          `Duplicate Xero contact name "${customer.businessName}" — creating as "${disambiguatedName}"`,
+          { customerId: customer.id, originalName: customer.businessName } as any
+        );
+
+        const retryPayload = { ...contactPayload, Name: disambiguatedName };
+        const response = await xeroApiRequest<XeroContactsResponse>('/Contacts', {
+          method: 'PUT',
+          body: { Contacts: [retryPayload] },
+        });
+
+        xeroLogger.sync.contactCreated(response.Contacts[0].ContactID!, customer.id, disambiguatedName);
+        return { success: true, contactId: response.Contacts[0].ContactID };
+      }
+      throw createError;
+    }
   } catch (error) {
     xeroLogger.error(`Contact sync failed for customer ${customer.id} (${customer.businessName})`, {
       customerId: customer.id,
