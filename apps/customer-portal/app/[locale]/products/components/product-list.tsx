@@ -79,10 +79,52 @@ export function ProductList() {
     router.replace(`/${locale}/products${params.toString() ? `?${params.toString()}` : ''}`, { scroll: false });
   }, [searchParams, router, locale]);
 
-  // Single query for all products — category filtering done client-side to avoid duplicate API calls
-  const { data: allProductsData, isLoading, isFetching, error, refetch } = api.product.getAll.useQuery({
-    search: searchQuery || undefined,
-  });
+  // Infinite query for all products — loads pages progressively as user scrolls
+  const {
+    data: infiniteData,
+    isLoading,
+    isFetching,
+    isFetchingNextPage,
+    error,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+  } = api.product.getInfinite.useInfiniteQuery(
+    { limit: 20, search: searchQuery || undefined },
+    {
+      getNextPageParam: (lastPage) => lastPage.nextCursor,
+      initialCursor: 1,
+    }
+  );
+
+  // Flatten all pages into a single items array
+  const allProductsData = React.useMemo(() => {
+    if (!infiniteData) return null;
+    return {
+      items: infiniteData.pages.flatMap((page) => page.items),
+    };
+  }, [infiniteData]);
+
+  // Infinite scroll sentinel ref
+  const sentinelRef = React.useRef<HTMLDivElement>(null);
+
+  // IntersectionObserver for infinite scroll
+  React.useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const { data: categoriesData } = api.category.getAll.useQuery();
   const categories = React.useMemo(() => categoriesData ?? [], [categoriesData]);
@@ -347,6 +389,15 @@ export function ProductList() {
                   />
                 ))}
               </div>
+
+              {/* Infinite scroll sentinel + loading spinner */}
+              {hasNextPage && (
+                <div ref={sentinelRef} className="flex items-center justify-center py-6">
+                  {isFetchingNextPage && (
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  )}
+                </div>
+              )}
 
               {/* Empty State */}
               {inStockProducts.length === 0 && (

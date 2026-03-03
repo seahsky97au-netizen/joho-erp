@@ -870,7 +870,9 @@
       "deliveryInstructions": "请放在前门",
       "bypassReason": "经理批准的紧急订单",
       "adminNotes": "仅管理员可见的备注",
-      "internalNotes": "仓库工作人员可见的备注"
+      "internalNotes": "仓库工作人员可见的备注",
+      "searchProducts": "搜索产品...",
+      "noProductsFound": "未找到产品"
     },
     "labels": {
       "customPrice": "自定义"

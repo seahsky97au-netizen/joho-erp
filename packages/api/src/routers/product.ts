@@ -328,6 +328,141 @@ export const productRouter = router({
       return { items, ...paginationMeta };
     }),
 
+  // Get all products with cursor-based pagination for useInfiniteQuery
+  getInfinite: protectedProcedure
+    .input(
+      z.object({
+        limit: z.number().min(1).max(100).default(20),
+        cursor: z.number().min(1).default(1), // page number as cursor
+        search: z.string().optional(),
+        categoryId: z.string().optional(),
+        status: z.enum(['active', 'discontinued', 'out_of_stock']).optional(),
+        showAll: z.boolean().optional(),
+      })
+    )
+    .query(async ({ input, ctx: _ctx }) => {
+      const { cursor: page, limit, showAll, ...filters } = input;
+      const where: any = {};
+
+      if (filters.categoryId) {
+        where.categoryId = filters.categoryId;
+        where.categoryRelation = { isActive: true };
+      }
+
+      if (filters.status) {
+        where.status = filters.status;
+      } else if (!showAll) {
+        where.status = 'active';
+      }
+
+      if (filters.search) {
+        where.OR = [
+          { name: { contains: filters.search, mode: 'insensitive' } },
+          { sku: { contains: filters.search, mode: 'insensitive' } },
+        ];
+      }
+
+      // Only fetch top-level products (subproducts nested under parents)
+      where.parentProductId = null;
+
+      const skip = (page - 1) * limit;
+      const totalCount = await prisma.product.count({ where });
+
+      const products = await prisma.product.findMany({
+        where,
+        orderBy: { name: 'asc' },
+        skip,
+        take: limit,
+        include: {
+          categoryRelation: true,
+          subProducts: {
+            include: { categoryRelation: true },
+            orderBy: { name: 'asc' },
+          },
+        },
+      });
+
+      // Fetch customer-specific pricing if user is authenticated
+      let customerId: string | null = null;
+      if (_ctx.userId) {
+        const customer = await prisma.customer.findUnique({
+          where: { clerkUserId: _ctx.userId },
+          select: { id: true },
+        });
+        customerId = customer?.id || null;
+      }
+
+      const isCustomer = !_ctx.userRole || _ctx.userRole === 'customer';
+
+      const transformForCustomer = <T extends { currentStock: number; lowStockThreshold: number | null }>(
+        product: T
+      ) => {
+        const { currentStock, lowStockThreshold, ...rest } = product;
+        return {
+          ...rest,
+          stockStatus: getCustomerStockStatus(currentStock, lowStockThreshold),
+          hasStock: currentStock > 0,
+        };
+      };
+
+      let items;
+      if (customerId) {
+        const allProductIds = products.flatMap((p) => [
+          p.id,
+          ...(p.subProducts?.map((sub: any) => sub.id) || [])
+        ]);
+
+        const customerPricings = await prisma.customerPricing.findMany({
+          where: { customerId, productId: { in: allProductIds } },
+        });
+
+        const pricingMap = new Map(customerPricings.map((p) => [p.productId, p]));
+
+        items = products.map((product) => {
+          const customPricing = pricingMap.get(product.id);
+          const gstOptions = { applyGst: product.applyGst, gstRate: product.gstRate };
+          const priceInfo = getEffectivePrice(product.basePrice, customPricing, gstOptions);
+
+          const transformedSubProducts = product.subProducts?.map((sub: any) => {
+            const subCustomPricing = pricingMap.get(sub.id);
+            const subGstOptions = { applyGst: sub.applyGst, gstRate: sub.gstRate };
+            const subPriceInfo = getEffectivePrice(sub.basePrice, subCustomPricing, subGstOptions);
+            const fullSub = { ...sub, ...subPriceInfo };
+            return isCustomer ? transformForCustomer(fullSub) : fullSub;
+          });
+
+          const fullProduct = {
+            ...product,
+            ...priceInfo,
+            ...(transformedSubProducts && { subProducts: transformedSubProducts })
+          };
+          return isCustomer ? transformForCustomer(fullProduct) : fullProduct;
+        });
+      } else {
+        items = products.map((product) => {
+          const gstOptions = { applyGst: product.applyGst, gstRate: product.gstRate };
+
+          const transformedSubProducts = product.subProducts?.map((sub: any) => {
+            const subGstOptions = { applyGst: sub.applyGst, gstRate: sub.gstRate };
+            const fullSub = { ...sub, ...getEffectivePrice(sub.basePrice, undefined, subGstOptions) };
+            return isCustomer ? transformForCustomer(fullSub) : fullSub;
+          });
+
+          const fullProduct = {
+            ...product,
+            ...getEffectivePrice(product.basePrice, undefined, gstOptions),
+            ...(transformedSubProducts && { subProducts: transformedSubProducts })
+          };
+          return isCustomer ? transformForCustomer(fullProduct) : fullProduct;
+        });
+      }
+
+      const totalPages = Math.ceil(totalCount / limit);
+      const nextCursor = page < totalPages ? page + 1 : undefined;
+
+      return { items, nextCursor, total: totalCount };
+    }),
+
   // Get product by ID (with customer-specific pricing if applicable)
   getById: protectedProcedure
     .input(z.object({ productId: z.string() }))

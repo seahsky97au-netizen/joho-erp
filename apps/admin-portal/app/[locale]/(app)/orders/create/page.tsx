@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -11,13 +11,6 @@ import {
   Input,
   Label,
   AreaBadge,
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectSeparator,
-  SelectTrigger,
-  SelectValue,
 } from '@joho-erp/ui';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
@@ -33,6 +26,9 @@ import {
   FileText,
   Shield,
   CreditCard,
+  ChevronDown,
+  Check,
+  Search,
 } from 'lucide-react';
 import { useToast } from '@joho-erp/ui';
 
@@ -98,9 +94,38 @@ export default function CreateOrderOnBehalfPage() {
   // Field error state
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
+  // Product search state
+  const [productSearchTerm, setProductSearchTerm] = useState('');
+  const [debouncedProductSearch, setDebouncedProductSearch] = useState('');
+  const [productDropdownOpen, setProductDropdownOpen] = useState(false);
+  const productDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Debounce product search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedProductSearch(productSearchTerm);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [productSearchTerm]);
+
+  // Close product dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (productDropdownRef.current && !productDropdownRef.current.contains(event.target as Node)) {
+        setProductDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   // Fetch data
   const { data: customersData } = api.customer.getAll.useQuery({ limit: 1000 });
-  const { data: productsData } = api.product.getAll.useQuery({});
+  const { data: productsData, isLoading: isLoadingProducts } = api.product.getAll.useQuery({
+    search: debouncedProductSearch || undefined,
+    limit: 50,
+    showAll: true,
+  });
   const { data: selectedCustomer } = api.customer.getById.useQuery(
     { customerId: selectedCustomerId },
     { enabled: !!selectedCustomerId }
@@ -546,43 +571,120 @@ export default function CreateOrderOnBehalfPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="md:col-span-2">
                   <Label htmlFor="product">{t('fields.product')}</Label>
-                  <Select value={selectedProductId || undefined} onValueChange={setSelectedProductId}>
-                    <SelectTrigger className="w-full mt-1">
-                      <SelectValue placeholder={t('placeholders.selectProduct')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {groupedProducts.map((group, index) => {
-                        if (group.children.length > 0) {
-                          const parentPrice = getEffectiveProductPrice(group.parent.id, group.parent.basePrice);
-                          const isParentCustom = pricingMap.has(group.parent.id);
-                          return (
-                            <SelectGroup key={group.parent.id}>
-                              {index > 0 && <SelectSeparator />}
-                              <SelectItem value={group.parent.id}>
-                                {group.parent.sku} - {group.parent.name} ({formatAUD(parentPrice)}{isParentCustom ? ` - ${t('labels.customPrice')}` : ''})
-                              </SelectItem>
-                              {group.children.map((sub) => {
-                                const price = getEffectiveProductPrice(sub.id, sub.basePrice);
-                                const isCustom = pricingMap.has(sub.id);
+                  <div ref={productDropdownRef} className="relative mt-1">
+                    <button
+                      type="button"
+                      onClick={() => setProductDropdownOpen(!productDropdownOpen)}
+                      className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    >
+                      <span className={selectedProductId ? '' : 'text-muted-foreground'}>
+                        {selectedProductId
+                          ? (() => {
+                              const p = allProducts.find((p) => p.id === selectedProductId);
+                              return p ? `${p.sku} - ${p.name}` : t('placeholders.selectProduct');
+                            })()
+                          : t('placeholders.selectProduct')}
+                      </span>
+                      <ChevronDown className="h-4 w-4 opacity-50" />
+                    </button>
+
+                    {productDropdownOpen && (
+                      <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-md">
+                        {/* Search input */}
+                        <div className="p-2 border-b">
+                          <div className="relative">
+                            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              placeholder={t('placeholders.searchProducts')}
+                              value={productSearchTerm}
+                              onChange={(e) => setProductSearchTerm(e.target.value)}
+                              className="h-8 pl-8"
+                              autoFocus
+                            />
+                          </div>
+                        </div>
+
+                        {/* Product list */}
+                        <div className="max-h-64 overflow-y-auto">
+                          {isLoadingProducts ? (
+                            <div className="flex items-center justify-center p-4">
+                              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                            </div>
+                          ) : groupedProducts.length === 0 ? (
+                            <div className="p-3 text-center text-sm text-muted-foreground">
+                              {t('placeholders.noProductsFound')}
+                            </div>
+                          ) : (
+                            groupedProducts.map((group, index) => {
+                              if (group.children.length > 0) {
+                                const parentPrice = getEffectiveProductPrice(group.parent.id, group.parent.basePrice);
+                                const isParentCustom = pricingMap.has(group.parent.id);
                                 return (
-                                  <SelectItem key={sub.id} value={sub.id} className="pl-12">
-                                    {sub.sku} - {sub.name} ({formatAUD(price)}{isCustom ? ` - ${t('labels.customPrice')}` : ''})
-                                  </SelectItem>
+                                  <div key={group.parent.id}>
+                                    {index > 0 && <div className="border-t" />}
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setSelectedProductId(group.parent.id);
+                                        setProductDropdownOpen(false);
+                                        setProductSearchTerm('');
+                                      }}
+                                      className="flex w-full items-center justify-between px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
+                                    >
+                                      <span>
+                                        {group.parent.sku} - {group.parent.name} ({formatAUD(parentPrice)}{isParentCustom ? ` - ${t('labels.customPrice')}` : ''})
+                                      </span>
+                                      {group.parent.id === selectedProductId && <Check className="h-4 w-4 flex-shrink-0" />}
+                                    </button>
+                                    {group.children.map((sub) => {
+                                      const price = getEffectiveProductPrice(sub.id, sub.basePrice);
+                                      const isCustom = pricingMap.has(sub.id);
+                                      return (
+                                        <button
+                                          key={sub.id}
+                                          type="button"
+                                          onClick={() => {
+                                            setSelectedProductId(sub.id);
+                                            setProductDropdownOpen(false);
+                                            setProductSearchTerm('');
+                                          }}
+                                          className="flex w-full items-center justify-between pl-8 pr-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
+                                        >
+                                          <span>
+                                            {sub.sku} - {sub.name} ({formatAUD(price)}{isCustom ? ` - ${t('labels.customPrice')}` : ''})
+                                          </span>
+                                          {sub.id === selectedProductId && <Check className="h-4 w-4 flex-shrink-0" />}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
                                 );
-                              })}
-                            </SelectGroup>
-                          );
-                        }
-                        const price = getEffectiveProductPrice(group.parent.id, group.parent.basePrice);
-                        const isCustom = pricingMap.has(group.parent.id);
-                        return (
-                          <SelectItem key={group.parent.id} value={group.parent.id}>
-                            {group.parent.sku} - {group.parent.name} ({formatAUD(price)}{isCustom ? ` - ${t('labels.customPrice')}` : ''})
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
+                              }
+                              const price = getEffectiveProductPrice(group.parent.id, group.parent.basePrice);
+                              const isCustom = pricingMap.has(group.parent.id);
+                              return (
+                                <button
+                                  key={group.parent.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedProductId(group.parent.id);
+                                    setProductDropdownOpen(false);
+                                    setProductSearchTerm('');
+                                  }}
+                                  className="flex w-full items-center justify-between px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
+                                >
+                                  <span>
+                                    {group.parent.sku} - {group.parent.name} ({formatAUD(price)}{isCustom ? ` - ${t('labels.customPrice')}` : ''})
+                                  </span>
+                                  {group.parent.id === selectedProductId && <Check className="h-4 w-4 flex-shrink-0" />}
+                                </button>
+                              );
+                            })
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <Label htmlFor="quantity">{t('fields.quantity')}</Label>

@@ -870,7 +870,9 @@
       "deliveryInstructions": "Leave at front door",
       "bypassReason": "Approved by manager for urgent order",
       "adminNotes": "Notes visible only to admin users",
-      "internalNotes": "Notes visible to warehouse staff"
+      "internalNotes": "Notes visible to warehouse staff",
+      "searchProducts": "Search products...",
+      "noProductsFound": "No products found"
     },
     "labels": {
       "customPrice": "Custom"

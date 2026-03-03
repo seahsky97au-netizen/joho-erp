@@ -870,7 +870,9 @@
       "deliveryInstructions": "請放在前門",
       "bypassReason": "經理批准的緊急訂單",
       "adminNotes": "僅管理員可見的備註",
-      "internalNotes": "倉庫工作人員可見的備註"
+      "internalNotes": "倉庫工作人員可見的備註",
+      "searchProducts": "搜尋產品...",
+      "noProductsFound": "未找到產品"
     },
     "labels": {
       "customPrice": "自訂"
