@@ -1,0 +1,1 @@
+export { AmplitudeProvider } from './AmplitudeProvider';

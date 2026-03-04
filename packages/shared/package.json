@@ -11,12 +11,19 @@
     "./hooks": {
       "types": "./src/hooks/index.ts",
       "default": "./src/hooks/index.ts"
+    },
+    "./providers": {
+      "types": "./src/providers/index.ts",
+      "default": "./src/providers/index.ts"
     }
   },
   "typesVersions": {
     "*": {
       "hooks": [
         "./src/hooks/index.ts"
+      ],
+      "providers": [
+        "./src/providers/index.ts"
       ]
     }
   },
@@ -24,6 +31,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@amplitude/unified": "1.0.0-beta.40",
     "@dinero.js/currencies": "2.0.0-alpha.1",
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
@@ -36,6 +44,7 @@
     "typescript": "^5.3.3"
   },
   "peerDependencies": {
+    "@clerk/nextjs": "^6.0.0",
     "react": "^18.0.0 || ^19.0.0"
   }
 }

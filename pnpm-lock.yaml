@@ -63,7 +63,7 @@ importers:
         version: file:packages/database(typescript@5.9.3)
       '@joho-erp/shared':
         specifier: workspace:*
-        version: link:../../packages/shared
+        version: file:packages/shared(@clerk/nextjs@6.36.1(next@15.5.7(@playwright/test@1.58.2)(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(react@19.2.1)
       '@joho-erp/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -211,7 +211,7 @@ importers:
         version: file:packages/database(typescript@5.9.3)
       '@joho-erp/shared':
         specifier: workspace:*
-        version: link:../../packages/shared
+        version: file:packages/shared(@clerk/nextjs@6.36.1(next@15.5.7(@playwright/test@1.58.2)(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(react@19.2.1)
       '@joho-erp/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -384,7 +384,7 @@ importers:
         version: file:packages/database(typescript@5.9.3)
       '@joho-erp/shared':
         specifier: workspace:*
-        version: link:../packages/shared
+        version: file:packages/shared(@clerk/nextjs@6.36.1(next@15.5.7(@playwright/test@1.58.2)(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(react@19.2.1)
       '@playwright/test':
         specifier: ^1.49.0
         version: 1.58.2
@@ -415,7 +415,7 @@ importers:
         version: file:packages/database(typescript@5.9.3)
       '@joho-erp/shared':
         specifier: workspace:*
-        version: link:../shared
+        version: file:packages/shared(@clerk/nextjs@6.36.1(next@15.5.7(@playwright/test@1.58.2)(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(react@19.2.1)
       '@trpc/server':
         specifier: ^11.0.0
         version: 11.7.2(typescript@5.9.3)
@@ -472,6 +472,12 @@ importers:
 
   packages/shared:
     dependencies:
+      '@amplitude/unified':
+        specifier: 1.0.0-beta.40
+        version: 1.0.0-beta.40(@amplitude/rrweb@2.0.0-alpha.35)(rollup@4.54.0)
+      '@clerk/nextjs':
+        specifier: ^6.0.0
+        version: 6.36.1(next@15.5.7(@playwright/test@1.58.2)(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
       '@dinero.js/currencies':
         specifier: 2.0.0-alpha.1
         version: 2.0.0-alpha.1
@@ -505,7 +511,7 @@ importers:
     dependencies:
       '@joho-erp/shared':
         specifier: workspace:*
-        version: link:../shared
+        version: file:packages/shared(@clerk/nextjs@6.36.1(next@15.5.7(@playwright/test@1.58.2)(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(react@19.2.1)
       '@radix-ui/react-accordion':
         specifier: ^1.2.2
         version: 1.2.12(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -573,6 +579,95 @@ packages:
   '@alloc/quick-lru@5.2.0':
     resolution: {integrity: sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw==}
     engines: {node: '>=10'}
+
+  '@amplitude/analytics-browser@2.36.1':
+    resolution: {integrity: sha512-J5JR6fnbOv+uVJQSz2hH0UqGDMau04NIc1f/mgT2Pw1AU0NFAGMCk8o8ZH2dW0a7Bpl7bKOxFOe/fQyw/wFzJg==}
+
+  '@amplitude/analytics-client-common@2.4.31':
+    resolution: {integrity: sha512-JXryISD4BmBtICskjwMXwdjDA/9A9F35qWbyGUBK/E6kvZ5ZDKN6NEju6ZhCt//DnFgRg/evC7db5xpq7JQ+Ug==}
+
+  '@amplitude/analytics-connector@1.6.4':
+    resolution: {integrity: sha512-SpIv0IQMNIq6SH3UqFGiaZyGSc7PBZwRdq7lvP0pBxW8i4Ny+8zwI0pV+VMfMHQwWY3wdIbWw5WQphNjpdq1/Q==}
+
+  '@amplitude/analytics-core@2.41.1':
+    resolution: {integrity: sha512-K13VMm/zzvrIFOqxSiAmhisoNjzwgkpJRew2/OFnxd3ywXzIDfnTt/+zY6a0f3z3pOEHpzmcTlKzezLEQ1OOtQ==}
+
+  '@amplitude/analytics-types@1.4.0':
+    resolution: {integrity: sha512-RiMPHBqdrJ8ktTqG+Wzj2htnN/PCG9jGZG0SXtTFnWwVvcAJYbYm55/nrP1TTyrx1OlLhvF2VG3lVUP/xGAU8w==}
+
+  '@amplitude/analytics-types@2.11.1':
+    resolution: {integrity: sha512-wFEgb0t99ly2uJKm5oZ28Lti0Kh5RecR5XBkwfUpDzn84IoCIZ8GJTsMw/nThu8FZFc7xFDA4UAt76zhZKrs9A==}
+
+  '@amplitude/engagement-browser@1.0.8':
+    resolution: {integrity: sha512-nSkHOlA6R6lfj51X4beC7lbR/wfJ3zCMwfXGe6M/8WHw8NtanLW0hkXhH+mDLUCA1xMLBbwO4VZOEPwjdFXubQ==}
+
+  '@amplitude/experiment-core@0.12.0':
+    resolution: {integrity: sha512-EiLLxcyJD8T3GFsMPxBfWx9n9fBw6rC0RJwccPXLzResE0HnGZZpVWF86ZndnYmEMD1lUUjWi41N1ymEzodI5w==}
+
+  '@amplitude/experiment-core@0.7.2':
+    resolution: {integrity: sha512-Wc2NWvgQ+bLJLeF0A9wBSPIaw0XuqqgkPKsoNFQrmS7r5Djd56um75In05tqmVntPJZRvGKU46pAp8o5tdf4mA==}
+
+  '@amplitude/experiment-js-client@1.20.3':
+    resolution: {integrity: sha512-rv778CbjisEaYcHW9UyFcSQu1TqJPqR+lo8yYPZ50UKDGQfK6hKtWY4zPKRdwnr49ZF0Z+Bm/haYBNNP0aAW8Q==}
+
+  '@amplitude/plugin-autocapture-browser@1.23.1':
+    resolution: {integrity: sha512-d/smRGjGGh5LtXu8xAO1pTVQaHc/bdW8jVD8jJrrdsHaYcc3Hf0Uot1KcnpPMLrRSEL+2w7a6awg7CvkS8KUcA==}
+
+  '@amplitude/plugin-experiment-browser@1.0.0-beta.11':
+    resolution: {integrity: sha512-Ksf4bTs01sIdfqvyuge3u15SoV3c+gkYLClJh3fCsB5oQXZO3yoOlhWd2DRxmsUCfxszgS84oKLZBZrLWzA3yA==}
+
+  '@amplitude/plugin-network-capture-browser@1.9.1':
+    resolution: {integrity: sha512-2PtQtuBzQnP8Q8XZ3RPmzr4xa2Ng8WpSzeKtjdWzubOQRo5a7FfvxjarLPMzdGlq/ZF5nu6tAb64seEoq0SJ3A==}
+
+  '@amplitude/plugin-page-url-enrichment-browser@0.6.5':
+    resolution: {integrity: sha512-C5cVsacdRMaxpTgHBNeWgnQ30nMbD4blQki+qGuNjYg/DHRtdWh8cdLRy7kadqtyfQviDenhTYvXEi+zh+yJow==}
+
+  '@amplitude/plugin-page-view-tracking-browser@2.8.1':
+    resolution: {integrity: sha512-hS8kueYiJMQs6vLfW0mxsgJ9JqiIHJVxZmLIUKMkmPJaGU6pYU8uojA2Qb0/cpAn6Y4gqXse4dG7NkdAcX/M7w==}
+
+  '@amplitude/plugin-session-replay-browser@1.25.18':
+    resolution: {integrity: sha512-Ol1TiGRGCY+r1/+VdMelTrLuWOaCyUpJPsLFRFPLGpxkUKq1WMm7/yHS7Cg0HH0Nvuqrpc3jkEv46T4ovlH1tg==}
+
+  '@amplitude/plugin-web-vitals-browser@1.1.16':
+    resolution: {integrity: sha512-SLjwV4BY8/4bijhrlf+Dhc8TZCsV8qid3JuefrNxaH6yyhdEFvAGqXE6NVWDc/yesHiuDNh2W2XWtYkvBtkteA==}
+
+  '@amplitude/rrdom@2.0.0-alpha.35':
+    resolution: {integrity: sha512-W9ImCKtgFB8oBKd7td0TH7JKkQ/3iwu5bfLXcOvzxLj7+RSD1k1gfDyncooyobwBV8j4FMiTyj2N53tJ6rFgaw==}
+
+  '@amplitude/rrweb-packer@2.0.0-alpha.35':
+    resolution: {integrity: sha512-A6BlcBuiAI8pHJ51mcQWu2Uddnddxj9MaYZMNjIzFm1FK+qYAyYafO1xcoVPXoMUHE/qqITUgAn9tUVWj8N8NQ==}
+
+  '@amplitude/rrweb-plugin-console-record@2.0.0-alpha.35':
+    resolution: {integrity: sha512-8hstBoMHMSEA3FGoQ0LKidhpQypKchyT2sjEDdwTC77xZSg+3LwtjElOSMVdgjrEfxvN4V1g72v+Pwy7LBGUDA==}
+    peerDependencies:
+      '@amplitude/rrweb': ^2.0.0-alpha.35
+
+  '@amplitude/rrweb-record@2.0.0-alpha.35':
+    resolution: {integrity: sha512-C8lr6LLMXLDINWE3SaebDrc4sj1pSFKm9s+zlW5e8CkAuAv8XfA5Wjx5cevxG3LMkIwXdugvrrjYKmEVCODI1g==}
+
+  '@amplitude/rrweb-snapshot@2.0.0-alpha.35':
+    resolution: {integrity: sha512-n55AdmlRNZ7XuOlCRmSjH2kyyHS1oe5haUS+buxqjfQcamUtam+dSnP+6N1E8dLxIDjynJnbrCOC+8xvenpl1A==}
+
+  '@amplitude/rrweb-types@2.0.0-alpha.35':
+    resolution: {integrity: sha512-cR/xlN5fu7Cw6Zh9O6iEgNleqT92wJ3HO2mV19yQE6SRqLGKXXeDeTrUBd5FKCZnXvRsv3JtK+VR4u9vmZze3g==}
+
+  '@amplitude/rrweb-utils@2.0.0-alpha.35':
+    resolution: {integrity: sha512-/OpyKKHYGwoy2fvWDg5jiH1LzWag4wlFTQjd2DUgndxlXccQF1+yxYljCDdM+J1GBeZ7DaLZa9qe2JUUtoNOOw==}
+
+  '@amplitude/rrweb@2.0.0-alpha.35':
+    resolution: {integrity: sha512-qFaZDNMkjolZUVv1OxrWngGl38FH0iF0jtybd/vhuOzvwohJjyKL9Tgoulj8osj21/4BUpGEhWweGeJygjoJJw==}
+
+  '@amplitude/session-replay-browser@1.31.4':
+    resolution: {integrity: sha512-WKYtnT7SEoxXgskDX676Vloo2N2lh9YrIcrEKfess4CHoWDUX4wt5ey+D2AzRVQUrSYxHLKbS0hWa8NtoyjnkA==}
+
+  '@amplitude/targeting@0.2.0':
+    resolution: {integrity: sha512-/50ywTrC4hfcfJVBbh5DFbqMPPfaIOivZeb5Gb+OGM03QrA+lsUqdvtnKLNuWtceD4H6QQ2KFzPJ5aAJLyzVDA==}
+
+  '@amplitude/ua-parser-js@0.7.33':
+    resolution: {integrity: sha512-wKEtVR4vXuPT9cVEIJkYWnlF++Gx3BdLatPBM+SZ1ztVIvnhdGBZR/mn9x/PzyrMcRlZmyi6L56I2J3doVBnjA==}
+
+  '@amplitude/unified@1.0.0-beta.40':
+    resolution: {integrity: sha512-t6IGkk/UtFZzpklWDgpfA2eFEG/EBq6+AmP2a17awVtude4sjXpfRDxW8mpU3ByjyW9pqquisTGP488TYaZoDQ==}
 
   '@ampproject/remapping@2.3.0':
     resolution: {integrity: sha512-30iZtAPgz+LTIYoeivqYo853f02jBYSd5uGnGpkFV0M3xOt9aN73erkgYAmZU43x4VfqcnLxW9Kpg3R5LC4YYw==}
@@ -1460,6 +1555,12 @@ packages:
   '@joho-erp/database@file:packages/database':
     resolution: {directory: packages/database, type: directory}
 
+  '@joho-erp/shared@file:packages/shared':
+    resolution: {directory: packages/shared, type: directory}
+    peerDependencies:
+      '@clerk/nextjs': ^6.0.0
+      react: ^18.0.0 || ^19.0.0
+
   '@jridgewell/gen-mapping@0.3.13':
     resolution: {integrity: sha512-2kkt/7niJ6MgEPxF0bYdQ6etZaA+fQvDcLKckhy1yIQOzaoKjBBjSj63/aLVjYE3qhRt5dvM+uUyfCg6UKCBbA==}
 
@@ -2178,6 +2279,24 @@ packages:
       react-redux:
         optional: true
 
+  '@rollup/plugin-replace@6.0.3':
+    resolution: {integrity: sha512-J4RZarRvQAm5IF0/LwUUg+obsm+xZhYnbMXmXROyoSE1ATJe3oXSb9L5MMppdxP2ylNSjv6zFBwKYjcKMucVfA==}
+    engines: {node: '>=14.0.0'}
+    peerDependencies:
+      rollup: ^1.20.0||^2.0.0||^3.0.0||^4.0.0
+    peerDependenciesMeta:
+      rollup:
+        optional: true
+
+  '@rollup/pluginutils@5.3.0':
+    resolution: {integrity: sha512-5EdhGZtnu3V88ces7s53hhfK5KSASnJZv8Lulpc04cWO3REESroJXg73DFsOmgbU2BhwV0E20bu2IDZb3VKW4Q==}
+    engines: {node: '>=14.0.0'}
+    peerDependencies:
+      rollup: ^1.20.0||^2.0.0||^3.0.0||^4.0.0
+    peerDependenciesMeta:
+      rollup:
+        optional: true
+
   '@rollup/rollup-android-arm-eabi@4.54.0':
     resolution: {integrity: sha512-OywsdRHrFvCdvsewAInDKCNyR3laPA2mc9bRYJ6LBp5IyvF3fvXbbNR0bSzHlZVFtn6E0xw2oZlyjg4rKCVcng==}
     cpu: [arm]
@@ -2758,6 +2877,9 @@ packages:
   '@tybys/wasm-util@0.10.1':
     resolution: {integrity: sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg==}
 
+  '@types/css-font-loading-module@0.0.7':
+    resolution: {integrity: sha512-nl09VhutdjINdWyXxHWN/w9zlNCfr60JUqJbd24YXUuCwgeL0TpFSdElCwb6cxfB6ybE19Gjj4g0jsgkXxKv1Q==}
+
   '@types/d3-array@3.2.2':
     resolution: {integrity: sha512-hOLWVbm7uRza0BYXpIIW5pxfrKe0W+D5lrFiAEYR+pb6w3N2SwSMaJbXdUfSEv+dT4MfHBLtn5js0LAWaO6otw==}
 
@@ -2835,6 +2957,9 @@ packages:
   '@types/xlsx@0.0.36':
     resolution: {integrity: sha512-mvfrKiKKMErQzLMF8ElYEH21qxWCZtN59pHhWGmWCWFJStYdMWjkDSAy6mGowFxHXaXZWe5/TW7pBUiWclIVOw==}
     deprecated: This is a stub types definition for xlsx (https://github.com/sheetjs/js-xlsx). xlsx provides its own type definitions, so you don't need @types/xlsx installed!
+
+  '@types/zen-observable@0.8.3':
+    resolution: {integrity: sha512-fbF6oTd4sGGy0xjHPKAt+eS2CrxJ3+6gQ3FGcBoIJR2TLAyCkCyI8JqZNy+FeON0AhVgNJoUumVoZQjBFUqHkw==}
 
   '@typescript-eslint/eslint-plugin@6.21.0':
     resolution: {integrity: sha512-oy9+hTPCUFpngkEZUSzbf9MxI65wbKFoQYsgPdILTfbUldp5ovUuphZVe4i30emU9M/kP+T64Di0mxl7dSw3MA==}
@@ -3032,6 +3157,9 @@ packages:
   '@vitest/utils@1.6.1':
     resolution: {integrity: sha512-jOrrUvXM4Av9ZWiG1EajNto0u96kWAhJ1LmPmJhXXQx/32MecEKd10pOLYgS2BQx1TgkGhloPU1ArDW2vvaY6g==}
 
+  '@xstate/fsm@1.6.5':
+    resolution: {integrity: sha512-b5o1I6aLNeYlU/3CPlj/Z91ybk1gUsKT+5NAJI+2W4UjvS5KLG28K9v5UvNoFVjHV8PajVZ00RH3vnjyQO7ZAw==}
+
   abs-svg-path@0.1.1:
     resolution: {integrity: sha512-d8XPSGjfyzlXC3Xx891DJRyZfqk5JU0BJrDQcsWomFIV1/BIzPW5HDH5iDdWpqWaav0YVIEzT1RHTwWr0FFshA==}
 
@@ -3178,6 +3306,10 @@ packages:
 
   balanced-match@1.0.2:
     resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
+
+  base64-arraybuffer@1.0.2:
+    resolution: {integrity: sha512-I3yl4r9QB5ZRY3XuJVEPfc2XhZO6YweFPI+UovAzn+8/hb3oJ6lnysaFcjVpkCPfVWFUDvoZ8kmVDP7WyRtYtQ==}
+    engines: {node: '>= 0.6.0'}
 
   base64-js@0.0.8:
     resolution: {integrity: sha512-3XSA2cR/h/73EzlXXdU6YNycmYI7+kicTxks4eJg2g39biHR84slg2+des+p7iHYhbRg/udIS4TD53WabcOUkw==}
@@ -3784,6 +3916,9 @@ packages:
     resolution: {integrity: sha512-MMdARuVEQziNTeJD8DgMqmhwR11BRQ/cBP+pLtYdSTnf3MIO8fFeiINEbX36ZdNlfU/7A9f3gUw49B3oQsvwBA==}
     engines: {node: '>=4.0'}
 
+  estree-walker@2.0.2:
+    resolution: {integrity: sha512-Rfkk/Mp/DL7JVje3u18FxFujQlTNR2q6QfMSMB7AvCBx91NGj/ba3kCfza0f6dVDbw7YlRf/nDrn7pQrCCyQ/w==}
+
   estree-walker@3.0.3:
     resolution: {integrity: sha512-7RUKfXgSMMkzt6ZuXmqapOurLGPPfgj6l9uRZ7lRGolvk0y2yocc35LdcxKC5PQZdn2DMqioAQ2NoWcrTKmm6g==}
 
@@ -3855,6 +3990,9 @@ packages:
     peerDependenciesMeta:
       picomatch:
         optional: true
+
+  fflate@0.4.8:
+    resolution: {integrity: sha512-FJqqoDBR00Mdj9ppamLa/Y7vxm+PRmNWA67N846RvsoYVMKB4q3y/de5PA7gUmRMYK/8CMz2GDZQmCRN1wBcWA==}
 
   file-entry-cache@6.0.1:
     resolution: {integrity: sha512-7Gps/XWymbLk2QLYK4NzpMOrYjMhdIxXuIvy2QBsLE6ljuodKvdkWs/cpyJJ3CVIVpH0Oi1Hvg1ovbMzLdFBBg==}
@@ -4091,6 +4229,12 @@ packages:
   hyphen@1.13.0:
     resolution: {integrity: sha512-flZoIooovWALhu04Z3ooPWQldjTOgLDs5DlbUxTjnIyhQKu9ukljKWwElFCUyVi6TBk210bMBlaMG8eW3bXU+g==}
 
+  idb-keyval@6.2.2:
+    resolution: {integrity: sha512-yjD9nARJ/jb1g+CvD0tlhUHOrJ9Sy0P8T9MF3YaLlHnSRpwPfpTX0XIvpmw3gAJUmEu3FiICLBDPXVwyEvrleg==}
+
+  idb@8.0.0:
+    resolution: {integrity: sha512-l//qvlAKGmQO31Qn7xdzagVPPaHTxXx199MhrAFuVBTPqydcPYBWjkrbv4Y0ktB+GmWOiwHl237UUOrLmQxLvw==}
+
   ieee754@1.2.1:
     resolution: {integrity: sha512-dcyqhDvX1C46lXZcVqCpK+FtMRQVdIMN6/Df5js2zouUsqG7I6sFxitIC+7KYK29KdXOLHdu9zL4sFnoVQnqaA==}
 
@@ -4316,6 +4460,9 @@ packages:
     resolution: {integrity: sha512-ekilCSN1jwRvIbgeg/57YFh8qQDNbwDb9xT/qu2DAHbFFZUicIl4ygVaAvzveMhMVr3LnpSKTNnwt8PoOfmKhQ==}
     hasBin: true
 
+  js-base64@3.7.8:
+    resolution: {integrity: sha512-hNngCeKxIUQiEUN3GPJOkz4wF/YvdUdbNL9hsBcMQTkKzboD7T/q3OYOuuPZLUE6dBxSGpwhk5mwuDud7JVAow==}
+
   js-cookie@3.0.5:
     resolution: {integrity: sha512-cEiJEAEoIbWfCZYKWhVwFuvPX1gETRYPw6LlaTKoxD3s2AkXzkCjnp6h0V77ozyqj0jakteJ4YqDJT830+lVGw==}
     engines: {node: '>=14'}
@@ -4509,6 +4656,9 @@ packages:
 
   minimist@1.2.8:
     resolution: {integrity: sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA==}
+
+  mitt@3.0.1:
+    resolution: {integrity: sha512-vKivATfr97l2/QBCYAkXYDbrIWPM2IIKEl7YPhjCvKlG3kE2gm+uBo6nEXK3M5/Ffh/FLpKExzOQ3JJoJGFKBw==}
 
   mlly@1.8.0:
     resolution: {integrity: sha512-l8D9ODSRWLe2KHJSifWGwBqpTZXIXTeo8mlKjY+E2HAakaTeNpqAyBZ8GSqLzHgw4XmHmC8whvpjJNMbFZN7/g==}
@@ -5112,6 +5262,9 @@ packages:
   safe-buffer@5.2.1:
     resolution: {integrity: sha512-rp3So07KcdmmKbGvgaNxQSJr7bGVSVk5S9Eq1F+ppbRo70+YeaDxkw5Dd8NPN+GD6bjnYm2VuPuCXmpuYvmCXQ==}
 
+  safe-json-stringify@1.2.0:
+    resolution: {integrity: sha512-gH8eh2nZudPQO6TytOvbxnuhYBOvDBBLW52tz5q6X58lJcd/tkmqFR+5Z9adS8aJtURSXWThWy/xJtJwixErvg==}
+
   safe-push-apply@1.0.0:
     resolution: {integrity: sha512-iKE9w/Z7xCzUMIZqdBsp6pEQvwuEebH4vdpjcDWnyzaI6yl6O9FHvVpmGelvEHNsoY6wGblkxR6Zty/h00WiSA==}
     engines: {node: '>= 0.4'}
@@ -5523,6 +5676,9 @@ packages:
   undici-types@6.21.0:
     resolution: {integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==}
 
+  unfetch@4.1.0:
+    resolution: {integrity: sha512-crP/n3eAPUJxZXM9T80/yv0YhkTEx2K1D3h7D1AJM6fzsWZrxdyRuLN0JH/dkZh1LNH8LxCnBzoPFCPbb2iGpg==}
+
   unicode-properties@1.4.1:
     resolution: {integrity: sha512-CLjCCLQ6UuMxWnbIylkisbRj31qxHPAurvena/0iwSVbQ2G1VY5/HjV0IRabOEbDHlzZlRdCrD4NhB0JtU40Pg==}
 
@@ -5662,6 +5818,9 @@ packages:
   warning@4.0.3:
     resolution: {integrity: sha512-rpJyN222KWIvHJ/F53XSZv0Zl/accqHR8et1kpaMTD/fLCRxtV8iX8czMzY7sVZupTI3zcUTg8eycS2kNF9l6w==}
 
+  web-vitals@5.1.0:
+    resolution: {integrity: sha512-ArI3kx5jI0atlTtmV0fWU3fjpLmq/nD3Zr1iFFlJLaqa5wLBkUSzINwBPySCX/8jRyjlmy1Volw1kz1g9XE4Jg==}
+
   webidl-conversions@7.0.0:
     resolution: {integrity: sha512-VwddBukDzu71offAQR975unBIGqfKZpM+8ZX6ySk8nYhVoo5CYaZyzt3YBvYtRtO+aoGlqxPg/B87NGVZ/fu6g==}
     engines: {node: '>=12'}
@@ -5731,12 +5890,191 @@ packages:
   yoga-layout@3.2.1:
     resolution: {integrity: sha512-0LPOt3AxKqMdFBZA3HBAt/t/8vIKq7VaQYbuA8WxCgung+p9TVyKRYdpvCb80HcdTN2NkbIKbhNwKUfm3tQywQ==}
 
+  zen-observable-ts@1.1.0:
+    resolution: {integrity: sha512-1h4zlLSqI2cRLPJUHJFL8bCWHhkpuXkF+dbGkRaWjgDIG26DmzyshUMrdV/rL3UnR+mhaX4fRq8LPouq0MYYIA==}
+
+  zen-observable@0.8.15:
+    resolution: {integrity: sha512-PQ2PC7R9rslx84ndNBZB/Dkv8V8fZEpk83RLgXtYd0fwUgEjseMn1Dgajh2x6S8QbZAFa9p2qVCEuYZNgve0dQ==}
+
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
 snapshots:
 
   '@alloc/quick-lru@5.2.0': {}
+
+  '@amplitude/analytics-browser@2.36.1':
+    dependencies:
+      '@amplitude/analytics-core': 2.41.1
+      '@amplitude/plugin-autocapture-browser': 1.23.1
+      '@amplitude/plugin-network-capture-browser': 1.9.1
+      '@amplitude/plugin-page-url-enrichment-browser': 0.6.5
+      '@amplitude/plugin-page-view-tracking-browser': 2.8.1
+      '@amplitude/plugin-web-vitals-browser': 1.1.16
+      tslib: 2.8.1
+
+  '@amplitude/analytics-client-common@2.4.31':
+    dependencies:
+      '@amplitude/analytics-connector': 1.6.4
+      '@amplitude/analytics-core': 2.41.1
+      '@amplitude/analytics-types': 2.11.1
+      tslib: 2.8.1
+
+  '@amplitude/analytics-connector@1.6.4': {}
+
+  '@amplitude/analytics-core@2.41.1':
+    dependencies:
+      '@amplitude/analytics-connector': 1.6.4
+      safe-json-stringify: 1.2.0
+      tslib: 2.8.1
+      zen-observable-ts: 1.1.0
+
+  '@amplitude/analytics-types@1.4.0': {}
+
+  '@amplitude/analytics-types@2.11.1': {}
+
+  '@amplitude/engagement-browser@1.0.8':
+    dependencies:
+      '@amplitude/analytics-types': 1.4.0
+
+  '@amplitude/experiment-core@0.12.0':
+    dependencies:
+      js-base64: 3.7.8
+
+  '@amplitude/experiment-core@0.7.2':
+    dependencies:
+      js-base64: 3.7.8
+
+  '@amplitude/experiment-js-client@1.20.3':
+    dependencies:
+      '@amplitude/analytics-connector': 1.6.4
+      '@amplitude/experiment-core': 0.12.0
+      '@amplitude/ua-parser-js': 0.7.33
+      base64-js: 1.5.1
+      unfetch: 4.1.0
+
+  '@amplitude/plugin-autocapture-browser@1.23.1':
+    dependencies:
+      '@amplitude/analytics-core': 2.41.1
+      tslib: 2.8.1
+
+  '@amplitude/plugin-experiment-browser@1.0.0-beta.11':
+    dependencies:
+      '@amplitude/analytics-core': 2.41.1
+      '@amplitude/experiment-js-client': 1.20.3
+
+  '@amplitude/plugin-network-capture-browser@1.9.1':
+    dependencies:
+      '@amplitude/analytics-core': 2.41.1
+      tslib: 2.8.1
+
+  '@amplitude/plugin-page-url-enrichment-browser@0.6.5':
+    dependencies:
+      '@amplitude/analytics-core': 2.41.1
+      tslib: 2.8.1
+
+  '@amplitude/plugin-page-view-tracking-browser@2.8.1':
+    dependencies:
+      '@amplitude/analytics-core': 2.41.1
+      tslib: 2.8.1
+
+  '@amplitude/plugin-session-replay-browser@1.25.18(@amplitude/rrweb@2.0.0-alpha.35)(rollup@4.54.0)':
+    dependencies:
+      '@amplitude/analytics-client-common': 2.4.31
+      '@amplitude/analytics-core': 2.41.1
+      '@amplitude/analytics-types': 2.11.1
+      '@amplitude/rrweb-plugin-console-record': 2.0.0-alpha.35(@amplitude/rrweb@2.0.0-alpha.35)
+      '@amplitude/rrweb-record': 2.0.0-alpha.35
+      '@amplitude/session-replay-browser': 1.31.4(@amplitude/rrweb@2.0.0-alpha.35)(rollup@4.54.0)
+      idb-keyval: 6.2.2
+      tslib: 2.8.1
+    transitivePeerDependencies:
+      - '@amplitude/rrweb'
+      - rollup
+
+  '@amplitude/plugin-web-vitals-browser@1.1.16':
+    dependencies:
+      '@amplitude/analytics-core': 2.41.1
+      tslib: 2.8.1
+      web-vitals: 5.1.0
+
+  '@amplitude/rrdom@2.0.0-alpha.35':
+    dependencies:
+      '@amplitude/rrweb-snapshot': 2.0.0-alpha.35
+
+  '@amplitude/rrweb-packer@2.0.0-alpha.35':
+    dependencies:
+      '@amplitude/rrweb-types': 2.0.0-alpha.35
+      fflate: 0.4.8
+
+  '@amplitude/rrweb-plugin-console-record@2.0.0-alpha.35(@amplitude/rrweb@2.0.0-alpha.35)':
+    dependencies:
+      '@amplitude/rrweb': 2.0.0-alpha.35
+
+  '@amplitude/rrweb-record@2.0.0-alpha.35':
+    dependencies:
+      '@amplitude/rrweb': 2.0.0-alpha.35
+      '@amplitude/rrweb-types': 2.0.0-alpha.35
+
+  '@amplitude/rrweb-snapshot@2.0.0-alpha.35':
+    dependencies:
+      postcss: 8.5.6
+
+  '@amplitude/rrweb-types@2.0.0-alpha.35': {}
+
+  '@amplitude/rrweb-utils@2.0.0-alpha.35': {}
+
+  '@amplitude/rrweb@2.0.0-alpha.35':
+    dependencies:
+      '@amplitude/rrdom': 2.0.0-alpha.35
+      '@amplitude/rrweb-snapshot': 2.0.0-alpha.35
+      '@amplitude/rrweb-types': 2.0.0-alpha.35
+      '@amplitude/rrweb-utils': 2.0.0-alpha.35
+      '@types/css-font-loading-module': 0.0.7
+      '@xstate/fsm': 1.6.5
+      base64-arraybuffer: 1.0.2
+      mitt: 3.0.1
+
+  '@amplitude/session-replay-browser@1.31.4(@amplitude/rrweb@2.0.0-alpha.35)(rollup@4.54.0)':
+    dependencies:
+      '@amplitude/analytics-client-common': 2.4.31
+      '@amplitude/analytics-core': 2.41.1
+      '@amplitude/analytics-types': 2.11.1
+      '@amplitude/experiment-core': 0.7.2
+      '@amplitude/rrweb-packer': 2.0.0-alpha.35
+      '@amplitude/rrweb-plugin-console-record': 2.0.0-alpha.35(@amplitude/rrweb@2.0.0-alpha.35)
+      '@amplitude/rrweb-record': 2.0.0-alpha.35
+      '@amplitude/rrweb-types': 2.0.0-alpha.35
+      '@amplitude/rrweb-utils': 2.0.0-alpha.35
+      '@amplitude/targeting': 0.2.0
+      '@rollup/plugin-replace': 6.0.3(rollup@4.54.0)
+      idb: 8.0.0
+      tslib: 2.8.1
+    transitivePeerDependencies:
+      - '@amplitude/rrweb'
+      - rollup
+
+  '@amplitude/targeting@0.2.0':
+    dependencies:
+      '@amplitude/analytics-client-common': 2.4.31
+      '@amplitude/analytics-core': 2.41.1
+      '@amplitude/analytics-types': 2.11.1
+      '@amplitude/experiment-core': 0.7.2
+      idb: 8.0.0
+      tslib: 2.8.1
+
+  '@amplitude/ua-parser-js@0.7.33': {}
+
+  '@amplitude/unified@1.0.0-beta.40(@amplitude/rrweb@2.0.0-alpha.35)(rollup@4.54.0)':
+    dependencies:
+      '@amplitude/analytics-browser': 2.36.1
+      '@amplitude/analytics-core': 2.41.1
+      '@amplitude/engagement-browser': 1.0.8
+      '@amplitude/plugin-experiment-browser': 1.0.0-beta.11
+      '@amplitude/plugin-session-replay-browser': 1.25.18(@amplitude/rrweb@2.0.0-alpha.35)(rollup@4.54.0)
+    transitivePeerDependencies:
+      - '@amplitude/rrweb'
+      - rollup
 
   '@ampproject/remapping@2.3.0':
     dependencies:
@@ -7097,6 +7435,20 @@ snapshots:
       - magicast
       - typescript
 
+  '@joho-erp/shared@file:packages/shared(@clerk/nextjs@6.36.1(next@15.5.7(@playwright/test@1.58.2)(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(react@19.2.1)':
+    dependencies:
+      '@amplitude/unified': 1.0.0-beta.40(@amplitude/rrweb@2.0.0-alpha.35)(rollup@4.54.0)
+      '@clerk/nextjs': 6.36.1(next@15.5.7(@playwright/test@1.58.2)(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
+      '@dinero.js/currencies': 2.0.0-alpha.1
+      date-fns: 4.1.0
+      date-fns-tz: 3.2.0(date-fns@4.1.0)
+      dinero.js: 2.0.0-alpha.14
+      react: 19.2.1
+      zod: 3.25.76
+    transitivePeerDependencies:
+      - '@amplitude/rrweb'
+      - rollup
+
   '@jridgewell/gen-mapping@0.3.13':
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.5
@@ -7840,6 +8192,21 @@ snapshots:
     optionalDependencies:
       react: 19.2.1
       react-redux: 9.2.0(@types/react@19.2.7)(react@19.2.1)(redux@5.0.1)
+
+  '@rollup/plugin-replace@6.0.3(rollup@4.54.0)':
+    dependencies:
+      '@rollup/pluginutils': 5.3.0(rollup@4.54.0)
+      magic-string: 0.30.21
+    optionalDependencies:
+      rollup: 4.54.0
+
+  '@rollup/pluginutils@5.3.0(rollup@4.54.0)':
+    dependencies:
+      '@types/estree': 1.0.8
+      estree-walker: 2.0.2
+      picomatch: 4.0.3
+    optionalDependencies:
+      rollup: 4.54.0
 
   '@rollup/rollup-android-arm-eabi@4.54.0':
     optional: true
@@ -8596,6 +8963,8 @@ snapshots:
       tslib: 2.8.1
     optional: true
 
+  '@types/css-font-loading-module@0.0.7': {}
+
   '@types/d3-array@3.2.2': {}
 
   '@types/d3-color@3.1.3': {}
@@ -8666,6 +9035,8 @@ snapshots:
   '@types/xlsx@0.0.36':
     dependencies:
       xlsx: 0.18.5
+
+  '@types/zen-observable@0.8.3': {}
 
   '@typescript-eslint/eslint-plugin@6.21.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.9.3))(eslint@8.57.1)(typescript@5.9.3)':
     dependencies:
@@ -8875,6 +9246,8 @@ snapshots:
       loupe: 2.3.7
       pretty-format: 29.7.0
 
+  '@xstate/fsm@1.6.5': {}
+
   abs-svg-path@0.1.1: {}
 
   acorn-jsx@5.3.2(acorn@8.15.0):
@@ -9047,6 +9420,8 @@ snapshots:
   axobject-query@4.1.0: {}
 
   balanced-match@1.0.2: {}
+
+  base64-arraybuffer@1.0.2: {}
 
   base64-js@0.0.8: {}
 
@@ -9827,6 +10202,8 @@ snapshots:
 
   estraverse@5.3.0: {}
 
+  estree-walker@2.0.2: {}
+
   estree-walker@3.0.3:
     dependencies:
       '@types/estree': 1.0.8
@@ -9901,6 +10278,8 @@ snapshots:
   fdir@6.5.0(picomatch@4.0.3):
     optionalDependencies:
       picomatch: 4.0.3
+
+  fflate@0.4.8: {}
 
   file-entry-cache@6.0.1:
     dependencies:
@@ -10146,6 +10525,10 @@ snapshots:
 
   hyphen@1.13.0: {}
 
+  idb-keyval@6.2.2: {}
+
+  idb@8.0.0: {}
+
   ieee754@1.2.1: {}
 
   ignore@5.3.2: {}
@@ -10370,6 +10753,8 @@ snapshots:
 
   jiti@2.6.1: {}
 
+  js-base64@3.7.8: {}
+
   js-cookie@3.0.5: {}
 
   js-tokens@4.0.0: {}
@@ -10580,6 +10965,8 @@ snapshots:
       brace-expansion: 2.0.2
 
   minimist@1.2.8: {}
+
+  mitt@3.0.1: {}
 
   mlly@1.8.0:
     dependencies:
@@ -11199,6 +11586,8 @@ snapshots:
 
   safe-buffer@5.2.1: {}
 
+  safe-json-stringify@1.2.0: {}
+
   safe-push-apply@1.0.0:
     dependencies:
       es-errors: 1.3.0
@@ -11697,6 +12086,8 @@ snapshots:
 
   undici-types@6.21.0: {}
 
+  unfetch@4.1.0: {}
+
   unicode-properties@1.4.1:
     dependencies:
       base64-js: 1.5.1
@@ -11872,6 +12263,8 @@ snapshots:
     dependencies:
       loose-envify: 1.4.0
 
+  web-vitals@5.1.0: {}
+
   webidl-conversions@7.0.0: {}
 
   whatwg-url@11.0.0:
@@ -11954,5 +12347,12 @@ snapshots:
   yocto-queue@1.2.2: {}
 
   yoga-layout@3.2.1: {}
+
+  zen-observable-ts@1.1.0:
+    dependencies:
+      '@types/zen-observable': 0.8.3
+      zen-observable: 0.8.15
+
+  zen-observable@0.8.15: {}
 
   zod@3.25.76: {}

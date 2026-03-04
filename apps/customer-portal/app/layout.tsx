@@ -1,5 +1,6 @@
 import './globals.css';
 import { ClerkProvider } from '@clerk/nextjs';
+import { AmplitudeProvider } from '@joho-erp/shared/providers';
 import { TRPCProvider } from './trpc-provider';
 import { Toaster } from '@joho-erp/ui';
 import type { Metadata } from 'next';
@@ -29,12 +30,14 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider>
-      <html lang="en" className={outfit.variable}>
-        <body className="font-outfit antialiased">
-          <TRPCProvider>{children}</TRPCProvider>
-          <Toaster />
-        </body>
-      </html>
+      <AmplitudeProvider>
+        <html lang="en" className={outfit.variable}>
+          <body className="font-outfit antialiased">
+            <TRPCProvider>{children}</TRPCProvider>
+            <Toaster />
+          </body>
+        </html>
+      </AmplitudeProvider>
     </ClerkProvider>
   );
 }

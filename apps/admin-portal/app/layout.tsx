@@ -2,6 +2,7 @@ import './globals.css';
 import { ClerkProvider } from '@clerk/nextjs';
 import { TRPCProvider } from './trpc-provider';
 import { ThemeProvider } from '@/components/theme-provider';
+import { AmplitudeProvider } from '@joho-erp/shared/providers';
 import { Toaster } from '@joho-erp/ui';
 import type { Metadata } from 'next';
 import localFont from 'next/font/local';
@@ -30,19 +31,21 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider>
-      <html lang="en" className={outfit.variable} suppressHydrationWarning>
-        <body className="font-outfit antialiased">
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="light"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <TRPCProvider>{children}</TRPCProvider>
-            <Toaster />
-          </ThemeProvider>
-        </body>
-      </html>
+      <AmplitudeProvider>
+        <html lang="en" className={outfit.variable} suppressHydrationWarning>
+          <body className="font-outfit antialiased">
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="light"
+              enableSystem
+              disableTransitionOnChange
+            >
+              <TRPCProvider>{children}</TRPCProvider>
+              <Toaster />
+            </ThemeProvider>
+          </body>
+        </html>
+      </AmplitudeProvider>
     </ClerkProvider>
   );
 }
