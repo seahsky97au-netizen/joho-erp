@@ -698,6 +698,7 @@
     "customer": "客户",
     "date": "日期",
     "deliveryDate": "配送日期",
+    "orderDate": "下单日期",
     "status": "状态",
     "total": "总计",
     "items": "项目",

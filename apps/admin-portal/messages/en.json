@@ -698,6 +698,7 @@
     "customer": "Customer",
     "date": "Date",
     "deliveryDate": "Delivery Date",
+    "orderDate": "Order Date",
     "status": "Status",
     "total": "Total",
     "items": "Items",

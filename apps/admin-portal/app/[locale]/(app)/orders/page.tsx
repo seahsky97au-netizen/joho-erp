@@ -299,6 +299,12 @@ export default function OrdersPage() {
         sortable: true,
       },
       {
+        key: 'orderedAt',
+        label: t('orderDate'),
+        render: (order) => new Date(order.orderedAt).toLocaleDateString(),
+        sortable: true,
+      },
+      {
         key: 'items',
         label: t('items'),
         render: (order) => order.items.length,
