@@ -1004,7 +1004,10 @@ async function findExistingItemByCode(code: string): Promise<string | null> {
       return response.Items[0].ItemID || null;
     }
     return null;
-  } catch {
+  } catch (error) {
+    xeroLogger.warn(`Failed to look up existing Xero item by code "${code}", will attempt creation`, {
+      error: error instanceof Error ? error.message : 'Unknown error',
+    } as any);
     return null;
   }
 }
@@ -1328,6 +1331,27 @@ export async function ensureXeroItemsExist(
         createdCount++;
       }
     } catch (error) {
+      // Handle "already exists" — lookup failed but item is in Xero
+      if (
+        error instanceof XeroApiError &&
+        error.statusCode === 400 &&
+        error.responseBody.toLowerCase().includes('already exists')
+      ) {
+        xeroLogger.warn(
+          `Item with SKU "${product.sku}" already exists in Xero — looking up and caching`,
+          { sku: product.sku } as any
+        );
+        const retryItemId = await findExistingItemByCode(product.sku);
+        if (retryItemId) {
+          await prisma.product.update({
+            where: { id: product.id },
+            data: { xeroItemId: retryItemId },
+          });
+          xeroLogger.sync.itemCreated(retryItemId, product.id, product.sku);
+          skippedCount++;
+          continue;
+        }
+      }
       const message = error instanceof Error ? error.message : 'Unknown error';
       errors.push(`SKU "${product.sku}": ${message}`);
       xeroLogger.error(`Failed to create Xero item for SKU "${product.sku}"`, {
