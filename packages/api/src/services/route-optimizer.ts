@@ -452,8 +452,9 @@ export async function assignPreliminaryPackingSequence(
   // Add area filter to ensure each area has its own independent sequence
   if (areaName) {
     whereClause.deliveryAddress = {
-      path: ['areaName'],
-      equals: areaName,
+      is: {
+        areaName: areaName,
+      },
     };
   }
 
