@@ -1745,7 +1745,9 @@
       "credit": "信用",
       "directors": "董事",
       "financial": "财务",
-      "references": "参考"
+      "references": "参考",
+      "signatures": "签名",
+      "documents": "证件"
     },
     "businessInfo": {
       "title": "业务信息",
@@ -1890,6 +1892,43 @@
       "emailPlaceholder": "contact@example.com",
       "remove": "移除",
       "emptyState": "尚未添加贸易参考"
+    },
+    "signatures": {
+      "title": "签名",
+      "description": "为每位董事收集申请人和担保人签名",
+      "termsText": "本人/我们同意信用申请的条款和条件",
+      "applicantSignature": "申请人签名",
+      "guarantorSignature": "个人担保签名",
+      "witnessName": "见证人姓名",
+      "witnessNamePlaceholder": "请输入见证人全名",
+      "witnessSignature": "见证人签名",
+      "noDirectors": "请先在董事选项卡中添加董事，然后再采集签名",
+      "directorNumber": "董事 {number}: {name}",
+      "signaturePad": {
+        "clear": "清除",
+        "tapToSign": "在此签名"
+      }
+    },
+    "documents": {
+      "title": "身份证件",
+      "description": "为每位董事上传身份证件",
+      "noDirectors": "请先在董事选项卡中添加董事，然后再上传证件",
+      "directorNumber": "董事 {number}: {name}",
+      "selectType": "证件类型",
+      "driverLicense": "驾照",
+      "passport": "护照",
+      "licenseFront": "驾照正面",
+      "licenseBack": "驾照背面",
+      "passportPhotoPage": "护照照片页",
+      "clickToUpload": "点击上传",
+      "allowedFileTypes": "JPEG、PNG 或 PDF（最大 5MB）",
+      "uploading": "上传中...",
+      "replace": "替换",
+      "uploadError": "上传失败",
+      "uploadErrorGeneric": "文件上传失败",
+      "invalidFileType": "无效的文件类型",
+      "fileTooLarge": "文件过大",
+      "maxFileSize": "最大文件大小为 5MB"
     },
     "buttons": {
       "cancel": "取消",
@@ -3794,6 +3833,27 @@
       "TAS": "塔斯马尼亚州",
       "NT": "北领地",
       "ACT": "澳大利亚首都领地"
+    },
+    "invitation": {
+      "inviteButton": "邀请使用门户",
+      "resendButton": "重新发送邀请",
+      "dialogTitle": "邀请客户使用门户",
+      "dialogDescription": "发送电子邮件邀请，以便此客户可以访问客户门户。他们将能够浏览产品并下订单。",
+      "emailLabel": "电子邮件地址",
+      "emailPlaceholder": "输入邀请邮箱地址",
+      "sendButton": "发送邀请",
+      "sending": "发送中...",
+      "resending": "重新发送中...",
+      "statusNotInvited": "未邀请",
+      "statusInvited": "已邀请",
+      "statusAccepted": "门户已激活",
+      "inviteSuccess": "邀请已发送",
+      "inviteSuccessMessage": "邀请邮件已发送至 {email}",
+      "inviteError": "邀请失败",
+      "resendSuccess": "邀请已重发",
+      "resendSuccessMessage": "邀请已重新发送至 {email}",
+      "resendError": "重发失败",
+      "adminCreatedAccount": "管理员创建的账户"
     },
     "smsReminder": {
       "title": "短信订单提醒",

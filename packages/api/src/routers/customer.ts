@@ -848,6 +848,22 @@ export const customerRouter = router({
 
         // Optional: Trade References
         tradeReferences: z.array(tradeReferenceSchema).optional(),
+
+        // Optional: Signatures (for admin sign-up on behalf of customer)
+        signatures: z
+          .array(
+            z.object({
+              directorIndex: z.number().int().min(0),
+              applicantSignatureUrl: z.string().url(),
+              applicantSignedAt: z.date().or(z.string().transform((str) => new Date(str))),
+              guarantorSignatureUrl: z.string().url(),
+              guarantorSignedAt: z.date().or(z.string().transform((str) => new Date(str))),
+              witnessName: z.string().min(1),
+              witnessSignatureUrl: z.string().url(),
+              witnessSignedAt: z.date().or(z.string().transform((str) => new Date(str))),
+            })
+          )
+          .optional(),
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -943,12 +959,42 @@ export const customerRouter = router({
             notes: input.notes,
             reviewedAt: input.creditLimit > 0 ? new Date() : undefined,
             reviewedBy: input.creditLimit > 0 ? ctx.userId : undefined,
+            ...(input.signatures && input.signatures.length > 0 && input.directors
+              ? {
+                  agreedToTermsAt: new Date(),
+                  signatures: input.signatures.flatMap((sig) => {
+                    const director = input.directors![sig.directorIndex];
+                    if (!director) return [];
+                    const signerName = `${director.givenNames} ${director.familyName}`;
+                    return [
+                      {
+                        signerName,
+                        signerPosition: director.position,
+                        signatureUrl: sig.applicantSignatureUrl,
+                        signedAt: sig.applicantSignedAt,
+                        signatureType: 'APPLICANT' as const,
+                      },
+                      {
+                        signerName,
+                        signerPosition: director.position,
+                        signatureUrl: sig.guarantorSignatureUrl,
+                        signedAt: sig.guarantorSignedAt,
+                        signatureType: 'GUARANTOR' as const,
+                        witnessName: sig.witnessName,
+                        witnessSignatureUrl: sig.witnessSignatureUrl,
+                        witnessSignedAt: sig.witnessSignedAt,
+                      },
+                    ];
+                  }),
+                }
+              : {}),
           },
           directors: input.directors || [],
           financialDetails: input.financialDetails,
           tradeReferences: input.tradeReferences || [],
           status: 'active',
           onboardingComplete: true, // Admin-created customers skip onboarding
+          portalInvitationStatus: 'not_invited',
         },
       });
 
@@ -1989,5 +2035,146 @@ export const customerRouter = router({
           message: error instanceof Error ? error.message : 'Geocoding failed',
         });
       }
+    }),
+
+  // Admin: Invite customer to portal
+  inviteCustomer: requirePermission('customers:create')
+    .input(
+      z.object({
+        customerId: z.string(),
+        email: z.string().email(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const resolvedCustomerId = await resolveCustomerId(input.customerId);
+
+      const customer = await prisma.customer.findUnique({
+        where: { id: resolvedCustomerId },
+      });
+
+      if (!customer) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Customer not found',
+        });
+      }
+
+      if (!customer.clerkUserId.startsWith('admin_created_')) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'This customer already has a portal account',
+        });
+      }
+
+      // Create Clerk invitation
+      try {
+        const { clerkClient } = await import('@clerk/nextjs/server');
+        const clerkBackend = await clerkClient();
+
+        const customerPortalUrl = process.env.NEXT_PUBLIC_CUSTOMER_PORTAL_URL || 'http://localhost:3000';
+
+        await clerkBackend.invitations.createInvitation({
+          emailAddress: input.email,
+          publicMetadata: {
+            role: 'customer',
+            customerId: resolvedCustomerId,
+          },
+          redirectUrl: `${customerPortalUrl}/sign-up`,
+        });
+      } catch (error) {
+        console.error('Clerk invitation error:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: error instanceof Error ? error.message : 'Failed to send invitation',
+        });
+      }
+
+      // Update customer record
+      const updated = await prisma.customer.update({
+        where: { id: resolvedCustomerId },
+        data: {
+          portalInvitationStatus: 'invited',
+          portalInvitedAt: new Date(),
+          portalInvitedEmail: input.email,
+        },
+      });
+
+      return updated;
+    }),
+
+  // Admin: Revoke and resend invitation
+  revokeAndResendInvitation: requirePermission('customers:create')
+    .input(
+      z.object({
+        customerId: z.string(),
+        email: z.string().email(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const resolvedCustomerId = await resolveCustomerId(input.customerId);
+
+      const customer = await prisma.customer.findUnique({
+        where: { id: resolvedCustomerId },
+      });
+
+      if (!customer) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Customer not found',
+        });
+      }
+
+      if (!customer.clerkUserId.startsWith('admin_created_')) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'This customer already has a portal account',
+        });
+      }
+
+      try {
+        const { clerkClient } = await import('@clerk/nextjs/server');
+        const clerkBackend = await clerkClient();
+
+        // Revoke existing invitations for this email
+        const invitations = await clerkBackend.invitations.getInvitationList();
+        for (const inv of invitations.data) {
+          if (
+            inv.emailAddress === customer.portalInvitedEmail &&
+            inv.status === 'pending'
+          ) {
+            await clerkBackend.invitations.revokeInvitation(inv.id);
+          }
+        }
+
+        // Create new invitation
+        const customerPortalUrl = process.env.NEXT_PUBLIC_CUSTOMER_PORTAL_URL || 'http://localhost:3000';
+
+        await clerkBackend.invitations.createInvitation({
+          emailAddress: input.email,
+          publicMetadata: {
+            role: 'customer',
+            customerId: resolvedCustomerId,
+          },
+          redirectUrl: `${customerPortalUrl}/sign-up`,
+        });
+      } catch (error) {
+        console.error('Clerk invitation error:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: error instanceof Error ? error.message : 'Failed to resend invitation',
+        });
+      }
+
+      // Update customer record
+      const updated = await prisma.customer.update({
+        where: { id: resolvedCustomerId },
+        data: {
+          portalInvitationStatus: 'invited',
+          portalInvitedAt: new Date(),
+          portalInvitedEmail: input.email,
+        },
+      });
+
+      return updated;
     }),
 });

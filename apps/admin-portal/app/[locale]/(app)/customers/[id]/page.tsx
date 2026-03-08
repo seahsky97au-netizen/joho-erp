@@ -63,6 +63,7 @@ import {
   RefreshCw,
   Upload,
   ImageOff,
+  Send,
 } from 'lucide-react';
 import { formatAUD, formatDate, DAYS_OF_WEEK, type DayOfWeek, validateABN } from '@joho-erp/shared';
 import { AuditLogSection } from '@/components/audit-log-section';
@@ -283,6 +284,52 @@ export default function CustomerDetailPage({ params }: PageProps) {
       toast({
         title: t('closure.closeError'),
         description: tErrors('operationFailed'),
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Invitation dialog state
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+
+  // Invite mutation
+  const inviteMutation = api.customer.inviteCustomer.useMutation({
+    onSuccess: () => {
+      toast({
+        title: t('invitation.inviteSuccess'),
+        description: t('invitation.inviteSuccessMessage', { email: inviteEmail }),
+      });
+      void utils.customer.getById.invalidate({ customerId: resolvedParams.id });
+      setShowInviteDialog(false);
+      setInviteEmail('');
+    },
+    onError: (error) => {
+      console.error('Invite customer error:', error.message);
+      toast({
+        title: t('invitation.inviteError'),
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Resend invitation mutation
+  const resendMutation = api.customer.revokeAndResendInvitation.useMutation({
+    onSuccess: () => {
+      toast({
+        title: t('invitation.resendSuccess'),
+        description: t('invitation.resendSuccessMessage', { email: inviteEmail }),
+      });
+      void utils.customer.getById.invalidate({ customerId: resolvedParams.id });
+      setShowInviteDialog(false);
+      setInviteEmail('');
+    },
+    onError: (error) => {
+      console.error('Resend invitation error:', error.message);
+      toast({
+        title: t('invitation.resendError'),
+        description: error.message,
         variant: 'destructive',
       });
     },
@@ -844,6 +891,47 @@ export default function CustomerDetailPage({ params }: PageProps) {
                 {t('closure.close')}
               </Button>
             </>
+          )}
+          {/* Invite / Resend Invitation button */}
+          {customer.clerkUserId.startsWith('admin_created_') && (
+            <>
+              {customer.portalInvitationStatus === 'invited' ? (
+                <Button
+                  variant="outline"
+                  disabled={isEditing}
+                  onClick={() => {
+                    setInviteEmail(customer.portalInvitedEmail || customer.contactPerson.email);
+                    setShowInviteDialog(true);
+                  }}
+                >
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  {t('invitation.resendButton')}
+                </Button>
+              ) : customer.portalInvitationStatus !== 'accepted' ? (
+                <Button
+                  variant="outline"
+                  disabled={isEditing}
+                  onClick={() => {
+                    setInviteEmail(customer.contactPerson.email);
+                    setShowInviteDialog(true);
+                  }}
+                >
+                  <Send className="mr-2 h-4 w-4" />
+                  {t('invitation.inviteButton')}
+                </Button>
+              ) : null}
+            </>
+          )}
+          {/* Portal status badge */}
+          {customer.portalInvitationStatus === 'invited' && (
+            <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+              {t('invitation.statusInvited')}
+            </Badge>
+          )}
+          {customer.portalInvitationStatus === 'accepted' && (
+            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+              {t('invitation.statusAccepted')}
+            </Badge>
           )}
           <Button
             variant="outline"
@@ -2154,6 +2242,65 @@ export default function CustomerDetailPage({ params }: PageProps) {
                 </>
               ) : (
                 t('closure.confirm')
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Invite Customer Dialog */}
+      <AlertDialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('invitation.dialogTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('invitation.dialogDescription')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="invite-email">{t('invitation.emailLabel')}</Label>
+              <Input
+                id="invite-email"
+                type="email"
+                placeholder={t('invitation.emailPlaceholder')}
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+              />
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={inviteMutation.isPending || resendMutation.isPending}>
+              {tCommon('cancel')}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (customer?.portalInvitationStatus === 'invited') {
+                  resendMutation.mutate({
+                    customerId: resolvedParams.id,
+                    email: inviteEmail,
+                  });
+                } else {
+                  inviteMutation.mutate({
+                    customerId: resolvedParams.id,
+                    email: inviteEmail,
+                  });
+                }
+              }}
+              disabled={!inviteEmail || inviteMutation.isPending || resendMutation.isPending}
+            >
+              {inviteMutation.isPending || resendMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  {customer?.portalInvitationStatus === 'invited'
+                    ? t('invitation.resending')
+                    : t('invitation.sending')}
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4 mr-2" />
+                  {t('invitation.sendButton')}
+                </>
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

@@ -1745,7 +1745,9 @@
       "credit": "Credit",
       "directors": "Directors",
       "financial": "Financial",
-      "references": "References"
+      "references": "References",
+      "signatures": "Signatures",
+      "documents": "Documents"
     },
     "businessInfo": {
       "title": "Business Information",
@@ -1890,6 +1892,43 @@
       "emailPlaceholder": "contact@example.com",
       "remove": "Remove",
       "emptyState": "No trade references added yet"
+    },
+    "signatures": {
+      "title": "Signatures",
+      "description": "Collect applicant & guarantor signatures for each director",
+      "termsText": "I/We agree to the terms and conditions of the credit application",
+      "applicantSignature": "Applicant Signature",
+      "guarantorSignature": "Personal Guarantee Signature",
+      "witnessName": "Witness Name",
+      "witnessNamePlaceholder": "Enter witness full name",
+      "witnessSignature": "Witness Signature",
+      "noDirectors": "Please add directors in the Directors tab first before capturing signatures",
+      "directorNumber": "Director {number}: {name}",
+      "signaturePad": {
+        "clear": "Clear",
+        "tapToSign": "Sign here"
+      }
+    },
+    "documents": {
+      "title": "Identity Documents",
+      "description": "Upload identity documents for each director",
+      "noDirectors": "Please add directors in the Directors tab first before uploading documents",
+      "directorNumber": "Director {number}: {name}",
+      "selectType": "Document Type",
+      "driverLicense": "Driver License",
+      "passport": "Passport",
+      "licenseFront": "License Front",
+      "licenseBack": "License Back",
+      "passportPhotoPage": "Passport Photo Page",
+      "clickToUpload": "Click to upload",
+      "allowedFileTypes": "JPEG, PNG, or PDF (max 5MB)",
+      "uploading": "Uploading...",
+      "replace": "Replace",
+      "uploadError": "Upload failed",
+      "uploadErrorGeneric": "Failed to upload document",
+      "invalidFileType": "Invalid file type",
+      "fileTooLarge": "File too large",
+      "maxFileSize": "Maximum file size is 5MB"
     },
     "buttons": {
       "cancel": "Cancel",
@@ -3794,6 +3833,27 @@
       "TAS": "Tasmania",
       "NT": "Northern Territory",
       "ACT": "Australian Capital Territory"
+    },
+    "invitation": {
+      "inviteButton": "Invite to Portal",
+      "resendButton": "Resend Invitation",
+      "dialogTitle": "Invite Customer to Portal",
+      "dialogDescription": "Send an email invitation so this customer can access the customer portal. They will be able to browse products and place orders.",
+      "emailLabel": "Email Address",
+      "emailPlaceholder": "Enter email for invitation",
+      "sendButton": "Send Invitation",
+      "sending": "Sending...",
+      "resending": "Resending...",
+      "statusNotInvited": "Not Invited",
+      "statusInvited": "Invited",
+      "statusAccepted": "Portal Active",
+      "inviteSuccess": "Invitation Sent",
+      "inviteSuccessMessage": "An invitation email has been sent to {email}",
+      "inviteError": "Invitation Failed",
+      "resendSuccess": "Invitation Resent",
+      "resendSuccessMessage": "The invitation has been resent to {email}",
+      "resendError": "Resend Failed",
+      "adminCreatedAccount": "Admin-created account"
     },
     "smsReminder": {
       "title": "SMS Order Reminder",

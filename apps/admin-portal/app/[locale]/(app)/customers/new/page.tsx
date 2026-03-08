@@ -20,8 +20,21 @@ import Link from 'next/link';
 import { api } from '@/trpc/client';
 import { parseToCents, validateABN, validateACN, validateAustralianPhone, formatCentsForWholeInput } from '@joho-erp/shared';
 import { AddressSearch, type AddressResult } from '@/components/address-search';
+import { SignaturePadComponent } from './components/signature-pad';
+import {
+  IdentityDocumentUpload,
+  type IdDocumentData,
+} from './components/identity-document-upload';
 
 // Type definitions
+type SignatureInfo = {
+  directorIndex: number;
+  applicantSignatureData: string | null;
+  guarantorSignatureData: string | null;
+  witnessName: string;
+  witnessSignatureData: string | null;
+};
+
 type DirectorInfo = {
   familyName: string;
   givenNames: string;
@@ -117,6 +130,12 @@ export default function NewCustomerPage() {
     },
     tradeReferences: [] as TradeReferenceInfo[],
   });
+
+  // Signature state per director
+  const [signatures, setSignatures] = useState<SignatureInfo[]>([]);
+
+  // Identity document state per director
+  const [idDocuments, setIdDocuments] = useState<IdDocumentData[]>([]);
 
   const [sameAsDelivery, setSameAsDelivery] = useState(true);
   const [postalSameAsBilling, setPostalSameAsBilling] = useState(true);
@@ -233,6 +252,7 @@ export default function NewCustomerPage() {
 
   // Helper functions for directors
   const addDirector = () => {
+    const newIndex = formData.directors.length;
     setFormData({
       ...formData,
       directors: [
@@ -249,6 +269,25 @@ export default function NewCustomerPage() {
         },
       ],
     });
+    setSignatures((prev) => [
+      ...prev,
+      {
+        directorIndex: newIndex,
+        applicantSignatureData: null,
+        guarantorSignatureData: null,
+        witnessName: '',
+        witnessSignatureData: null,
+      },
+    ]);
+    setIdDocuments((prev) => [
+      ...prev,
+      {
+        documentType: 'DRIVER_LICENSE',
+        frontUrl: null,
+        backUrl: null,
+        uploadedAt: null,
+      },
+    ]);
   };
 
   const removeDirector = (index: number) => {
@@ -256,6 +295,8 @@ export default function NewCustomerPage() {
       ...formData,
       directors: formData.directors.filter((_, i) => i !== index),
     });
+    setSignatures((prev) => prev.filter((_, i) => i !== index));
+    setIdDocuments((prev) => prev.filter((_, i) => i !== index));
   };
 
   const updateDirector = (index: number, field: string, value: string) => {
@@ -615,6 +656,85 @@ export default function NewCustomerPage() {
     setIsSubmitting(true);
 
     try {
+      // Upload signatures to R2 if any exist
+      let signatureData: Array<{
+        directorIndex: number;
+        applicantSignatureUrl: string;
+        applicantSignedAt: Date;
+        guarantorSignatureUrl: string;
+        guarantorSignedAt: Date;
+        witnessName: string;
+        witnessSignatureUrl: string;
+        witnessSignedAt: Date;
+      }> | undefined;
+
+      const validSignatures = signatures.filter(
+        (sig) =>
+          sig &&
+          sig.applicantSignatureData &&
+          sig.guarantorSignatureData &&
+          sig.witnessSignatureData &&
+          sig.witnessName
+      );
+
+      if (validSignatures.length > 0) {
+        const uploadSignature = async (dataUrl: string, type: string, dirIndex: number): Promise<string> => {
+          const blob = await fetch(dataUrl).then((r) => r.blob());
+          const file = new File([blob], `${type}-${dirIndex}.png`, { type: 'image/png' });
+          const formDataUpload = new FormData();
+          formDataUpload.append('file', file);
+          formDataUpload.append('signatureType', type);
+          formDataUpload.append('directorIndex', dirIndex.toString());
+
+          const response = await fetch('/api/upload/signature', {
+            method: 'POST',
+            body: formDataUpload,
+          });
+          const result = await response.json();
+          if (!result.success) throw new Error(result.error || 'Signature upload failed');
+          return result.publicUrl;
+        };
+
+        signatureData = await Promise.all(
+          validSignatures.map(async (sig) => {
+            const now = new Date();
+            const [applicantUrl, guarantorUrl, witnessUrl] = await Promise.all([
+              uploadSignature(sig.applicantSignatureData!, 'applicant', sig.directorIndex),
+              uploadSignature(sig.guarantorSignatureData!, 'guarantor', sig.directorIndex),
+              uploadSignature(sig.witnessSignatureData!, 'witness', sig.directorIndex),
+            ]);
+            return {
+              directorIndex: sig.directorIndex,
+              applicantSignatureUrl: applicantUrl,
+              applicantSignedAt: now,
+              guarantorSignatureUrl: guarantorUrl,
+              guarantorSignedAt: now,
+              witnessName: sig.witnessName,
+              witnessSignatureUrl: witnessUrl,
+              witnessSignedAt: now,
+            };
+          })
+        );
+      }
+
+      // Build directors with ID document data
+      const directorsWithDocs = formData.directors.length > 0
+        ? formData.directors.map((director, index) => {
+            const doc = idDocuments[index];
+            return {
+              ...director,
+              ...(doc?.frontUrl
+                ? {
+                    idDocumentType: doc.documentType as 'DRIVER_LICENSE' | 'PASSPORT',
+                    idDocumentFrontUrl: doc.frontUrl,
+                    idDocumentBackUrl: doc.backUrl || undefined,
+                    idDocumentUploadedAt: doc.uploadedAt || undefined,
+                  }
+                : {}),
+            };
+          })
+        : undefined;
+
       await createCustomerMutation.mutateAsync({
         accountType: formData.accountType,
         businessName: formData.businessName,
@@ -630,9 +750,10 @@ export default function NewCustomerPage() {
         creditLimit: formData.creditLimit,
         paymentTerms: formData.paymentTerms || undefined,
         notes: formData.notes || undefined,
-        directors: formData.directors.length > 0 ? formData.directors : undefined,
+        directors: directorsWithDocs,
         financialDetails: includeFinancial ? formData.financialDetails : undefined,
         tradeReferences: formData.tradeReferences.length > 0 ? formData.tradeReferences : undefined,
+        signatures: signatureData,
       });
     } catch (error) {
       console.error('Error creating customer:', error);
@@ -666,6 +787,8 @@ export default function NewCustomerPage() {
               { value: 'directors', label: t('tabs.directors') },
               { value: 'financial', label: t('tabs.financial') },
               { value: 'references', label: t('tabs.references') },
+              { value: 'signatures', label: t('tabs.signatures') },
+              { value: 'documents', label: t('tabs.documents') },
             ].map((tab) => (
               <button
                 key={tab.value}
@@ -1645,6 +1768,178 @@ export default function NewCustomerPage() {
                       {t('tradeReferences.addReference')}
                     </Button>
                   </>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Signatures Tab */}
+        {activeTab === 'signatures' && (
+          <div className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>{t('signatures.title')}</CardTitle>
+                <CardDescription>{t('signatures.description')}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-8">
+                {formData.directors.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">{t('signatures.noDirectors')}</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground">
+                      {t('signatures.termsText')}
+                    </div>
+                    {formData.directors.map((director, index) => (
+                      <div key={index} className="space-y-6 border rounded-lg p-4">
+                        <h3 className="font-semibold">
+                          {t('signatures.directorNumber', {
+                            number: index + 1,
+                            name: `${director.givenNames} ${director.familyName}`.trim() || `Director ${index + 1}`,
+                          })}
+                        </h3>
+
+                        <SignaturePadComponent
+                          id={`applicant-sig-${index}`}
+                          label={t('signatures.applicantSignature')}
+                          onSignatureChange={(data) => {
+                            setSignatures((prev) => {
+                              const updated = [...prev];
+                              if (!updated[index]) {
+                                updated[index] = {
+                                  directorIndex: index,
+                                  applicantSignatureData: null,
+                                  guarantorSignatureData: null,
+                                  witnessName: '',
+                                  witnessSignatureData: null,
+                                };
+                              }
+                              updated[index] = { ...updated[index], applicantSignatureData: data };
+                              return updated;
+                            });
+                          }}
+                        />
+
+                        <SignaturePadComponent
+                          id={`guarantor-sig-${index}`}
+                          label={t('signatures.guarantorSignature')}
+                          onSignatureChange={(data) => {
+                            setSignatures((prev) => {
+                              const updated = [...prev];
+                              if (!updated[index]) {
+                                updated[index] = {
+                                  directorIndex: index,
+                                  applicantSignatureData: null,
+                                  guarantorSignatureData: null,
+                                  witnessName: '',
+                                  witnessSignatureData: null,
+                                };
+                              }
+                              updated[index] = { ...updated[index], guarantorSignatureData: data };
+                              return updated;
+                            });
+                          }}
+                        />
+
+                        <div className="space-y-4 border-t pt-4">
+                          <div className="space-y-2">
+                            <Label>{t('signatures.witnessName')}</Label>
+                            <Input
+                              placeholder={t('signatures.witnessNamePlaceholder')}
+                              value={signatures[index]?.witnessName || ''}
+                              onChange={(e) => {
+                                setSignatures((prev) => {
+                                  const updated = [...prev];
+                                  if (!updated[index]) {
+                                    updated[index] = {
+                                      directorIndex: index,
+                                      applicantSignatureData: null,
+                                      guarantorSignatureData: null,
+                                      witnessName: '',
+                                      witnessSignatureData: null,
+                                    };
+                                  }
+                                  updated[index] = { ...updated[index], witnessName: e.target.value };
+                                  return updated;
+                                });
+                              }}
+                            />
+                          </div>
+
+                          <SignaturePadComponent
+                            id={`witness-sig-${index}`}
+                            label={t('signatures.witnessSignature')}
+                            onSignatureChange={(data) => {
+                              setSignatures((prev) => {
+                                const updated = [...prev];
+                                if (!updated[index]) {
+                                  updated[index] = {
+                                    directorIndex: index,
+                                    applicantSignatureData: null,
+                                    guarantorSignatureData: null,
+                                    witnessName: '',
+                                    witnessSignatureData: null,
+                                  };
+                                }
+                                updated[index] = { ...updated[index], witnessSignatureData: data };
+                                return updated;
+                              });
+                            }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Documents Tab */}
+        {activeTab === 'documents' && (
+          <div className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>{t('documents.title')}</CardTitle>
+                <CardDescription>{t('documents.description')}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {formData.directors.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">{t('documents.noDirectors')}</p>
+                  </div>
+                ) : (
+                  formData.directors.map((director, index) => (
+                    <div key={index} className="space-y-4">
+                      <h3 className="font-semibold">
+                        {t('documents.directorNumber', {
+                          number: index + 1,
+                          name: `${director.givenNames} ${director.familyName}`.trim() || `Director ${index + 1}`,
+                        })}
+                      </h3>
+                      <IdentityDocumentUpload
+                        directorIndex={index}
+                        value={
+                          idDocuments[index] || {
+                            documentType: 'DRIVER_LICENSE',
+                            frontUrl: null,
+                            backUrl: null,
+                            uploadedAt: null,
+                          }
+                        }
+                        onChange={(data) => {
+                          setIdDocuments((prev) => {
+                            const updated = [...prev];
+                            updated[index] = data;
+                            return updated;
+                          });
+                        }}
+                      />
+                    </div>
+                  ))
                 )}
               </CardContent>
             </Card>

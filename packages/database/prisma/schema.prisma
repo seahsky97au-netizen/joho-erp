@@ -383,6 +383,9 @@ model Customer {
   closureReason       String?             // Reason for account closure (if closed)
   closedAt            DateTime?           // When account was closed
   closedBy            String?             // User ID of admin who closed the account
+  portalInvitationStatus    String?             // "not_invited" | "invited" | "accepted"
+  portalInvitedAt           DateTime?
+  portalInvitedEmail        String?
   xeroContactId             String?
   onboardingComplete        Boolean             @default(false)
   creditApplicationPdfUrl   String?             // URL to generated credit application PDF in R2

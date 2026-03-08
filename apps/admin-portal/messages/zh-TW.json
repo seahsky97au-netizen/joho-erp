@@ -1745,7 +1745,9 @@
       "credit": "信用",
       "directors": "董事",
       "financial": "財務",
-      "references": "參考"
+      "references": "參考",
+      "signatures": "簽名",
+      "documents": "證件"
     },
     "businessInfo": {
       "title": "業務資訊",
@@ -1890,6 +1892,43 @@
       "emailPlaceholder": "contact@example.com",
       "remove": "移除",
       "emptyState": "尚未新增貿易參考"
+    },
+    "signatures": {
+      "title": "簽名",
+      "description": "為每位董事收集申請人和擔保人簽名",
+      "termsText": "本人/我們同意信用申請的條款和條件",
+      "applicantSignature": "申請人簽名",
+      "guarantorSignature": "個人擔保簽名",
+      "witnessName": "見證人姓名",
+      "witnessNamePlaceholder": "請輸入見證人全名",
+      "witnessSignature": "見證人簽名",
+      "noDirectors": "請先在董事分頁中新增董事，再進行簽名採集",
+      "directorNumber": "董事 {number}: {name}",
+      "signaturePad": {
+        "clear": "清除",
+        "tapToSign": "在此簽名"
+      }
+    },
+    "documents": {
+      "title": "身份證件",
+      "description": "為每位董事上傳身份證件",
+      "noDirectors": "請先在董事分頁中新增董事，再上傳證件",
+      "directorNumber": "董事 {number}: {name}",
+      "selectType": "證件類型",
+      "driverLicense": "駕照",
+      "passport": "護照",
+      "licenseFront": "駕照正面",
+      "licenseBack": "駕照背面",
+      "passportPhotoPage": "護照照片頁",
+      "clickToUpload": "點擊上傳",
+      "allowedFileTypes": "JPEG、PNG 或 PDF（最大 5MB）",
+      "uploading": "上傳中...",
+      "replace": "替換",
+      "uploadError": "上傳失敗",
+      "uploadErrorGeneric": "檔案上傳失敗",
+      "invalidFileType": "無效的檔案類型",
+      "fileTooLarge": "檔案過大",
+      "maxFileSize": "最大檔案大小為 5MB"
     },
     "buttons": {
       "cancel": "取消",
@@ -3794,6 +3833,27 @@
       "TAS": "塔斯馬尼亞州",
       "NT": "北領地",
       "ACT": "澳洲首都領地"
+    },
+    "invitation": {
+      "inviteButton": "邀請使用入口",
+      "resendButton": "重新發送邀請",
+      "dialogTitle": "邀請客戶使用入口",
+      "dialogDescription": "發送電子郵件邀請，以便此客戶可以存取客戶入口。他們將能夠瀏覽產品並下訂單。",
+      "emailLabel": "電子郵件地址",
+      "emailPlaceholder": "輸入邀請郵箱地址",
+      "sendButton": "發送邀請",
+      "sending": "發送中...",
+      "resending": "重新發送中...",
+      "statusNotInvited": "未邀請",
+      "statusInvited": "已邀請",
+      "statusAccepted": "入口已啟用",
+      "inviteSuccess": "邀請已發送",
+      "inviteSuccessMessage": "邀請郵件已發送至 {email}",
+      "inviteError": "邀請失敗",
+      "resendSuccess": "邀請已重發",
+      "resendSuccessMessage": "邀請已重新發送至 {email}",
+      "resendError": "重發失敗",
+      "adminCreatedAccount": "管理員建立的帳戶"
     },
     "smsReminder": {
       "title": "簡訊訂單提醒",
