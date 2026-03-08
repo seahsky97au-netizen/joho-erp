@@ -106,7 +106,7 @@ export function ProductRow({
                 onClick={onExpandToggle}
                 className="text-left w-full group focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded"
               >
-                <h3 className="font-semibold text-sm truncate group-hover:text-primary transition-colors">
+                <h3 className="font-semibold text-sm group-hover:text-primary transition-colors">
                   {product.name}
                 </h3>
               </button>
@@ -173,7 +173,7 @@ export function ProductRow({
               onClick={onExpandToggle}
               className="text-left w-full group focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded"
             >
-              <h3 className="font-semibold text-base truncate group-hover:text-primary transition-colors">
+              <h3 className="font-semibold text-base group-hover:text-primary transition-colors">
                 {product.name}
               </h3>
             </button>

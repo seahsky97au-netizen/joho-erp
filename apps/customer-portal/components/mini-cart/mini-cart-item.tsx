@@ -145,7 +145,7 @@ export function MiniCartItem({ item }: MiniCartItemProps) {
         {/* Product Info */}
         <div className="flex-1 min-w-0">
           {/* Product Name */}
-          <h4 className="text-sm font-medium text-neutral-900 leading-snug line-clamp-2 mb-1">
+          <h4 className="text-sm font-medium text-neutral-900 leading-snug mb-1">
             {item.productName}
           </h4>
 
