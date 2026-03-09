@@ -19,7 +19,7 @@ import {
   useToast,
 } from '@joho-erp/ui';
 import { useTranslations } from 'next-intl';
-import { Loader2, FileText, FileStack, Printer, RefreshCw, Zap } from 'lucide-react';
+import { Loader2, FileText, FileStack, Printer, Zap } from 'lucide-react';
 import { api } from '@/trpc/client';
 
 interface RouteManifestDialogProps {
@@ -59,64 +59,65 @@ export function RouteManifestDialog({
 
   const [isDownloadingInvoices, setIsDownloadingInvoices] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
-  const [downloadProgress, setDownloadProgress] = useState<{ current: number; total: number } | null>(null);
-  const [printProgress, setPrintProgress] = useState<{ current: number; total: number } | null>(null);
-  const [failedInvoices, setFailedInvoices] = useState<Array<{ orderId: string; url: string }>>([]);
   const [isGeneratingInvoices, setIsGeneratingInvoices] = useState(false);
   const [generateProgress, setGenerateProgress] = useState<{ current: number; total: number } | null>(null);
 
   const utils = api.useUtils();
   const createInvoiceMutation = api.xero.createInvoice.useMutation();
 
+  const fetchMergedPdf = useCallback(async (orderIds: string[]): Promise<{ blob: Blob; failedOrders: string[]; total: number; successful: number } | null> => {
+    const response = await fetch('/api/invoices/merge-pdf', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderIds }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText);
+    }
+
+    const blob = await response.blob();
+    const total = parseInt(response.headers.get('X-Total-Invoices') || '0', 10);
+    const successful = parseInt(response.headers.get('X-Successful-Invoices') || '0', 10);
+    const failedOrdersHeader = response.headers.get('X-Failed-Orders') || '';
+    const failedOrders = failedOrdersHeader ? failedOrdersHeader.split(',') : [];
+
+    return { blob, failedOrders, total, successful };
+  }, []);
+
   const downloadAllInvoices = useCallback(async () => {
     if (!invoiceData?.invoices?.length) return;
 
     setIsDownloadingInvoices(true);
-    setFailedInvoices([]);
 
     try {
-      const invoicesWithUrls = invoiceData.invoices.filter((inv) => inv.url);
+      const orderIds = invoiceData.invoices.map((inv) => inv.orderId);
+      const result = await fetchMergedPdf(orderIds);
+      if (!result) return;
 
-      if (invoicesWithUrls.length === 0) {
+      // Trigger download via hidden anchor
+      const url = URL.createObjectURL(result.blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const today = new Date().toISOString().split('T')[0];
+      a.download = `Invoices-${today}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      if (result.failedOrders.length > 0) {
         toast({
-          title: tErrors('noInvoices'),
+          title: t('partialSuccess', {
+            success: result.successful,
+            total: result.total,
+            failed: result.failedOrders.length,
+          }),
           variant: 'destructive',
-        });
-        return;
-      }
-
-      const failed: Array<{ orderId: string; url: string }> = [];
-
-      for (let i = 0; i < invoicesWithUrls.length; i++) {
-        const inv = invoicesWithUrls[i];
-        setDownloadProgress({ current: i + 1, total: invoicesWithUrls.length });
-        try {
-          if (inv.url) {
-            const opened = window.open(inv.url, `_blank_${i}`);
-            if (!opened) {
-              failed.push({ orderId: inv.orderId, url: inv.url });
-            }
-          }
-        } catch {
-          failed.push({ orderId: inv.orderId, url: inv.url! });
-        }
-        if (i < invoicesWithUrls.length - 1) {
-          await new Promise((resolve) => setTimeout(resolve, 200));
-        }
-      }
-
-      setFailedInvoices(failed);
-
-      if (failed.length === 0) {
-        toast({
-          title: t('invoicesOpened'),
-          description: t('invoicesOpenedDescription', { count: invoicesWithUrls.length }),
         });
       } else {
-        toast({
-          title: t('downloadFailed', { failed: failed.length, total: invoicesWithUrls.length }),
-          variant: 'destructive',
-        });
+        toast({ title: t('downloadReady') });
       }
     } catch (error) {
       console.error('Error downloading invoices:', error);
@@ -127,7 +128,7 @@ export function RouteManifestDialog({
     } finally {
       setIsDownloadingInvoices(false);
     }
-  }, [invoiceData, toast, tErrors, t]);
+  }, [invoiceData, fetchMergedPdf, toast, tErrors, t]);
 
   const handlePrint = useCallback(async () => {
     if (!invoiceData?.invoices?.length) return;
@@ -135,35 +136,24 @@ export function RouteManifestDialog({
     setIsPrinting(true);
 
     try {
-      const invoicesWithUrls = invoiceData.invoices.filter((inv) => inv.url);
+      const orderIds = invoiceData.invoices.map((inv) => inv.orderId);
+      const result = await fetchMergedPdf(orderIds);
+      if (!result) return;
 
-      if (invoicesWithUrls.length === 0) {
+      printPdfBlob(result.blob);
+
+      if (result.failedOrders.length > 0) {
         toast({
-          title: tErrors('noInvoices'),
+          title: t('partialSuccess', {
+            success: result.successful,
+            total: result.total,
+            failed: result.failedOrders.length,
+          }),
           variant: 'destructive',
         });
-        return;
+      } else {
+        toast({ title: t('printReady') });
       }
-
-      for (let i = 0; i < invoicesWithUrls.length; i++) {
-        const inv = invoicesWithUrls[i];
-        if (!inv.url) continue;
-
-        setPrintProgress({ current: i + 1, total: invoicesWithUrls.length });
-        const response = await fetch(inv.url);
-        const blob = await response.blob();
-        printPdfBlob(blob);
-
-        // Small delay between prints to let the browser handle each dialog
-        if (i < invoicesWithUrls.length - 1) {
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-        }
-      }
-
-      toast({
-        title: t('invoicesOpened'),
-        description: t('invoicesOpenedDescription', { count: invoicesWithUrls.length }),
-      });
     } catch (error) {
       console.error('Error printing invoices:', error);
       toast({
@@ -172,46 +162,8 @@ export function RouteManifestDialog({
       });
     } finally {
       setIsPrinting(false);
-      setPrintProgress(null);
     }
-  }, [invoiceData, toast, tErrors, t]);
-
-  const retryFailedInvoices = useCallback(async () => {
-    if (failedInvoices.length === 0) return;
-    setIsDownloadingInvoices(true);
-
-    const stillFailed: Array<{ orderId: string; url: string }> = [];
-
-    for (let i = 0; i < failedInvoices.length; i++) {
-      const inv = failedInvoices[i];
-      setDownloadProgress({ current: i + 1, total: failedInvoices.length });
-      try {
-        const opened = window.open(inv.url, `_blank_retry_${i}`);
-        if (!opened) {
-          stillFailed.push(inv);
-        }
-      } catch {
-        stillFailed.push(inv);
-      }
-      if (i < failedInvoices.length - 1) {
-        await new Promise((resolve) => setTimeout(resolve, 200));
-      }
-    }
-
-    setFailedInvoices(stillFailed);
-
-    if (stillFailed.length === 0) {
-      toast({ title: t('downloadComplete') });
-      setDownloadProgress(null);
-    } else {
-      toast({
-        title: t('downloadFailed', { failed: stillFailed.length, total: failedInvoices.length }),
-        variant: 'destructive',
-      });
-    }
-
-    setIsDownloadingInvoices(false);
-  }, [failedInvoices, toast, t]);
+  }, [invoiceData, fetchMergedPdf, toast, tErrors, t]);
 
   const generateMissingInvoices = useCallback(async () => {
     const orders = invoiceData?.ordersWithoutInvoices;
@@ -259,9 +211,6 @@ export function RouteManifestDialog({
   // Reset state when dialog closes
   useEffect(() => {
     if (!open) {
-      setFailedInvoices([]);
-      setDownloadProgress(null);
-      setPrintProgress(null);
       setGenerateProgress(null);
     }
   }, [open]);
@@ -274,6 +223,8 @@ export function RouteManifestDialog({
       day: 'numeric',
     }).format(date);
   };
+
+  const isBusy = isDownloadingInvoices || isPrinting || isGeneratingInvoices;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -332,7 +283,7 @@ export function RouteManifestDialog({
                   size="sm"
                   variant="outline"
                   className="mt-2"
-                  disabled={isGeneratingInvoices || isPrinting || isDownloadingInvoices}
+                  disabled={isBusy}
                   onClick={generateMissingInvoices}
                 >
                   {isGeneratingInvoices ? (
@@ -356,19 +307,13 @@ export function RouteManifestDialog({
           )}
         </div>
 
-        {/* Progress Bar */}
-        {(downloadProgress || printProgress || generateProgress) && (() => {
-          const progress = downloadProgress || printProgress || generateProgress;
-          const label = generateProgress
-            ? t('generatingProgress', { current: generateProgress.current, total: generateProgress.total })
-            : downloadProgress
-              ? t('downloadingProgress', { current: downloadProgress.current, total: downloadProgress.total })
-              : t('printingProgress', { current: printProgress!.current, total: printProgress!.total });
-          const pct = Math.round((progress!.current / progress!.total) * 100);
+        {/* Progress indicators */}
+        {generateProgress && (() => {
+          const pct = Math.round((generateProgress.current / generateProgress.total) * 100);
           return (
             <div className="px-6 pb-2 space-y-1">
               <div className="flex justify-between text-xs text-muted-foreground">
-                <span>{label}</span>
+                <span>{t('generatingProgress', { current: generateProgress.current, total: generateProgress.total })}</span>
                 <span>{pct}%</span>
               </div>
               <div className="w-full bg-secondary rounded-full h-2">
@@ -381,8 +326,16 @@ export function RouteManifestDialog({
           );
         })()}
 
+        {/* Preparing invoices message */}
+        {(isDownloadingInvoices || isPrinting) && (
+          <div className="px-6 pb-2 flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            {t('preparingInvoices', { count: invoiceData?.ordersWithInvoices || 0 })}
+          </div>
+        )}
+
         <DialogFooter className="flex-col sm:flex-row gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isDownloadingInvoices || isPrinting || isGeneratingInvoices}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isBusy}>
             {tCommon('cancel')}
           </Button>
           <Button
@@ -393,9 +346,7 @@ export function RouteManifestDialog({
             {isPrinting ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                {printProgress
-                  ? t('printingProgress', { current: printProgress.current, total: printProgress.total })
-                  : t('printingInvoices')}
+                {t('printingInvoices')}
               </>
             ) : (
               <>
@@ -404,31 +355,22 @@ export function RouteManifestDialog({
               </>
             )}
           </Button>
-          {failedInvoices.length > 0 && !isDownloadingInvoices ? (
-            <Button onClick={retryFailedInvoices}>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              {t('retryFailed', { count: failedInvoices.length })}
-            </Button>
-          ) : (
-            <Button
-              onClick={downloadAllInvoices}
-              disabled={isDownloadingInvoices || isLoadingInvoices || !invoiceData?.ordersWithInvoices || isGeneratingInvoices}
-            >
-              {isDownloadingInvoices ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  {downloadProgress
-                    ? t('downloadingProgress', { current: downloadProgress.current, total: downloadProgress.total })
-                    : t('downloadingInvoices')}
-                </>
-              ) : (
-                <>
-                  <FileStack className="h-4 w-4 mr-2" />
-                  {t('downloadInvoices')} {invoiceData?.ordersWithInvoices ? `(${invoiceData.ordersWithInvoices})` : ''}
-                </>
-              )}
-            </Button>
-          )}
+          <Button
+            onClick={downloadAllInvoices}
+            disabled={isDownloadingInvoices || isLoadingInvoices || !invoiceData?.ordersWithInvoices || isGeneratingInvoices}
+          >
+            {isDownloadingInvoices ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                {t('downloadingInvoices')}
+              </>
+            ) : (
+              <>
+                <FileStack className="h-4 w-4 mr-2" />
+                {t('downloadInvoices')} {invoiceData?.ordersWithInvoices ? `(${invoiceData.ordersWithInvoices})` : ''}
+              </>
+            )}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
