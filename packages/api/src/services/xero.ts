@@ -1193,10 +1193,9 @@ export async function syncContactToXero(customer: CustomerForXeroSync): Promise<
       if (
         createError instanceof XeroApiError &&
         createError.statusCode === 400 &&
-        createError.responseBody.toLowerCase().includes('existing active contact')
+        createError.responseBody.toLowerCase().includes('already assigned to another contact')
       ) {
-        const shortId = customer.id.slice(-6);
-        const disambiguatedName = `${customer.businessName} (#${shortId})`;
+        const disambiguatedName = `${customer.businessName} (CustomerID: ${customer.abn})`;
         xeroLogger.warn(
           `Duplicate Xero contact name "${customer.businessName}" — creating as "${disambiguatedName}"`,
           { customerId: customer.id, originalName: customer.businessName } as any
