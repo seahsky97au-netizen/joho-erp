@@ -310,7 +310,7 @@ export const packingRouter = router({
       z.object({
         orderId: z.string(),
         productId: z.string(),
-        newQuantity: z.number().int().min(0),
+        newQuantity: z.number().min(0),
         pin: z.string().regex(/^\d{4}$/, 'PIN must be exactly 4 digits').optional(),
       })
     )
