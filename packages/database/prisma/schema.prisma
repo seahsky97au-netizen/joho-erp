@@ -962,7 +962,7 @@ type CartItem {
   sku                 String
   productName         String
   unit                String
-  quantity            Int                 // Cart quantities are always integers
+  quantity            Float               // Quantity (supports decimals, e.g. 0.5, 1.25)
   unitPrice           Int                 // In cents (effective price with customer-specific discount, before GST)
   basePrice           Int                 // In cents (original price, before GST)
   subtotal            Int                 // In cents (unitPrice * quantity, before GST)
@@ -1002,7 +1002,7 @@ type Packing {
 type OriginalOrderItem {
   productId           String
   sku                 String
-  quantity            Int
+  quantity            Float
   unitPrice           Int                 // Stored in cents
   subtotal            Int                 // Stored in cents
 }

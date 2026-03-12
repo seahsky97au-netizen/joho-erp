@@ -302,7 +302,7 @@ export default function CreateOrderOnBehalfPage() {
 
   // Add item to order
   const handleAddItem = () => {
-    const qty = parseInt(quantityInput) || 0;
+    const qty = Math.round((parseFloat(quantityInput) || 0) * 100) / 100;
     if (!selectedProductId || qty <= 0) {
       toast({
         title: t('validation.invalidItem'),
@@ -678,7 +678,8 @@ export default function CreateOrderOnBehalfPage() {
                   <Input
                     id="quantity"
                     type="number"
-                    min="0"
+                    min="0.01"
+                    step="0.01"
                     value={quantityInput}
                     onChange={(e) => setQuantityInput(e.target.value)}
                     className="mt-1"

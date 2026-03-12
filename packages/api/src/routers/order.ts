@@ -244,7 +244,7 @@ export const orderRouter = router({
           .array(
             z.object({
               productId: z.string(),
-              quantity: z.number().int().min(1).max(10000),
+              quantity: z.number().min(0.01).max(10000),
             })
           )
           .min(1, 'At least one item is required'),
@@ -643,7 +643,7 @@ export const orderRouter = router({
           .array(
             z.object({
               productId: z.string(),
-              quantity: z.number().int().min(1).max(10000),
+              quantity: z.number().min(0.01).max(10000),
             })
           )
           .min(1, 'At least one item is required'),

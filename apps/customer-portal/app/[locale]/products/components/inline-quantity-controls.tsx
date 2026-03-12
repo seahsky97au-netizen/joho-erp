@@ -7,7 +7,7 @@ import { Minus, Plus, Loader2, Check, X } from 'lucide-react';
 import { api } from '@/trpc/client';
 
 const MAX_QUANTITY = 999;
-const MIN_QUANTITY = 1;
+const MIN_QUANTITY = 0.01;
 
 interface InlineQuantityControlsProps {
   productId: string;
@@ -208,7 +208,7 @@ export function InlineQuantityControls({
       return;
     }
 
-    const newQty = parseInt(inputValue, 10);
+    const newQty = Math.round(parseFloat(inputValue) * 100) / 100;
 
     // If invalid number or 0, remove item if in cart
     if (isNaN(newQty) || newQty <= 0) {
@@ -266,8 +266,8 @@ export function InlineQuantityControls({
       setInputValue('');
       return;
     }
-    // Only allow numbers
-    const numValue = parseInt(value, 10);
+    // Allow numbers and decimals
+    const numValue = parseFloat(value);
     if (!isNaN(numValue) && numValue <= MAX_QUANTITY) {
       setInputValue(value);
     }
@@ -291,8 +291,8 @@ export function InlineQuantityControls({
       setCustomQuantity('');
       return;
     }
-    // Only allow positive numbers 1-999
-    const numValue = parseInt(value, 10);
+    // Allow positive numbers and decimals
+    const numValue = parseFloat(value);
     if (!isNaN(numValue) && numValue >= 0 && numValue <= MAX_QUANTITY) {
       setCustomQuantity(value);
     }
@@ -315,7 +315,7 @@ export function InlineQuantityControls({
       return;
     }
 
-    const qty = parseInt(customQuantity, 10);
+    const qty = Math.round(parseFloat(customQuantity) * 100) / 100;
 
     // Invalid or non-positive
     if (isNaN(qty) || qty <= 0) {
@@ -346,7 +346,7 @@ export function InlineQuantityControls({
 
   // State 1: Not in cart (custom input + confirm button + quick-add button)
   if (currentQuantity === 0 && !isEditing) {
-    const hasValidCustomQuantity = customQuantity.trim() !== '' && !isNaN(parseInt(customQuantity, 10)) && parseInt(customQuantity, 10) > 0;
+    const hasValidCustomQuantity = customQuantity.trim() !== '' && !isNaN(parseFloat(customQuantity)) && parseFloat(customQuantity) > 0;
 
     return (
       <div className={cn('flex items-center gap-1.5', className)}>
@@ -359,6 +359,7 @@ export function InlineQuantityControls({
           disabled={disabled || isPending}
           min={MIN_QUANTITY}
           max={MAX_QUANTITY}
+          step="0.01"
           className={cn(
             'h-9 w-14 border-2 border-border rounded-md text-center font-medium text-sm',
             'focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary',
@@ -474,6 +475,7 @@ export function InlineQuantityControls({
         disabled={disabled || isPending}
         min={MIN_QUANTITY}
         max={MAX_QUANTITY}
+        step="0.01"
         className={cn(
           'h-9 w-16 border-2 border-primary rounded-md text-center font-bold text-sm',
           'focus:outline-none focus:ring-2 focus:ring-ring',

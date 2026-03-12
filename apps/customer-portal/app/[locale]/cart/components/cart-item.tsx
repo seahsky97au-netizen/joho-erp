@@ -74,11 +74,16 @@ export function CartItem({ item }: CartItemProps) {
   };
 
   const handleDecrease = () => {
-    if (item.quantity > 1) {
-      updateQuantity.mutate({
-        productId: item.productId,
-        quantity: item.quantity - 1,
-      });
+    if (item.quantity > 0.01) {
+      const newQty = Math.round((item.quantity - 1) * 100) / 100;
+      if (newQty <= 0) {
+        removeItem.mutate({ productId: item.productId });
+      } else {
+        updateQuantity.mutate({
+          productId: item.productId,
+          quantity: newQty,
+        });
+      }
     }
   };
 
@@ -121,7 +126,7 @@ export function CartItem({ item }: CartItemProps) {
       return;
     }
 
-    const newQty = parseInt(editQuantity, 10);
+    const newQty = Math.round(parseFloat(editQuantity) * 100) / 100;
 
     // If invalid number, restore to original
     if (isNaN(newQty)) {
@@ -217,7 +222,7 @@ export function CartItem({ item }: CartItemProps) {
                 size="icon"
                 className="h-11 w-11"
                 onClick={handleDecrease}
-                disabled={item.quantity <= 1 || isPending}
+                disabled={item.quantity <= 0.01 || isPending}
                 aria-label={tProducts('decreaseQuantity')}
               >
                 {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Minus className="h-4 w-4" />}
@@ -227,6 +232,7 @@ export function CartItem({ item }: CartItemProps) {
                   <Input
                     ref={inputRef}
                     type="number"
+                    step="0.01"
                     value={editQuantity}
                     onChange={(e) => setEditQuantity(e.target.value)}
                     onBlur={handleQuantityBlur}

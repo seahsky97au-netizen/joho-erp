@@ -375,7 +375,7 @@ export const cartRouter = router({
     .input(
       z.object({
         productId: z.string().min(1, 'Product ID is required'),
-        quantity: z.number().int().min(1, 'Quantity must be at least 1'),
+        quantity: z.number().min(0.01, 'Quantity must be at least 0.01'),
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -574,7 +574,7 @@ export const cartRouter = router({
     .input(
       z.object({
         productId: z.string().min(1, 'Product ID is required'),
-        quantity: z.number().int().min(1, 'Quantity must be at least 1'),
+        quantity: z.number().min(0.01, 'Quantity must be at least 0.01'),
       })
     )
     .mutation(async ({ input, ctx }) => {

@@ -68,11 +68,16 @@ export function MiniCartItem({ item }: MiniCartItemProps) {
   };
 
   const handleDecrease = () => {
-    if (item.quantity > 1) {
-      updateQuantity.mutate({
-        productId: item.productId,
-        quantity: item.quantity - 1,
-      });
+    if (item.quantity > 0.01) {
+      const newQty = Math.round((item.quantity - 1) * 100) / 100;
+      if (newQty <= 0) {
+        removeItem.mutate({ productId: item.productId });
+      } else {
+        updateQuantity.mutate({
+          productId: item.productId,
+          quantity: newQty,
+        });
+      }
     }
   };
 
@@ -189,7 +194,7 @@ export function MiniCartItem({ item }: MiniCartItemProps) {
                   'transition-all duration-150'
                 )}
                 onClick={handleDecrease}
-                disabled={item.quantity <= 1 || isPending}
+                disabled={item.quantity <= 0.01 || isPending}
                 aria-label={tProducts('decreaseQuantity')}
               >
                 <Minus className="h-3.5 w-3.5 text-neutral-600" />
