@@ -440,6 +440,18 @@ export const dashboardRouter = router({
                 unit: true,
               },
             },
+            batchConsumptions: {
+              include: {
+                batch: {
+                  select: {
+                    id: true,
+                    batchNumber: true,
+                    receivedAt: true,
+                    expiryDate: true,
+                  },
+                },
+              },
+            },
           },
           orderBy: { createdAt: 'desc' },
           take: limit,
@@ -492,6 +504,15 @@ export const dashboardRouter = router({
           vehicleTemperature: batchByTxId.get(tx.id)?.vehicleTemperature ?? null,
           supplierId: batchByTxId.get(tx.id)?.supplierId ?? null,
           supplierName: batchByTxId.get(tx.id)?.supplier?.businessName ?? null,
+          // Batch consumptions (FIFO tracking)
+          batchConsumptions: tx.batchConsumptions.map((bc) => ({
+            id: bc.id,
+            quantityConsumed: bc.quantityConsumed,
+            batchId: bc.batch.id,
+            batchNumber: bc.batch.batchNumber,
+            batchReceivedAt: bc.batch.receivedAt,
+            batchExpiryDate: bc.batch.expiryDate,
+          })),
         })),
         totalCount,
         hasMore: offset + transactions.length < totalCount,

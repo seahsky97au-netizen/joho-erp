@@ -37,6 +37,15 @@ import { BatchLink } from './BatchLink';
 type SortBy = 'createdAt' | 'productName' | 'quantity';
 type SortDirection = 'asc' | 'desc';
 
+interface BatchConsumption {
+  id: string;
+  quantityConsumed: number;
+  batchId: string;
+  batchNumber: string | null;
+  batchReceivedAt: string | Date;
+  batchExpiryDate: string | Date | null;
+}
+
 interface TransactionItem {
   id: string;
   productId: string;
@@ -51,6 +60,7 @@ interface TransactionItem {
   notes: string | null;
   createdAt: Date;
   createdBy: string;
+  batchConsumptions?: BatchConsumption[];
 }
 
 export function PackingHistoryTable() {
@@ -66,6 +76,7 @@ export function PackingHistoryTable() {
 
   const [selectedTransaction, setSelectedTransaction] = useState<TransactionItem | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
   const { data, isLoading, refetch } = api.inventory.getPackingHistory.useQuery({
     page,
@@ -199,6 +210,7 @@ export function PackingHistoryTable() {
                   <TableHead>{t('columns.notes')}</TableHead>
                   <TableHead>{t('columns.date')}</TableHead>
                   <TableHead>{t('columns.performedBy')}</TableHead>
+                  <TableHead>{t('columns.batchesConsumed')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -250,11 +262,60 @@ export function PackingHistoryTable() {
                     <TableCell>
                       <span className="text-sm text-muted-foreground">{item.createdBy}</span>
                     </TableCell>
+                    <TableCell>
+                      {item.batchConsumptions && item.batchConsumptions.length > 0 ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setExpandedRows((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(item.id)) {
+                                next.delete(item.id);
+                              } else {
+                                next.add(item.id);
+                              }
+                              return next;
+                            });
+                          }}
+                        >
+                          {expandedRows.has(item.id) ? t('columns.hideDetails') : `${item.batchConsumptions.length} ${t('columns.batches')}`}
+                        </Button>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))}
+                {items.map((item) =>
+                  expandedRows.has(item.id) && item.batchConsumptions && item.batchConsumptions.length > 0 ? (
+                    <TableRow key={`${item.id}-consumptions`} className="bg-muted/20">
+                      <TableCell colSpan={9} className="py-2 px-6">
+                        <div className="space-y-1">
+                          <p className="text-xs font-semibold text-muted-foreground mb-1">{t('columns.batchesConsumed')}</p>
+                          {item.batchConsumptions.map((bc) => (
+                            <div key={bc.id} className="flex items-center justify-between text-sm">
+                              <span className="font-medium">{bc.batchNumber || '-'}</span>
+                              <span className="text-muted-foreground">
+                                {new Date(bc.batchReceivedAt).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                              </span>
+                              {bc.batchExpiryDate && (
+                                <span className="text-muted-foreground">
+                                  {t('columns.expires')} {new Date(bc.batchExpiryDate).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                </span>
+                              )}
+                              <span className="font-medium tabular-nums text-destructive">-{bc.quantityConsumed} {item.productUnit}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ) : null
+                )}
                 {items.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={8} className="py-8 text-center">
+                    <TableCell colSpan={9} className="py-8 text-center">
                       <EmptyState
                         icon={Package}
                         title={t('emptyState')}

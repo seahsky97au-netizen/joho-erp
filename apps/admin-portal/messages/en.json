@@ -3043,7 +3043,9 @@
       "stock_count_correction": "Stock Count Correction",
       "stock_write_off": "Stock Write-off",
       "packing_adjustment": "Packing Adjustment",
-      "processing": "Processing"
+      "packing_reset": "Packing Reset",
+      "processing": "Processing",
+      "stock_return": "Stock Return"
     },
     "adjustStock": "Adjust Stock",
     "processStock": "Process Stock",
@@ -3064,7 +3066,10 @@
       "supplier": "Supplier",
       "invoiceNumber": "Invoice Number",
       "mtvNumber": "MTV Number",
-      "vehicleTemperature": "Vehicle Temperature"
+      "vehicleTemperature": "Vehicle Temperature",
+      "batchesConsumed": "Batches Consumed",
+      "unknownBatch": "Unknown Batch",
+      "expires": "Exp."
     },
     "batchDetail": {
       "title": "Stock Batch Details",
@@ -3535,7 +3540,11 @@
         "stockChange": "Stock Change",
         "notes": "Notes",
         "date": "Date",
-        "performedBy": "Performed By"
+        "performedBy": "Performed By",
+        "batchesConsumed": "Batches Consumed",
+        "batches": "batches",
+        "hideDetails": "Hide",
+        "expires": "Exp."
       },
       "packingAdjustment": "Adjustment",
       "packingReset": "Reset",
@@ -3617,6 +3626,29 @@
       "saving": "Saving...",
       "success": "Transaction updated successfully",
       "error": "Failed to update transaction"
+    },
+    "productConsumption": {
+      "title": "Batch Consumption History",
+      "description": "View which batches were consumed for this product (FIFO order)",
+      "currentStock": "Current Stock",
+      "productNotFound": "Product not found",
+      "columns": {
+        "batchNumber": "Batch #",
+        "quantityConsumed": "Qty Consumed",
+        "orderNumber": "Order",
+        "transactionType": "Type",
+        "batchReceived": "Batch Received",
+        "batchExpiry": "Batch Expiry",
+        "consumedAt": "Consumed At"
+      },
+      "emptyState": "No consumption records",
+      "emptyStateDescription": "No batch consumption records found for this product",
+      "pagination": {
+        "showing": "Showing {start}-{end} of {total} records",
+        "previous": "Previous",
+        "next": "Next",
+        "pageOf": "Page {page} of {total}"
+      }
     }
   },
   "customerDetail": {

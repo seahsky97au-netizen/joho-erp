@@ -32,6 +32,7 @@ interface Delivery {
   areaName: string | null; // Can be null if area unassigned
   estimatedTime: string;
   deliverySequence?: number | null;
+  areaDeliverySequence?: number | null;
   driverId?: string | null;
   driverName?: string | null;
   driverDeliverySequence?: number | null;
@@ -405,7 +406,7 @@ export default function DeliveryMap({
             >
               <DeliveryMarker
                 status={delivery.status}
-                sequence={delivery.deliverySequence}
+                sequence={delivery.areaDeliverySequence}
                 isPriority={false} // TODO: Add priority field to delivery data
                 onClick={() => setPopupInfo(delivery)}
               />
@@ -427,7 +428,7 @@ export default function DeliveryMap({
               <div className="flex items-center justify-between text-xs">
                 <span className="text-gray-600">
                   {popupInfo.areaName && t('map.popup.area', { areaName: popupInfo.areaName.toUpperCase() })}
-                  {popupInfo.deliverySequence && ` • ${t('map.popup.sequence', { sequence: popupInfo.deliverySequence })}`}
+                  {popupInfo.areaDeliverySequence && ` • ${t('map.popup.sequence', { sequence: popupInfo.areaDeliverySequence })}`}
                 </span>
                 <span
                   className={`px-2 py-0.5 rounded-full ${

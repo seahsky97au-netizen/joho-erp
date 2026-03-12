@@ -20,6 +20,7 @@ import {
   Truck,
   Building2,
   Thermometer,
+  Layers,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { formatAUD } from '@joho-erp/shared';
@@ -53,6 +54,15 @@ export interface InventoryTransaction {
   vehicleTemperature?: number | null;
   supplierId?: string | null;
   supplierName?: string | null;
+  // Batch consumptions (FIFO tracking)
+  batchConsumptions?: Array<{
+    id: string;
+    quantityConsumed: number;
+    batchId: string;
+    batchNumber: string | null;
+    batchReceivedAt: string | Date;
+    batchExpiryDate: string | Date | null;
+  }>;
 }
 
 interface InventoryTransactionDetailDialogProps {
@@ -277,6 +287,41 @@ export function InventoryTransactionDetailDialog({
                 )}
               </div>
             )}
+
+          {/* Batch Consumptions (FIFO) */}
+          {transaction.batchConsumptions && transaction.batchConsumptions.length > 0 && (
+            <div className="pt-4 border-t space-y-3">
+              <h4 className="text-sm font-semibold flex items-center gap-2">
+                <Layers className="h-4 w-4" />
+                {tDetail('batchesConsumed')}
+              </h4>
+              <div className="space-y-2">
+                {transaction.batchConsumptions.map((bc) => (
+                  <div
+                    key={bc.id}
+                    className="flex items-center justify-between p-2 bg-muted/30 rounded-md text-sm"
+                  >
+                    <div>
+                      <span className="font-medium">
+                        {bc.batchNumber || tDetail('unknownBatch')}
+                      </span>
+                      <span className="text-muted-foreground ml-2">
+                        {formatExpiryDate(bc.batchReceivedAt)}
+                      </span>
+                      {bc.batchExpiryDate && (
+                        <span className="text-muted-foreground ml-2">
+                          ({tDetail('expires')} {formatExpiryDate(bc.batchExpiryDate)})
+                        </span>
+                      )}
+                    </div>
+                    <span className="font-medium text-destructive tabular-nums">
+                      -{bc.quantityConsumed} {transaction.productUnit}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Order Reference Link */}
           {transaction.referenceType === 'order' && transaction.referenceId && (

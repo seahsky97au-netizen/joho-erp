@@ -1482,6 +1482,18 @@ export const inventoryRouter = router({
           product: {
             select: { id: true, name: true, sku: true, unit: true },
           },
+          batchConsumptions: {
+            include: {
+              batch: {
+                select: {
+                  id: true,
+                  batchNumber: true,
+                  receivedAt: true,
+                  expiryDate: true,
+                },
+              },
+            },
+          },
         },
         orderBy,
         skip: (page - 1) * pageSize,
@@ -1502,6 +1514,14 @@ export const inventoryRouter = router({
         notes: tx.notes,
         createdAt: tx.createdAt,
         createdBy: tx.createdBy || 'system',
+        batchConsumptions: tx.batchConsumptions.map((bc) => ({
+          id: bc.id,
+          quantityConsumed: bc.quantityConsumed,
+          batchId: bc.batch.id,
+          batchNumber: bc.batch.batchNumber,
+          batchReceivedAt: bc.batch.receivedAt,
+          batchExpiryDate: bc.batch.expiryDate,
+        })),
       }));
 
       return {
@@ -1902,5 +1922,81 @@ export const inventoryRouter = router({
       });
 
       return { success: true };
+    }),
+
+  /**
+   * Get batch consumption history for a specific product
+   */
+  getProductConsumptionHistory: requirePermission('inventory:view')
+    .input(
+      z.object({
+        productId: z.string(),
+        page: z.number().int().positive().default(1),
+        pageSize: z.number().int().positive().max(100).default(25),
+      })
+    )
+    .query(async ({ input }) => {
+      const { productId, page, pageSize } = input;
+
+      const [product, totalCount, consumptions] = await Promise.all([
+        prisma.product.findUnique({
+          where: { id: productId },
+          select: { id: true, name: true, sku: true, unit: true, currentStock: true },
+        }),
+        prisma.batchConsumption.count({
+          where: { batch: { productId } },
+        }),
+        prisma.batchConsumption.findMany({
+          where: { batch: { productId } },
+          include: {
+            batch: {
+              select: {
+                id: true,
+                batchNumber: true,
+                receivedAt: true,
+                expiryDate: true,
+              },
+            },
+            transaction: {
+              select: {
+                id: true,
+                type: true,
+                adjustmentType: true,
+                notes: true,
+                createdAt: true,
+                referenceId: true,
+                referenceType: true,
+              },
+            },
+          },
+          orderBy: { consumedAt: 'desc' },
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+        }),
+      ]);
+
+      return {
+        product,
+        consumptions: consumptions.map((c) => ({
+          id: c.id,
+          quantityConsumed: c.quantityConsumed,
+          orderNumber: c.orderNumber,
+          orderId: c.orderId,
+          consumedAt: c.consumedAt,
+          batchId: c.batch.id,
+          batchNumber: c.batch.batchNumber,
+          batchReceivedAt: c.batch.receivedAt,
+          batchExpiryDate: c.batch.expiryDate,
+          transactionType: c.transaction.type,
+          transactionAdjustmentType: c.transaction.adjustmentType,
+          transactionNotes: c.transaction.notes,
+          transactionReferenceId: c.transaction.referenceId,
+          transactionReferenceType: c.transaction.referenceType,
+        })),
+        totalCount,
+        page,
+        pageSize,
+        totalPages: Math.ceil(totalCount / pageSize),
+      };
     }),
 });

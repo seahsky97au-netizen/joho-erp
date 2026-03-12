@@ -40,6 +40,7 @@ import {
   Search,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { api } from '@/trpc/client';
 import { useDebounce } from 'use-debounce';
 import { BatchInfoDialog } from './BatchInfoDialog';
@@ -648,7 +649,9 @@ export function StockCountsTable({
                         )}
                       </TableCell>
                       <TableCell>
-                        <p className="font-medium">{product.name}</p>
+                        <Link href={`/inventory/${product.id}`} className="font-medium text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
+                          {product.name}
+                        </Link>
                       </TableCell>
                       <TableCell>
                         <p className="text-sm text-muted-foreground">{product.sku}</p>

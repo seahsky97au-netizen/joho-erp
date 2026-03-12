@@ -567,6 +567,7 @@ export const packingRouter = router({
           await tx.inventoryBatch.create({
             data: {
               productId: stockTargetProductId,
+              batchNumber,
               quantityRemaining: Math.abs(stockDelta),
               initialQuantity: Math.abs(stockDelta),
               costPerUnit: 0, // Unknown cost - admin can adjust later
@@ -1759,7 +1760,7 @@ export const packingRouter = router({
               const resetBatchNumber = await genResetBatchNum(tx, 'packing_reset');
 
               // Create reversal transaction with dedicated type for clarity
-              await tx.inventoryTransaction.create({
+              const resetTransaction = await tx.inventoryTransaction.create({
                 data: {
                   productId,
                   type: 'adjustment',
@@ -1779,10 +1780,12 @@ export const packingRouter = router({
               await tx.inventoryBatch.create({
                 data: {
                   productId,
+                  batchNumber: resetBatchNumber,
                   quantityRemaining: quantity,
                   initialQuantity: quantity,
                   costPerUnit: 0, // Unknown cost for returned stock
                   receivedAt: new Date(),
+                  receiveTransactionId: resetTransaction.id,
                   notes: `Stock returned from packing reset: Order ${order.orderNumber}`,
                 },
               });

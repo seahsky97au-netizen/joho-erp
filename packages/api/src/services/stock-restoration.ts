@@ -15,6 +15,7 @@ import {
   calculateAllSubproductStocks,
   type SubproductForStockCalc,
 } from '@joho-erp/shared';
+import { generateBatchNumber } from './batch-number';
 
 // Type for transaction client
 type TransactionClient = Omit<
@@ -168,11 +169,15 @@ export async function restoreOrderStock(
       const previousStock = product.currentStock;
       const newStock = previousStock + item.quantity;
 
+      // Generate batch number for stock return
+      const batchNumber = await generateBatchNumber(client, 'stock_return');
+
       // Create inventory transaction (return)
-      await client.inventoryTransaction.create({
+      const transaction = await client.inventoryTransaction.create({
         data: {
           productId: product.id,
           type: 'return',
+          batchNumber,
           quantity: item.quantity,
           previousStock,
           newStock,
@@ -196,10 +201,12 @@ export async function restoreOrderStock(
       await client.inventoryBatch.create({
         data: {
           productId: product.id,
+          batchNumber,
           quantityRemaining: item.quantity,
           initialQuantity: item.quantity,
           costPerUnit,
           receivedAt: new Date(),
+          receiveTransactionId: transaction.id,
           notes: `Returned stock from cancelled order ${orderNumber}`,
         },
       });
@@ -250,11 +257,15 @@ export async function restoreOrderStock(
     const previousParentStock = parent.currentStock;
     const newParentStock = previousParentStock + parentData.totalParentConsumption;
 
+    // Generate batch number for stock return
+    const parentBatchNumber = await generateBatchNumber(client, 'stock_return');
+
     // Create inventory transaction for parent (return)
-    await client.inventoryTransaction.create({
+    const parentTransaction = await client.inventoryTransaction.create({
       data: {
         productId: parentId,
         type: 'return',
+        batchNumber: parentBatchNumber,
         quantity: parentData.totalParentConsumption,
         previousStock: previousParentStock,
         newStock: newParentStock,
@@ -277,10 +288,12 @@ export async function restoreOrderStock(
     await client.inventoryBatch.create({
       data: {
         productId: parentId,
+        batchNumber: parentBatchNumber,
         quantityRemaining: parentData.totalParentConsumption,
         initialQuantity: parentData.totalParentConsumption,
         costPerUnit: parentCostPerUnit,
         receivedAt: new Date(),
+        receiveTransactionId: parentTransaction.id,
         notes: `Returned stock from cancelled order ${orderNumber} (from subproduct returns)`,
       },
     });
@@ -457,16 +470,15 @@ export async function reversePackingAdjustments(
     const newStock = previousStock + quantity;
 
     // Generate batch number for reversal transaction
-    const { generateBatchNumber } = await import('./batch-number');
-    const batchNumber = await generateBatchNumber(client, 'packing_reset');
+    const reversalBatchNumber = await generateBatchNumber(client, 'packing_reset');
 
     // Create reversal transaction
-    await client.inventoryTransaction.create({
+    const reversalTransaction = await client.inventoryTransaction.create({
       data: {
         productId,
         type: 'adjustment',
         adjustmentType: 'packing_reset',
-        batchNumber,
+        batchNumber: reversalBatchNumber,
         quantity: quantity, // Positive to add back
         previousStock,
         newStock,
@@ -481,10 +493,12 @@ export async function reversePackingAdjustments(
     await client.inventoryBatch.create({
       data: {
         productId,
+        batchNumber: reversalBatchNumber,
         quantityRemaining: quantity,
         initialQuantity: quantity,
         costPerUnit: 0, // Unknown cost for returned stock
         receivedAt: new Date(),
+        receiveTransactionId: reversalTransaction.id,
         notes: `Stock returned from packing adjustments on cancelled order ${orderNumber}`,
       },
     });
