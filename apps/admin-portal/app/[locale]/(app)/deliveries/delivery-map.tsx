@@ -7,6 +7,7 @@ import { MapPin } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { WarehouseMarker } from './components/markers/WarehouseMarker';
 import { DeliveryMarker } from './components/markers/DeliveryMarker';
+import { getAreaColor } from './components/markers/marker-styles';
 import { FullscreenControl } from './components/FullscreenControl';
 
 // Driver color palette for multi-route visualization
@@ -36,6 +37,7 @@ interface Delivery {
   driverId?: string | null;
   driverName?: string | null;
   driverDeliverySequence?: number | null;
+  areaColorVariant?: string | null;
 }
 
 interface RouteData {
@@ -408,6 +410,7 @@ export default function DeliveryMap({
                 status={delivery.status}
                 sequence={delivery.areaDeliverySequence}
                 isPriority={false} // TODO: Add priority field to delivery data
+                areaColor={getAreaColor(delivery.areaColorVariant)}
                 onClick={() => setPopupInfo(delivery)}
               />
             </Marker>

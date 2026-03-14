@@ -10,6 +10,7 @@
     "db:reset-transactional": "tsx src/scripts/reset-transactional-data.ts",
     "db:seed-customers": "tsx src/scripts/seed-customers.ts",
     "db:seed-orders": "tsx src/scripts/seed-orders.ts",
+    "db:seed-topside-orders": "tsx src/scripts/seed-topside-orders.ts",
     "prisma:generate": "prisma generate",
     "prisma:studio": "prisma studio",
     "prisma:push": "prisma db push",

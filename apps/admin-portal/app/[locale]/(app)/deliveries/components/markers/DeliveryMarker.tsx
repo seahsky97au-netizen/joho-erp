@@ -1,12 +1,13 @@
 'use client';
 
 import { Check, AlertCircle, MapPin } from 'lucide-react';
-import { getStatusColor, getStatusSize } from './marker-styles';
+import { getStatusColor, getStatusSize, getStatusRingColor } from './marker-styles';
 
 interface DeliveryMarkerProps {
   status: string;
   sequence?: number | null;
   isPriority?: boolean;
+  areaColor?: string | null;
   onClick?: () => void;
 }
 
@@ -14,9 +15,12 @@ export function DeliveryMarker({
   status,
   sequence,
   isPriority = false,
+  areaColor,
   onClick,
 }: DeliveryMarkerProps) {
-  const color = getStatusColor(status);
+  const statusColor = getStatusColor(status);
+  const color = areaColor || statusColor;
+  const borderColor = areaColor ? getStatusRingColor(status) : 'white';
   const size = getStatusSize(status);
   const isCompleted = status === 'delivered';
   const isActive = status === 'ready_for_delivery';
@@ -87,9 +91,10 @@ export function DeliveryMarker({
 
         {/* Inner circle with sequence number or checkmark */}
         <div
-          className="relative rounded-full flex items-center justify-center font-bold text-white border-4 border-white shadow-inner"
+          className="relative rounded-full flex items-center justify-center font-bold text-white border-4 shadow-inner"
           style={{
             backgroundColor: color,
+            borderColor,
             width: `${size}px`,
             height: `${size}px`,
             fontSize: isCompleted ? '12px' : '16px',
