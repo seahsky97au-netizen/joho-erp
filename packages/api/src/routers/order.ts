@@ -568,7 +568,7 @@ export const orderRouter = router({
         );
 
         // Send notification to customer
-        await sendBackorderSubmittedEmail({
+        void sendBackorderSubmittedEmail({
           customerEmail: customer.contactPerson.email,
           customerName: customer.businessName,
           orderNumber: order.order.orderNumber,
@@ -580,7 +580,7 @@ export const orderRouter = router({
         });
 
         // Send notification to admin
-        await sendBackorderAdminNotification({
+        void sendBackorderAdminNotification({
           orderNumber: order.order.orderNumber,
           customerName: customer.businessName,
           totalAmount: order.order.totalAmount,
@@ -592,7 +592,7 @@ export const orderRouter = router({
 
       // Send order confirmation email (for non-backorder orders)
       if (!order.stockValidationResult.requiresBackorder) {
-        await sendOrderConfirmationEmail({
+        void sendOrderConfirmationEmail({
           customerEmail: customer.contactPerson.email,
           customerName: customer.businessName,
           orderNumber: order.order.orderNumber,
@@ -621,7 +621,7 @@ export const orderRouter = router({
       }
 
       // Log order creation to audit trail
-      await logOrderCreated(
+      void logOrderCreated(
         ctx.userId,
         order.order.id,
         order.order.orderNumber,
@@ -958,7 +958,7 @@ export const orderRouter = router({
           postcode: string;
         };
 
-        await sendOrderConfirmationEmail({
+        void sendOrderConfirmationEmail({
           customerEmail: customer.contactPerson.email,
           customerName: customer.businessName,
           orderNumber: order.orderNumber,
@@ -987,7 +987,7 @@ export const orderRouter = router({
       }
 
       // Log order creation to audit trail
-      await logOrderCreated(
+      void logOrderCreated(
         ctx.userId,
         order.id,
         order.orderNumber,

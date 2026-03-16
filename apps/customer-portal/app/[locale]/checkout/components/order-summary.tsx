@@ -75,6 +75,13 @@ export function OrderSummary() {
     return formatDateForMelbourne(tomorrow);
   }, [cutoffInfo]);
 
+  // Reset delivery date if it's now before the minimum (e.g., tab was backgrounded overnight)
+  React.useEffect(() => {
+    if (deliveryDate && minDeliveryDate && deliveryDate < minDeliveryDate) {
+      setDeliveryDate(minDeliveryDate);
+    }
+  }, [deliveryDate, minDeliveryDate]);
+
   // TRPC utils for cache invalidation
   const utils = api.useUtils();
 
@@ -101,9 +108,14 @@ export function OrderSummary() {
     onError: (error) => {
       console.error('Place order error:', error.message);
       const isForbidden = error.data?.code === 'FORBIDDEN';
+      const isBadRequest = error.data?.code === 'BAD_REQUEST';
       toast({
         title: isForbidden ? tBlocking('suspendedTitle') : t('orderFailed'),
-        description: isForbidden ? tBlocking('suspendedMessage') : tErrors('orderFailed'),
+        description: isForbidden
+          ? tBlocking('suspendedMessage')
+          : isBadRequest
+            ? error.message
+            : tErrors('orderFailed'),
         variant: 'destructive',
       });
       if (isForbidden) {
