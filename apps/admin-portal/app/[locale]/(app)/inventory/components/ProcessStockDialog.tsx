@@ -104,7 +104,7 @@ export function ProcessStockDialog({
 
   // Fetch source product batches for FIFO cost calculation
   const { data: sourceBatches } = api.inventory.getProductBatches.useQuery(
-    { productId: sourceProduct?.id ?? '', includeConsumed: false },
+    { productId: sourceProduct?.id ?? '', includeConsumed: false, batchPrefix: 'SI-' },
     { enabled: !!sourceProduct && open }
   );
 

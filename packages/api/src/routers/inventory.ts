@@ -808,6 +808,7 @@ export const inventoryRouter = router({
         productId: z.string(),
         includeConsumed: z.boolean().default(false),
         supplierOnly: z.boolean().default(false),
+        batchPrefix: z.string().optional(),
       })
     )
     .query(async ({ input }) => {
@@ -816,6 +817,7 @@ export const inventoryRouter = router({
           productId: input.productId,
           isConsumed: input.includeConsumed ? undefined : false,
           ...(input.supplierOnly && { supplierId: { not: null } }),
+          ...(input.batchPrefix && { batchNumber: { startsWith: input.batchPrefix } }),
         },
         include: {
           supplier: { select: { id: true, businessName: true } },
