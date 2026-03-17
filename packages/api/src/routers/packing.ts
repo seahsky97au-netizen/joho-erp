@@ -1745,68 +1745,115 @@ export const packingRouter = router({
               productConsumptions.set(txn.productId, current + (-txn.quantity));
             }
 
-            // Restore stock for each product (only positive restorations)
+            // Restore or consume stock for each product based on net direction
             for (const [productId, quantity] of productConsumptions) {
-              if (quantity <= 0) continue; // Skip if net effect is 0 or negative
+              if (quantity === 0) continue; // Skip if net effect is zero
 
               const product = await tx.product.findUnique({ where: { id: productId } });
               if (!product) continue;
 
-              const previousStock = product.currentStock;
-              const newStock = previousStock + quantity;
-
-              // Generate batch number for reversal transaction
               const { generateBatchNumber: genResetBatchNum } = await import('../services/batch-number');
-              const resetBatchNumber = await genResetBatchNum(tx, 'packing_reset');
+              const { syncProductCurrentStock: syncResetStock, consumeStock: consumeResetStock } = await import('../services/inventory-batch');
 
-              // Create reversal transaction with dedicated type for clarity
-              const resetTransaction = await tx.inventoryTransaction.create({
-                data: {
-                  productId,
-                  type: 'adjustment',
-                  adjustmentType: 'packing_reset',
-                  batchNumber: resetBatchNumber, // New type for clarity in audit trail
-                  quantity: quantity, // Positive to add back
-                  previousStock,
-                  newStock,
-                  referenceType: 'order',
-                  referenceId: input.orderId,
-                  notes: `Stock restored from packing reset: Order ${order.orderNumber}`,
-                  createdBy: ctx.userId || 'system',
-                },
-              });
+              if (quantity > 0) {
+                // Net positive: stock was consumed, needs to be returned
+                const previousStock = product.currentStock;
+                const newStock = previousStock + quantity;
 
-              // Create new batch for returned stock
-              await tx.inventoryBatch.create({
-                data: {
-                  productId,
-                  batchNumber: resetBatchNumber,
-                  quantityRemaining: quantity,
-                  initialQuantity: quantity,
-                  costPerUnit: 0, // Unknown cost for returned stock
-                  receivedAt: new Date(),
-                  receiveTransactionId: resetTransaction.id,
-                  notes: `Stock returned from packing reset: Order ${order.orderNumber}`,
-                },
-              });
+                const resetBatchNumber = await genResetBatchNum(tx, 'packing_reset');
 
-              // Sync product stock from batch sums (defensive — replaces manual arithmetic)
-              const { syncProductCurrentStock: syncResetStock } = await import('../services/inventory-batch');
-              const syncedResetStock = await syncResetStock(productId, tx);
+                const resetTransaction = await tx.inventoryTransaction.create({
+                  data: {
+                    productId,
+                    type: 'adjustment',
+                    adjustmentType: 'packing_reset',
+                    batchNumber: resetBatchNumber,
+                    quantity: quantity, // Positive to add back
+                    previousStock,
+                    newStock,
+                    referenceType: 'order',
+                    referenceId: input.orderId,
+                    notes: `Stock restored from packing reset: Order ${order.orderNumber}`,
+                    createdBy: ctx.userId || 'system',
+                  },
+                });
 
-              // Recalculate subproduct stocks if this is a parent product
-              const subproducts = await tx.product.findMany({
-                where: { parentProductId: productId },
-                select: { id: true, parentProductId: true, estimatedLossPercentage: true },
-              });
+                await tx.inventoryBatch.create({
+                  data: {
+                    productId,
+                    batchNumber: resetBatchNumber,
+                    quantityRemaining: quantity,
+                    initialQuantity: quantity,
+                    costPerUnit: 0,
+                    receivedAt: new Date(),
+                    receiveTransactionId: resetTransaction.id,
+                    notes: `Stock returned from packing reset: Order ${order.orderNumber}`,
+                  },
+                });
 
-              if (subproducts.length > 0) {
-                const updatedStocks = calculateAllSubproductStocks(syncedResetStock, subproducts);
-                for (const { id, newStock: subStock } of updatedStocks) {
-                  await tx.product.update({
-                    where: { id },
-                    data: { currentStock: Math.max(0, subStock) },
-                  });
+                const syncedResetStock = await syncResetStock(productId, tx);
+
+                const subproducts = await tx.product.findMany({
+                  where: { parentProductId: productId },
+                  select: { id: true, parentProductId: true, estimatedLossPercentage: true },
+                });
+
+                if (subproducts.length > 0) {
+                  const updatedStocks = calculateAllSubproductStocks(syncedResetStock, subproducts);
+                  for (const { id, newStock: subStock } of updatedStocks) {
+                    await tx.product.update({
+                      where: { id },
+                      data: { currentStock: Math.max(0, subStock) },
+                    });
+                  }
+                }
+              } else {
+                // Net negative: stock was returned by adjustments (packer decreased qty),
+                // needs to be consumed back to reverse the phantom stock
+                const absQuantity = Math.abs(quantity);
+                const previousStock = product.currentStock;
+
+                const resetBatchNumber = await genResetBatchNum(tx, 'packing_reset');
+
+                const resetTransaction = await tx.inventoryTransaction.create({
+                  data: {
+                    productId,
+                    type: 'adjustment',
+                    adjustmentType: 'packing_reset',
+                    batchNumber: resetBatchNumber,
+                    quantity: -absQuantity, // Negative = consuming stock
+                    previousStock,
+                    newStock: previousStock - absQuantity,
+                    referenceType: 'order',
+                    referenceId: input.orderId,
+                    notes: `Stock consumed to reverse packing adjustments on reset order ${order.orderNumber}`,
+                    createdBy: ctx.userId || 'system',
+                  },
+                });
+
+                try {
+                  await consumeResetStock(productId, absQuantity, resetTransaction.id, input.orderId, order.orderNumber, tx);
+                } catch (error) {
+                  console.warn(
+                    `Could not consume ${absQuantity} for product ${productId} during packing reset: ${error}`
+                  );
+                }
+
+                const syncedResetStock = await syncResetStock(productId, tx);
+
+                const subproducts = await tx.product.findMany({
+                  where: { parentProductId: productId },
+                  select: { id: true, parentProductId: true, estimatedLossPercentage: true },
+                });
+
+                if (subproducts.length > 0) {
+                  const updatedStocks = calculateAllSubproductStocks(syncedResetStock, subproducts);
+                  for (const { id, newStock: subStock } of updatedStocks) {
+                    await tx.product.update({
+                      where: { id },
+                      data: { currentStock: Math.max(0, subStock) },
+                    });
+                  }
                 }
               }
             }

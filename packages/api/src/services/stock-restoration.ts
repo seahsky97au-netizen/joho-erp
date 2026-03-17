@@ -16,6 +16,7 @@ import {
   type SubproductForStockCalc,
 } from '@joho-erp/shared';
 import { generateBatchNumber } from './batch-number';
+import { consumeStock, syncProductCurrentStock } from './inventory-batch';
 
 // Type for transaction client
 type TransactionClient = Omit<
@@ -212,20 +213,33 @@ export async function restoreOrderStock(
       });
       result.inventoryBatchesCreated++;
 
-      // Update product stock (floor at 0 as defensive guard)
-      await client.product.update({
-        where: { id: product.id },
-        data: { currentStock: Math.max(0, newStock) },
-      });
+      // Sync product stock from batch sums (authoritative source of truth)
+      const syncedStock = await syncProductCurrentStock(product.id, client);
 
       result.restoredProducts.push({
         productId: product.id,
         productName: product.name,
         quantityRestored: item.quantity,
         previousStock,
-        newStock,
+        newStock: syncedStock,
         isSubproduct: false,
       });
+
+      // Fix 2: Recalculate subproduct stocks if this is a parent product
+      if (product.subProducts && product.subProducts.length > 0) {
+        const subproductsForCalc: SubproductForStockCalc[] = product.subProducts.map((s) => ({
+          id: s.id,
+          estimatedLossPercentage: s.estimatedLossPercentage,
+          parentProductId: s.parentProductId,
+        }));
+        const updatedSubStocks = calculateAllSubproductStocks(syncedStock, subproductsForCalc);
+        for (const { id, newStock: subStock } of updatedSubStocks) {
+          await client.product.update({
+            where: { id },
+            data: { currentStock: Math.max(0, subStock) },
+          });
+        }
+      }
     }
   }
 
@@ -299,22 +313,19 @@ export async function restoreOrderStock(
     });
     result.inventoryBatchesCreated++;
 
-    // Update parent stock (floor at 0 as defensive guard)
-    await client.product.update({
-      where: { id: parentId },
-      data: { currentStock: Math.max(0, newParentStock) },
-    });
+    // Sync parent stock from batch sums (authoritative source of truth)
+    const syncedParentStock = await syncProductCurrentStock(parentId, client);
 
     result.restoredProducts.push({
       productId: parentId,
       productName: parentData.parentName,
       quantityRestored: parentData.totalParentConsumption,
       previousStock: previousParentStock,
-      newStock: newParentStock,
+      newStock: syncedParentStock,
       isSubproduct: false,
     });
 
-    // Recalculate all sibling subproduct stocks based on new parent stock
+    // Recalculate all sibling subproduct stocks based on synced parent stock
     const subproductsForCalc: SubproductForStockCalc[] = parent.subProducts.map((s) => ({
       id: s.id,
       estimatedLossPercentage: s.estimatedLossPercentage,
@@ -322,7 +333,7 @@ export async function restoreOrderStock(
     }));
 
     const newSubproductStocks = calculateAllSubproductStocks(
-      newParentStock,
+      syncedParentStock,
       subproductsForCalc
     );
 
@@ -459,70 +470,386 @@ export async function reversePackingAdjustments(
     adjustmentQuantities.set(txn.productId, current + (-txn.quantity));
   }
 
-  // Restore stock for each product with net positive restoration
+  // Restore or consume stock for each product based on net direction
   for (const [productId, quantity] of adjustmentQuantities) {
-    if (quantity <= 0) continue; // Skip if net effect is 0 or negative
+    if (quantity === 0) continue; // Skip if net effect is zero
 
     const product = await client.product.findUnique({ where: { id: productId } });
     if (!product) continue;
 
-    const previousStock = product.currentStock;
-    const newStock = previousStock + quantity;
+    if (quantity > 0) {
+      // Net positive: stock was consumed by adjustments, needs to be returned
+      const previousStock = product.currentStock;
+      const newStock = previousStock + quantity;
 
-    // Generate batch number for reversal transaction
-    const reversalBatchNumber = await generateBatchNumber(client, 'packing_reset');
+      const reversalBatchNumber = await generateBatchNumber(client, 'packing_reset');
 
-    // Create reversal transaction
-    const reversalTransaction = await client.inventoryTransaction.create({
-      data: {
-        productId,
-        type: 'adjustment',
-        adjustmentType: 'packing_reset',
-        batchNumber: reversalBatchNumber,
-        quantity: quantity, // Positive to add back
+      const reversalTransaction = await client.inventoryTransaction.create({
+        data: {
+          productId,
+          type: 'adjustment',
+          adjustmentType: 'packing_reset',
+          batchNumber: reversalBatchNumber,
+          quantity: quantity, // Positive to add back
+          previousStock,
+          newStock,
+          referenceType: 'order',
+          referenceId: orderId,
+          notes: `Stock restored from packing adjustments on cancelled order ${orderNumber}: ${reason}`,
+          createdBy: userId,
+        },
+      });
+
+      await client.inventoryBatch.create({
+        data: {
+          productId,
+          batchNumber: reversalBatchNumber,
+          quantityRemaining: quantity,
+          initialQuantity: quantity,
+          costPerUnit: 0, // Unknown cost for returned stock
+          receivedAt: new Date(),
+          receiveTransactionId: reversalTransaction.id,
+          notes: `Stock returned from packing adjustments on cancelled order ${orderNumber}`,
+        },
+      });
+
+      // Sync product stock from batch sums
+      const syncedStock = await syncProductCurrentStock(productId, client);
+
+      // Recalculate subproduct stocks if this product is a parent
+      const subproducts = await client.product.findMany({
+        where: { parentProductId: productId },
+        select: { id: true, parentProductId: true, estimatedLossPercentage: true },
+      });
+
+      if (subproducts.length > 0) {
+        const updatedStocks = calculateAllSubproductStocks(syncedStock, subproducts);
+        for (const { id, newStock: subStock } of updatedStocks) {
+          await client.product.update({
+            where: { id },
+            data: { currentStock: Math.max(0, subStock) },
+          });
+        }
+      }
+    } else {
+      // Net negative: stock was returned by adjustments (packer decreased qty),
+      // needs to be consumed back to reverse the phantom stock
+      const absQuantity = Math.abs(quantity);
+      const previousStock = product.currentStock;
+
+      const batchNumber = await generateBatchNumber(client, 'packing_reset');
+
+      const transaction = await client.inventoryTransaction.create({
+        data: {
+          productId,
+          type: 'adjustment',
+          adjustmentType: 'packing_reset',
+          batchNumber,
+          quantity: -absQuantity, // Negative = consuming stock
+          previousStock,
+          newStock: previousStock - absQuantity,
+          referenceType: 'order',
+          referenceId: orderId,
+          notes: `Stock consumed to reverse packing adjustments on cancelled order ${orderNumber}: ${reason}`,
+          createdBy: userId,
+        },
+      });
+
+      try {
+        await consumeStock(productId, absQuantity, transaction.id, orderId, orderNumber, client);
+      } catch (error) {
+        console.warn(
+          `Could not consume ${absQuantity} for product ${productId} during packing reversal: ${error}`
+        );
+      }
+
+      // Sync product stock from batch sums
+      const syncedStock = await syncProductCurrentStock(productId, client);
+
+      // Recalculate subproduct stocks if this product is a parent
+      const subproducts = await client.product.findMany({
+        where: { parentProductId: productId },
+        select: { id: true, parentProductId: true, estimatedLossPercentage: true },
+      });
+
+      if (subproducts.length > 0) {
+        const updatedStocks = calculateAllSubproductStocks(syncedStock, subproducts);
+        for (const { id, newStock: subStock } of updatedStocks) {
+          await client.product.update({
+            where: { id },
+            data: { currentStock: Math.max(0, subStock) },
+          });
+        }
+      }
+    }
+  }
+}
+
+// Input for restoreStockForCreditNote
+export interface CreditNoteStockRestorationInput {
+  orderId: string;
+  orderNumber: string;
+  items: Array<{ productId: string; quantity: number }>;
+  userId: string;
+  reason: string;
+}
+
+/**
+ * Restores stock for items returned via a partial credit note.
+ *
+ * Unlike restoreOrderStock, this:
+ * - Uses referenceType 'credit_note' for audit trail clarity
+ * - Does NOT mark original sale/packing_adjustment transactions as reversed
+ * - Does NOT modify order.stockConsumed (the order is still active)
+ *
+ * Idempotency is guaranteed by the credit note quantity validation in the caller
+ * (prevents crediting the same items twice).
+ *
+ * @param input - The credit note details and items to restore
+ * @param tx - Optional transaction client for atomic operations
+ * @returns StockRestorationResult with details of what was restored
+ */
+export async function restoreStockForCreditNote(
+  input: CreditNoteStockRestorationInput,
+  tx?: TransactionClient
+): Promise<StockRestorationResult> {
+  const client = tx || prisma;
+  const { orderId, orderNumber, items, userId, reason } = input;
+
+  const result: StockRestorationResult = {
+    success: true,
+    restoredProducts: [],
+    inventoryBatchesCreated: 0,
+    inventoryTransactionsCreated: 0,
+  };
+
+  // Fetch all products referenced in the credit note
+  const productIds = items.map((item) => item.productId);
+  const products = await client.product.findMany({
+    where: { id: { in: productIds } },
+    include: {
+      parentProduct: true,
+      subProducts: {
+        where: { status: 'active' },
+        select: {
+          id: true,
+          estimatedLossPercentage: true,
+          parentProductId: true,
+        },
+      },
+    },
+  });
+
+  const productMap = new Map(products.map((p) => [p.id, p]));
+
+  // Track parent products that need recalculation (from subproduct returns)
+  const parentRestoreMap = new Map<
+    string,
+    {
+      totalParentConsumption: number;
+      parentName: string;
+    }
+  >();
+
+  for (const item of items) {
+    const product = productMap.get(item.productId);
+    if (!product) {
+      console.warn(
+        `Product ${item.productId} not found during credit note stock restoration for order ${orderNumber}`
+      );
+      continue;
+    }
+
+    const isSubproduct = !!product.parentProductId;
+
+    if (isSubproduct && product.parentProduct) {
+      // For subproducts, calculate parent consumption and aggregate
+      const lossPercentage = product.estimatedLossPercentage ?? 0;
+      const parentConsumption = calculateParentConsumption(item.quantity, lossPercentage);
+
+      const existing = parentRestoreMap.get(product.parentProductId!);
+      if (existing) {
+        existing.totalParentConsumption += parentConsumption;
+      } else {
+        parentRestoreMap.set(product.parentProductId!, {
+          totalParentConsumption: parentConsumption,
+          parentName: product.parentProduct.name,
+        });
+      }
+    } else {
+      // Regular product - restore directly
+      const previousStock = product.currentStock;
+
+      const batchNumber = await generateBatchNumber(client, 'stock_return');
+
+      const transaction = await client.inventoryTransaction.create({
+        data: {
+          productId: product.id,
+          type: 'return',
+          batchNumber,
+          quantity: item.quantity,
+          previousStock,
+          newStock: previousStock + item.quantity, // Recorded for audit, synced below
+          referenceType: 'credit_note',
+          referenceId: orderId,
+          notes: `Stock restored from partial credit note for order ${orderNumber}: ${reason}`,
+          createdBy: userId,
+        },
+      });
+      result.inventoryTransactionsCreated++;
+
+      // Create inventory batch for the returned stock
+      const existingBatch = await client.inventoryBatch.findFirst({
+        where: { productId: product.id },
+        orderBy: { receivedAt: 'desc' },
+        select: { costPerUnit: true },
+      });
+      const costPerUnit = existingBatch?.costPerUnit ?? 0;
+
+      await client.inventoryBatch.create({
+        data: {
+          productId: product.id,
+          batchNumber,
+          quantityRemaining: item.quantity,
+          initialQuantity: item.quantity,
+          costPerUnit,
+          receivedAt: new Date(),
+          receiveTransactionId: transaction.id,
+          notes: `Returned stock from partial credit note for order ${orderNumber}`,
+        },
+      });
+      result.inventoryBatchesCreated++;
+
+      // Sync product stock from batch sums (authoritative source of truth)
+      const syncedStock = await syncProductCurrentStock(product.id, client);
+
+      result.restoredProducts.push({
+        productId: product.id,
+        productName: product.name,
+        quantityRestored: item.quantity,
         previousStock,
-        newStock,
-        referenceType: 'order',
+        newStock: syncedStock,
+        isSubproduct: false,
+      });
+
+      // Recalculate subproduct stocks if this is a parent product
+      if (product.subProducts && product.subProducts.length > 0) {
+        const subproductsForCalc: SubproductForStockCalc[] = product.subProducts.map((s) => ({
+          id: s.id,
+          estimatedLossPercentage: s.estimatedLossPercentage,
+          parentProductId: s.parentProductId,
+        }));
+        const updatedSubStocks = calculateAllSubproductStocks(syncedStock, subproductsForCalc);
+        for (const { id, newStock: subStock } of updatedSubStocks) {
+          await client.product.update({
+            where: { id },
+            data: { currentStock: Math.max(0, subStock) },
+          });
+        }
+      }
+    }
+  }
+
+  // Process parent products that had subproduct returns
+  for (const [parentId, parentData] of parentRestoreMap) {
+    const parent = await client.product.findUnique({
+      where: { id: parentId },
+      include: {
+        subProducts: {
+          where: { status: 'active' },
+          select: {
+            id: true,
+            name: true,
+            estimatedLossPercentage: true,
+            parentProductId: true,
+            currentStock: true,
+          },
+        },
+      },
+    });
+
+    if (!parent) {
+      console.warn(
+        `Parent product ${parentId} not found during credit note stock restoration for order ${orderNumber}`
+      );
+      continue;
+    }
+
+    const previousParentStock = parent.currentStock;
+
+    const parentBatchNumber = await generateBatchNumber(client, 'stock_return');
+
+    const parentTransaction = await client.inventoryTransaction.create({
+      data: {
+        productId: parentId,
+        type: 'return',
+        batchNumber: parentBatchNumber,
+        quantity: parentData.totalParentConsumption,
+        previousStock: previousParentStock,
+        newStock: previousParentStock + parentData.totalParentConsumption,
+        referenceType: 'credit_note',
         referenceId: orderId,
-        notes: `Stock restored from packing adjustments on cancelled order ${orderNumber}: ${reason}`,
+        notes: `Stock restored from partial credit note for order ${orderNumber} (from subproduct returns): ${reason}`,
         createdBy: userId,
       },
     });
+    result.inventoryTransactionsCreated++;
 
-    // Create new batch for returned stock
+    const existingParentBatch = await client.inventoryBatch.findFirst({
+      where: { productId: parentId },
+      orderBy: { receivedAt: 'desc' },
+      select: { costPerUnit: true },
+    });
+    const parentCostPerUnit = existingParentBatch?.costPerUnit ?? 0;
+
     await client.inventoryBatch.create({
       data: {
-        productId,
-        batchNumber: reversalBatchNumber,
-        quantityRemaining: quantity,
-        initialQuantity: quantity,
-        costPerUnit: 0, // Unknown cost for returned stock
+        productId: parentId,
+        batchNumber: parentBatchNumber,
+        quantityRemaining: parentData.totalParentConsumption,
+        initialQuantity: parentData.totalParentConsumption,
+        costPerUnit: parentCostPerUnit,
         receivedAt: new Date(),
-        receiveTransactionId: reversalTransaction.id,
-        notes: `Stock returned from packing adjustments on cancelled order ${orderNumber}`,
+        receiveTransactionId: parentTransaction.id,
+        notes: `Returned stock from partial credit note for order ${orderNumber} (from subproduct returns)`,
       },
     });
+    result.inventoryBatchesCreated++;
 
-    // Update product stock (floor at 0 as defensive guard)
-    await client.product.update({
-      where: { id: productId },
-      data: { currentStock: Math.max(0, newStock) },
+    // Sync parent stock from batch sums
+    const syncedParentStock = await syncProductCurrentStock(parentId, client);
+
+    result.restoredProducts.push({
+      productId: parentId,
+      productName: parentData.parentName,
+      quantityRestored: parentData.totalParentConsumption,
+      previousStock: previousParentStock,
+      newStock: syncedParentStock,
+      isSubproduct: false,
     });
 
-    // Recalculate subproduct stocks if this product is a parent
-    const subproducts = await client.product.findMany({
-      where: { parentProductId: productId },
-      select: { id: true, parentProductId: true, estimatedLossPercentage: true },
-    });
+    // Recalculate all sibling subproduct stocks
+    const subproductsForCalc: SubproductForStockCalc[] = parent.subProducts.map((s) => ({
+      id: s.id,
+      estimatedLossPercentage: s.estimatedLossPercentage,
+      parentProductId: s.parentProductId,
+    }));
 
-    if (subproducts.length > 0) {
-      const updatedStocks = calculateAllSubproductStocks(newStock, subproducts);
-      for (const { id, newStock: subStock } of updatedStocks) {
+    const newSubproductStocks = calculateAllSubproductStocks(
+      syncedParentStock,
+      subproductsForCalc
+    );
+
+    for (const subStock of newSubproductStocks) {
+      const subproduct = parent.subProducts.find((s) => s.id === subStock.id);
+      if (subproduct && subproduct.currentStock !== subStock.newStock) {
         await client.product.update({
-          where: { id },
-          data: { currentStock: Math.max(0, subStock) },
+          where: { id: subStock.id },
+          data: { currentStock: Math.max(0, subStock.newStock) },
         });
       }
     }
   }
+
+  return result;
 }

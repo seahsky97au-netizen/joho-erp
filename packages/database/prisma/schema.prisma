@@ -132,6 +132,7 @@ enum SystemLogLevel {
 enum InventoryReferenceType {
   order
   manual
+  credit_note
 }
 
 enum XeroSyncJobType {

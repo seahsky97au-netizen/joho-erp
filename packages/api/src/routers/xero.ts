@@ -378,6 +378,24 @@ export const xeroRouter = router({
         });
       }
 
+      // Restore stock for credited items (physical returns)
+      const { restoreStockForCreditNote } = await import('../services/stock-restoration');
+      await prisma.$transaction(async (tx) => {
+        await restoreStockForCreditNote(
+          {
+            orderId: input.orderId,
+            orderNumber: order.orderNumber,
+            items: validatedItems.map((item) => ({
+              productId: item.productId,
+              quantity: item.quantity,
+            })),
+            userId: ctx.userId,
+            reason: input.reason,
+          },
+          tx
+        );
+      });
+
       // Enqueue the job with partial payload
       const jobId = await enqueueXeroJob('create_credit_note', 'order', input.orderId, {
         type: 'partial' as const,
