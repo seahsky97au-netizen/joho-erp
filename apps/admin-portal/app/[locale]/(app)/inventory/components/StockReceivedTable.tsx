@@ -33,6 +33,8 @@ import { useTranslations } from 'next-intl';
 import { api } from '@/trpc/client';
 import { formatAUD } from '@joho-erp/shared';
 import { BatchLink } from './BatchLink';
+import { DeleteBatchButton } from './DeleteBatchButton';
+import { PermissionGate } from '@/components/permission-gate';
 
 type SortBy = 'receivedAt' | 'productName' | 'quantity' | 'costPerUnit' | 'expiryDate';
 type SortDirection = 'asc' | 'desc';
@@ -211,6 +213,9 @@ export function StockReceivedTable() {
                   <TableHead>{t('columns.invoiceNumber')}</TableHead>
                   <TableHead>{t('columns.receivedDate')}</TableHead>
                   <TableHead>{t('columns.expiryDate')}</TableHead>
+                  <PermissionGate permission="products:adjust_stock">
+                    <TableHead>{t('columns.actions')}</TableHead>
+                  </PermissionGate>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -256,11 +261,26 @@ export function StockReceivedTable() {
                     <TableCell>
                       <span className="text-sm">{formatDate(item.expiryDate)}</span>
                     </TableCell>
+                    <PermissionGate permission="products:adjust_stock">
+                      <TableCell>
+                        {item.batchNumber && (
+                          <DeleteBatchButton
+                            batchId={item.id}
+                            batchNumber={item.batchNumber}
+                            productName={item.productName}
+                            initialQuantity={item.initialQuantity}
+                            quantityRemaining={item.quantityRemaining}
+                            unit={item.productUnit}
+                            onSuccess={() => refetch()}
+                          />
+                        )}
+                      </TableCell>
+                    </PermissionGate>
                   </TableRow>
                 ))}
                 {items.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={8} className="py-8 text-center">
+                    <TableCell colSpan={9} className="py-8 text-center">
                       <EmptyState
                         icon={PackagePlus}
                         title={t('emptyState')}

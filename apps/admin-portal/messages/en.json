@@ -3448,7 +3448,8 @@
         "supplier": "Supplier",
         "invoiceNumber": "Invoice #",
         "receivedDate": "Received Date",
-        "expiryDate": "Expiry Date"
+        "expiryDate": "Expiry Date",
+        "actions": "Actions"
       },
       "filters": {
         "searchPlaceholder": "Search by product name or SKU...",
@@ -3476,6 +3477,19 @@
         "previous": "Previous",
         "next": "Next",
         "pageOf": "Page {page} of {total}"
+      },
+      "deleteBatch": {
+        "delete": "Delete batch",
+        "title": "Delete Stock-In Batch",
+        "description": "This will delete batch {batchNumber} and remove {quantity} {unit} of {product} from inventory. This action cannot be undone.",
+        "reason": "Reason for deletion",
+        "reasonPlaceholder": "e.g., Wrong product, duplicate entry, incorrect quantity...",
+        "reasonRequired": "A reason is required",
+        "success": "Batch deleted successfully",
+        "error": "Failed to delete batch",
+        "cancel": "Cancel",
+        "confirm": "Delete",
+        "processing": "Deleting..."
       }
     },
     "processingHistory": {

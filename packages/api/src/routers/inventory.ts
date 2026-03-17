@@ -939,6 +939,129 @@ export const inventoryRouter = router({
     }),
 
   /**
+   * Delete (soft-delete) a stock-in batch that hasn't been consumed.
+   * Marks isConsumed = true, quantityRemaining = 0, creates a stock_write_off transaction.
+   * Only allowed for unconsumed SI- batches with no BatchConsumption records.
+   */
+  deleteStockReceivedBatch: requirePermission('products:adjust_stock')
+    .input(z.object({
+      batchId: z.string(),
+      reason: z.string().min(1),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const batch = await prisma.inventoryBatch.findUnique({
+        where: { id: input.batchId },
+        include: {
+          product: {
+            select: { id: true, currentStock: true, estimatedLossPercentage: true, parentProductId: true },
+          },
+        },
+      });
+
+      if (!batch) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Batch not found' });
+      }
+
+      if (batch.isConsumed) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Batch is already consumed' });
+      }
+
+      if (!batch.batchNumber?.startsWith('SI-')) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Only stock-in (SI-) batches can be deleted' });
+      }
+
+      // Verify batch is fully unconsumed
+      if (Math.abs(batch.quantityRemaining - batch.initialQuantity) >= 0.001) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Cannot delete a partially consumed batch. Use write-off instead.',
+        });
+      }
+
+      // Defense check: no consumption records
+      const consumptionCount = await prisma.batchConsumption.count({
+        where: { batchId: input.batchId },
+      });
+      if (consumptionCount > 0) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Cannot delete a batch that has consumption records.',
+        });
+      }
+
+      const quantityToDeduct = batch.initialQuantity;
+
+      if (batch.product.currentStock < quantityToDeduct) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: `Insufficient stock to delete this batch. Product stock: ${batch.product.currentStock}, batch quantity: ${quantityToDeduct}. Please adjust product stock first.`,
+        });
+      }
+
+      await prisma.$transaction(async (tx) => {
+        // Generate WO- batch number
+        const { generateBatchNumber } = await import('../services/batch-number');
+        const batchNumber = await generateBatchNumber(tx, 'stock_write_off');
+
+        // Mark batch as consumed
+        await tx.inventoryBatch.update({
+          where: { id: input.batchId },
+          data: {
+            isConsumed: true,
+            quantityRemaining: 0,
+            consumedAt: new Date(),
+          },
+        });
+
+        // Create inventory transaction for traceability
+        await tx.inventoryTransaction.create({
+          data: {
+            type: 'adjustment',
+            adjustmentType: 'stock_write_off',
+            productId: batch.productId,
+            quantity: -quantityToDeduct,
+            previousStock: batch.product.currentStock,
+            newStock: batch.product.currentStock - quantityToDeduct,
+            costPerUnit: batch.costPerUnit,
+            notes: `Batch deleted (input correction): ${input.reason}`,
+            createdBy: ctx.userId || 'system',
+            batchNumber,
+          },
+        });
+
+        // Sync product stock from batch sums
+        const { syncProductCurrentStock } = await import('../services/inventory-batch');
+        const syncedStock = await syncProductCurrentStock(batch.productId, tx);
+
+        // Cascade to subproducts
+        const subproducts = await tx.product.findMany({
+          where: { parentProductId: batch.productId },
+          select: { id: true },
+        });
+        if (subproducts.length > 0) {
+          const { calculateAllSubproductStocksWithInheritance } = await import('@joho-erp/shared');
+          const allSubs = await tx.product.findMany({
+            where: { parentProductId: batch.productId },
+            select: { id: true, parentProductId: true, estimatedLossPercentage: true },
+          });
+          const updatedStocks = calculateAllSubproductStocksWithInheritance(
+            syncedStock,
+            batch.product.estimatedLossPercentage,
+            allSubs
+          );
+          for (const { id, newStock } of updatedStocks) {
+            await tx.product.update({
+              where: { id },
+              data: { currentStock: Math.max(0, newStock) },
+            });
+          }
+        }
+      });
+
+      return { success: true };
+    }),
+
+  /**
    * Update a batch's remaining quantity
    */
   updateBatchQuantity: requirePermission('products:adjust_stock')

@@ -3448,7 +3448,8 @@
         "supplier": "供应商",
         "invoiceNumber": "发票号",
         "receivedDate": "入库日期",
-        "expiryDate": "保质期"
+        "expiryDate": "保质期",
+        "actions": "操作"
       },
       "filters": {
         "searchPlaceholder": "按产品名称或SKU搜索...",
@@ -3476,6 +3477,19 @@
         "previous": "上一页",
         "next": "下一页",
         "pageOf": "第 {page} 页，共 {total} 页"
+      },
+      "deleteBatch": {
+        "delete": "删除批次",
+        "title": "删除入库批次",
+        "description": "这将删除批次 {batchNumber}，并从库存中移除 {quantity} {unit} 的 {product}。此操作无法撤销。",
+        "reason": "删除原因",
+        "reasonPlaceholder": "例如：产品错误、重复录入、数量不正确...",
+        "reasonRequired": "必须填写原因",
+        "success": "批次删除成功",
+        "error": "批次删除失败",
+        "cancel": "取消",
+        "confirm": "删除",
+        "processing": "删除中..."
       }
     },
     "processingHistory": {
