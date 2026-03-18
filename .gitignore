@@ -35,3 +35,7 @@ next-env.d.ts
 # turbo
 .turbo
 .worktrees/
+
+# build/cache artifacts
+.pnpm-store/
+e2e/playwright-report/
