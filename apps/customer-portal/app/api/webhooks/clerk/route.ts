@@ -40,10 +40,7 @@ export async function POST(req: Request) {
     return new Response('Invalid signature', { status: 400 });
   }
 
-  // 4. Handle user.created event
-  // NOTE: Customer invitation handling (linking clerkUserId, transferring metadata)
-  // has moved to the customer portal's webhook (apps/customer-portal/app/api/webhooks/clerk/route.ts).
-  // This handler now only fires for admin portal Clerk sign-ups.
+  // 4. Handle user.created event - link customer record from invitation metadata
   if (evt.type === 'user.created') {
     const { id: userId, email_addresses } = evt.data;
     const primaryEmail = email_addresses?.find(
@@ -79,7 +76,7 @@ export async function POST(req: Request) {
             publicMetadata: metadata,
           });
 
-          // If this is a customer invitation, link the customer record
+          // Link the customer database record
           if (metadata.role === 'customer' && metadata.customerId) {
             try {
               await prisma.customer.update({

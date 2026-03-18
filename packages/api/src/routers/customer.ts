@@ -18,6 +18,23 @@ import {
   sendCustomerRegistrationEmail,
   sendNewCustomerRegistrationAdminEmail,
 } from '../services/email';
+
+/**
+ * Creates a Clerk client targeting the customer portal's Clerk instance.
+ * This is needed because the admin portal runs its own Clerk instance,
+ * but customer invitations must be created in the customer portal's Clerk.
+ */
+async function getCustomerPortalClerkClient() {
+  const secretKey = process.env.CUSTOMER_PORTAL_CLERK_SECRET_KEY;
+  if (!secretKey) {
+    throw new TRPCError({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'Customer portal Clerk secret key not configured',
+    });
+  }
+  const { createClerkClient } = await import('@clerk/nextjs/server');
+  return createClerkClient({ secretKey });
+}
 import {
   logCreditApproval,
   logCreditRejection,
@@ -2076,10 +2093,9 @@ export const customerRouter = router({
         });
       }
 
-      // Create Clerk invitation
+      // Create Clerk invitation in the customer portal's Clerk instance
       try {
-        const { clerkClient } = await import('@clerk/nextjs/server');
-        const clerkBackend = await clerkClient();
+        const clerkBackend = await getCustomerPortalClerkClient();
 
         const customerPortalUrl = process.env.NEXT_PUBLIC_CUSTOMER_PORTAL_URL || 'http://localhost:3000';
 
@@ -2092,6 +2108,7 @@ export const customerRouter = router({
           redirectUrl: `${customerPortalUrl}/sign-up`,
         });
       } catch (error) {
+        if (error instanceof TRPCError) throw error;
         console.error('Clerk invitation error:', error);
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
@@ -2142,8 +2159,7 @@ export const customerRouter = router({
       }
 
       try {
-        const { clerkClient } = await import('@clerk/nextjs/server');
-        const clerkBackend = await clerkClient();
+        const clerkBackend = await getCustomerPortalClerkClient();
 
         // Revoke existing invitations for this email
         const invitations = await clerkBackend.invitations.getInvitationList();
@@ -2168,6 +2184,7 @@ export const customerRouter = router({
           redirectUrl: `${customerPortalUrl}/sign-up`,
         });
       } catch (error) {
+        if (error instanceof TRPCError) throw error;
         console.error('Clerk invitation error:', error);
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',

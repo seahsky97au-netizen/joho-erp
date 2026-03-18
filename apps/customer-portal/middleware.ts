@@ -22,6 +22,7 @@ const isPublicRoute = createRouteMatcher([
   '/sign-up(.*)',
   // Onboarding is semi-public (requires Clerk auth but not customer registration)
   '/:locale/onboarding(.*)',
+  '/api/webhooks/(.*)', // Webhook endpoints use their own auth (svix)
 ]);
 
 // Define patterns that should bypass i18n processing
