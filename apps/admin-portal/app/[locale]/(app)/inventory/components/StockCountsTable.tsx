@@ -182,6 +182,7 @@ function ProductBatchRows({
 }) {
   const { data: batches, isLoading } = api.inventory.getProductBatches.useQuery({
     productId,
+    batchPrefix: 'SI-',
   });
 
   const formatDate = (date: string | Date) => {
@@ -246,7 +247,6 @@ function ProductBatchRows({
   }
 
   const batchSum = batches.reduce((sum, b) => sum + b.quantityRemaining, 0);
-  const hasMismatch = Math.abs(batchSum - parentCurrentStock) > 0.01;
 
   return (
     <>
@@ -326,13 +326,7 @@ function ProductBatchRows({
         <TableCell className="text-right text-sm font-semibold tabular-nums">
           {batchSum.toFixed(1)}
         </TableCell>
-        <TableCell colSpan={4}>
-          {hasMismatch && (
-            <Badge variant="warning" className="text-xs">
-              {tBatches('mismatchWarning', { currentStock: parentCurrentStock.toFixed(1) })}
-            </Badge>
-          )}
-        </TableCell>
+        <TableCell colSpan={4} />
       </TableRow>
     </>
   );
