@@ -875,7 +875,7 @@ export const inventoryRouter = router({
         where: { id: input.batchId },
         include: {
           product: {
-            select: { id: true, currentStock: true },
+            select: { id: true, currentStock: true, estimatedLossPercentage: true },
           },
         },
       });
@@ -932,7 +932,31 @@ export const inventoryRouter = router({
 
         // Sync product stock from batch sums (defensive — replaces manual arithmetic)
         const { syncProductCurrentStock } = await import('../services/inventory-batch');
-        await syncProductCurrentStock(batch.productId, tx);
+        const syncedStock = await syncProductCurrentStock(batch.productId, tx);
+
+        // Cascade to subproducts
+        const subproducts = await tx.product.findMany({
+          where: { parentProductId: batch.productId },
+          select: { id: true },
+        });
+        if (subproducts.length > 0) {
+          const { calculateAllSubproductStocksWithInheritance } = await import('@joho-erp/shared');
+          const allSubs = await tx.product.findMany({
+            where: { parentProductId: batch.productId },
+            select: { id: true, parentProductId: true, estimatedLossPercentage: true },
+          });
+          const updatedStocks = calculateAllSubproductStocksWithInheritance(
+            syncedStock,
+            batch.product.estimatedLossPercentage,
+            allSubs
+          );
+          for (const { id, newStock } of updatedStocks) {
+            await tx.product.update({
+              where: { id },
+              data: { currentStock: Math.max(0, newStock) },
+            });
+          }
+        }
       });
 
       return { success: true };
@@ -1076,7 +1100,7 @@ export const inventoryRouter = router({
         where: { id: input.batchId },
         include: {
           product: {
-            select: { id: true, currentStock: true },
+            select: { id: true, currentStock: true, estimatedLossPercentage: true },
           },
         },
       });
@@ -1133,7 +1157,31 @@ export const inventoryRouter = router({
 
         // Sync product stock from batch sums (defensive — replaces manual arithmetic)
         const { syncProductCurrentStock } = await import('../services/inventory-batch');
-        await syncProductCurrentStock(batch.productId, tx);
+        const syncedStock = await syncProductCurrentStock(batch.productId, tx);
+
+        // Cascade to subproducts
+        const subproducts = await tx.product.findMany({
+          where: { parentProductId: batch.productId },
+          select: { id: true },
+        });
+        if (subproducts.length > 0) {
+          const { calculateAllSubproductStocksWithInheritance } = await import('@joho-erp/shared');
+          const allSubs = await tx.product.findMany({
+            where: { parentProductId: batch.productId },
+            select: { id: true, parentProductId: true, estimatedLossPercentage: true },
+          });
+          const updatedStocks = calculateAllSubproductStocksWithInheritance(
+            syncedStock,
+            batch.product.estimatedLossPercentage,
+            allSubs
+          );
+          for (const { id, newStock } of updatedStocks) {
+            await tx.product.update({
+              where: { id },
+              data: { currentStock: Math.max(0, newStock) },
+            });
+          }
+        }
       });
 
       return { success: true, newQuantity: input.newQuantity };
