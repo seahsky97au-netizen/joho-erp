@@ -167,7 +167,7 @@ function getBatchSummary(product: Record<string, unknown>): {
 
 function ProductBatchRows({
   productId,
-  parentCurrentStock,
+  parentCurrentStock: _parentCurrentStock,
   tBatches,
   tExpiry,
   onBatchClick,
