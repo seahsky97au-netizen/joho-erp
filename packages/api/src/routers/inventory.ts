@@ -1002,16 +1002,24 @@ export const inventoryRouter = router({
         });
       }
 
-      // Defense check: no consumption records
-      const consumptionCount = await prisma.batchConsumption.count({
+      // Defense check: no meaningful consumption records
+      // Allow deletion if only near-zero (floating-point epsilon) consumptions exist
+      const consumptions = await prisma.batchConsumption.findMany({
         where: { batchId: input.batchId },
+        select: { id: true, quantityConsumed: true },
       });
-      if (consumptionCount > 0) {
+      const meaningfulConsumptions = consumptions.filter(
+        (c) => Math.abs(c.quantityConsumed) >= 0.001
+      );
+      if (meaningfulConsumptions.length > 0) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
           message: 'Cannot delete a batch that has consumption records.',
         });
       }
+      const epsilonConsumptionIds = consumptions
+        .filter((c) => Math.abs(c.quantityConsumed) < 0.001)
+        .map((c) => c.id);
 
       const quantityToDeduct = batch.initialQuantity;
 
@@ -1023,6 +1031,13 @@ export const inventoryRouter = router({
       }
 
       await prisma.$transaction(async (tx) => {
+        // Clean up near-zero (floating-point epsilon) consumption records
+        if (epsilonConsumptionIds.length > 0) {
+          await tx.batchConsumption.deleteMany({
+            where: { id: { in: epsilonConsumptionIds } },
+          });
+        }
+
         // Generate WO- batch number
         const { generateBatchNumber } = await import('../services/batch-number');
         const batchNumber = await generateBatchNumber(tx, 'stock_write_off');

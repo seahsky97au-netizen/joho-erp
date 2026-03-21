@@ -99,7 +99,7 @@ export async function consumeStock(
       let conflictDetected = false;
 
       for (const batch of availableBatches) {
-        if (remainingToConsume <= 0) break;
+        if (remainingToConsume < 0.001) break;
 
         // Check if batch is expired or expires soon (within 7 days)
         if (batch.expiryDate) {
@@ -121,6 +121,12 @@ export async function consumeStock(
           batch.quantityRemaining,
           remainingToConsume
         );
+
+        // Skip near-zero quantities caused by floating-point rounding
+        if (quantityFromBatch < 0.001) {
+          remainingToConsume -= quantityFromBatch;
+          continue;
+        }
 
         // Calculate cost from this batch (in cents)
         const costFromBatch = Math.round(quantityFromBatch * batch.costPerUnit);
