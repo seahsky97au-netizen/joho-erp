@@ -8,6 +8,12 @@
 import { prisma } from '@joho-erp/database';
 import type { PrismaClient } from '@joho-erp/database';
 
+// Type for transaction client (matches stock-restoration.ts)
+type TransactionClient = Omit<
+  PrismaClient,
+  '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'
+>;
+
 // Types for batch consumption results
 export interface BatchConsumptionRecord {
   batchId: string;
@@ -502,4 +508,70 @@ export async function getAvailableStockQuantity(
     console.error('Error getting available stock quantity:', error);
     throw error;
   }
+}
+
+/**
+ * Reverse batch consumptions by restoring original batch quantities.
+ *
+ * Instead of creating anonymous batches (which lose supplier traceability),
+ * this finds the BatchConsumption records for the given transactions and
+ * restores each original batch's quantityRemaining.
+ *
+ * @param transactionIds - InventoryTransaction IDs whose consumptions to reverse
+ * @param tx - Prisma transaction context
+ * @returns Total quantity restored across all batches
+ */
+export async function restoreBatchConsumptions(
+  transactionIds: string[],
+  tx: TransactionClient
+): Promise<number> {
+  if (transactionIds.length === 0) return 0;
+
+  // Find all BatchConsumption records for these transactions
+  const consumptions = await tx.batchConsumption.findMany({
+    where: { transactionId: { in: transactionIds } },
+  });
+
+  if (consumptions.length === 0) return 0;
+
+  let totalRestored = 0;
+
+  for (const consumption of consumptions) {
+    // Fetch the original batch
+    const batch = await tx.inventoryBatch.findUnique({
+      where: { id: consumption.batchId },
+    });
+
+    if (!batch) {
+      console.warn(
+        `[restoreBatchConsumptions] Batch ${consumption.batchId} not found, skipping`
+      );
+      continue;
+    }
+
+    // Restore quantityRemaining, capping at initialQuantity to prevent double-restoration
+    const restoredQty = Math.min(
+      batch.quantityRemaining + consumption.quantityConsumed,
+      batch.initialQuantity
+    );
+
+    await tx.inventoryBatch.update({
+      where: { id: batch.id },
+      data: {
+        quantityRemaining: restoredQty,
+        // Un-mark consumed if we've restored any quantity
+        isConsumed: restoredQty <= 0,
+        consumedAt: restoredQty > 0 ? null : batch.consumedAt,
+      },
+    });
+
+    totalRestored += consumption.quantityConsumed;
+  }
+
+  // Delete the BatchConsumption records (audit trail lives in InventoryTransaction with reversedAt)
+  await tx.batchConsumption.deleteMany({
+    where: { transactionId: { in: transactionIds } },
+  });
+
+  return totalRestored;
 }

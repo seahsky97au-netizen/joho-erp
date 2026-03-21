@@ -1328,10 +1328,15 @@ export const packingRouter = router({
           select: { xero: true },
         });
         const xeroInfo = orderForXero?.xero as { invoiceId?: string | null } | null;
+        const { enqueueXeroJob } = await import('../services/xero-queue');
         if (!xeroInfo?.invoiceId) {
-          const { enqueueXeroJob } = await import('../services/xero-queue');
           await enqueueXeroJob('create_invoice', 'order', input.orderId).catch((error) => {
             console.error('Failed to enqueue Xero invoice creation:', error);
+          });
+        } else {
+          // Order already has invoice (e.g. from before packing reset) — update it with current quantities
+          await enqueueXeroJob('update_invoice', 'order', input.orderId).catch((error) => {
+            console.error('Failed to enqueue Xero invoice update:', error);
           });
         }
       }
@@ -1734,126 +1739,98 @@ export const packingRouter = router({
             // Filter out already-reversed transactions in code (MongoDB doesn't match missing fields with null)
             const unreversedTransactions = stockTransactions.filter(txn => !txn.reversedAt);
 
-            // Group by productId to aggregate all quantities consumed
-            // Note: We need to handle both positive and negative quantities
+            const { generateBatchNumber: genResetBatchNum } = await import('../services/batch-number');
+            const { syncProductCurrentStock: syncResetStock, restoreBatchConsumptions } = await import('../services/inventory-batch');
+
+            // Separate consuming vs returning transactions:
+            // - Consuming (qty < 0): sale txns and negative packing_adjustments → have BatchConsumption records
+            // - Returning (qty > 0): positive packing_adjustments → created phantom batches directly
+            const consumingTxnIds = unreversedTransactions
+              .filter(txn => txn.quantity < 0)
+              .map(txn => txn.id);
+            const returningTxns = unreversedTransactions.filter(txn => txn.quantity > 0);
+
+            // Step A: Restore original supplier batches via BatchConsumption reversal
+            if (consumingTxnIds.length > 0) {
+              const restoredQty = await restoreBatchConsumptions(consumingTxnIds, tx);
+              console.info('[PACKING_RESET] Restored batch consumptions:', {
+                orderId: input.orderId,
+                orderNumber: order.orderNumber,
+                consumingTxnCount: consumingTxnIds.length,
+                totalRestoredQty: restoredQty,
+              });
+            }
+
+            // Step B: Zero out phantom batches created by returning packing_adjustments
+            for (const txn of returningTxns) {
+              const phantomBatches = await tx.inventoryBatch.findMany({
+                where: { receiveTransactionId: txn.id },
+              });
+              for (const batch of phantomBatches) {
+                await tx.inventoryBatch.update({
+                  where: { id: batch.id },
+                  data: { quantityRemaining: 0, isConsumed: true, consumedAt: new Date() },
+                });
+              }
+            }
+
+            // Step C: Create audit trail packing_reset transactions and sync stock
+            // Group by productId to aggregate all quantities
             const productConsumptions = new Map<string, number>();
             for (const txn of unreversedTransactions) {
               const current = productConsumptions.get(txn.productId) || 0;
-              // Sale transactions are negative (stock consumed)
-              // packing_adjustment can be positive or negative depending on direction
-              // We want to restore what was taken, so we negate the quantity
               productConsumptions.set(txn.productId, current + (-txn.quantity));
             }
 
-            // Restore or consume stock for each product based on net direction
+            const affectedProductIds = new Set<string>();
             for (const [productId, quantity] of productConsumptions) {
-              if (quantity === 0) continue; // Skip if net effect is zero
+              if (quantity === 0) continue;
+              affectedProductIds.add(productId);
 
               const product = await tx.product.findUnique({ where: { id: productId } });
               if (!product) continue;
 
-              const { generateBatchNumber: genResetBatchNum } = await import('../services/batch-number');
-              const { syncProductCurrentStock: syncResetStock, consumeStock: consumeResetStock } = await import('../services/inventory-batch');
+              const previousStock = product.currentStock;
+              const resetBatchNumber = await genResetBatchNum(tx, 'packing_reset');
 
-              if (quantity > 0) {
-                // Net positive: stock was consumed, needs to be returned
-                const previousStock = product.currentStock;
-                const newStock = previousStock + quantity;
+              // Create audit transaction (no batch creation — originals are restored/zeroed)
+              await tx.inventoryTransaction.create({
+                data: {
+                  productId,
+                  type: 'adjustment',
+                  adjustmentType: 'packing_reset',
+                  batchNumber: resetBatchNumber,
+                  quantity,
+                  previousStock,
+                  newStock: previousStock + quantity,
+                  referenceType: 'order',
+                  referenceId: input.orderId,
+                  notes: `Stock restored from packing reset: Order ${order.orderNumber}`,
+                  createdBy: ctx.userId || 'system',
+                },
+              });
+            }
 
-                const resetBatchNumber = await genResetBatchNum(tx, 'packing_reset');
+            // Step D: Sync stock for all affected products and cascade subproducts
+            for (const productId of affectedProductIds) {
+              const syncedResetStock = await syncResetStock(productId, tx);
+              console.info('[PACKING_RESET] Synced stock:', {
+                productId,
+                syncedStock: syncedResetStock,
+              });
 
-                const resetTransaction = await tx.inventoryTransaction.create({
-                  data: {
-                    productId,
-                    type: 'adjustment',
-                    adjustmentType: 'packing_reset',
-                    batchNumber: resetBatchNumber,
-                    quantity: quantity, // Positive to add back
-                    previousStock,
-                    newStock,
-                    referenceType: 'order',
-                    referenceId: input.orderId,
-                    notes: `Stock restored from packing reset: Order ${order.orderNumber}`,
-                    createdBy: ctx.userId || 'system',
-                  },
-                });
+              const subproducts = await tx.product.findMany({
+                where: { parentProductId: productId },
+                select: { id: true, parentProductId: true, estimatedLossPercentage: true },
+              });
 
-                await tx.inventoryBatch.create({
-                  data: {
-                    productId,
-                    batchNumber: resetBatchNumber,
-                    quantityRemaining: quantity,
-                    initialQuantity: quantity,
-                    costPerUnit: 0,
-                    receivedAt: new Date(),
-                    receiveTransactionId: resetTransaction.id,
-                    notes: `Stock returned from packing reset: Order ${order.orderNumber}`,
-                  },
-                });
-
-                const syncedResetStock = await syncResetStock(productId, tx);
-
-                const subproducts = await tx.product.findMany({
-                  where: { parentProductId: productId },
-                  select: { id: true, parentProductId: true, estimatedLossPercentage: true },
-                });
-
-                if (subproducts.length > 0) {
-                  const updatedStocks = calculateAllSubproductStocks(syncedResetStock, subproducts);
-                  for (const { id, newStock: subStock } of updatedStocks) {
-                    await tx.product.update({
-                      where: { id },
-                      data: { currentStock: Math.max(0, subStock) },
-                    });
-                  }
-                }
-              } else {
-                // Net negative: stock was returned by adjustments (packer decreased qty),
-                // needs to be consumed back to reverse the phantom stock
-                const absQuantity = Math.abs(quantity);
-                const previousStock = product.currentStock;
-
-                const resetBatchNumber = await genResetBatchNum(tx, 'packing_reset');
-
-                const resetTransaction = await tx.inventoryTransaction.create({
-                  data: {
-                    productId,
-                    type: 'adjustment',
-                    adjustmentType: 'packing_reset',
-                    batchNumber: resetBatchNumber,
-                    quantity: -absQuantity, // Negative = consuming stock
-                    previousStock,
-                    newStock: previousStock - absQuantity,
-                    referenceType: 'order',
-                    referenceId: input.orderId,
-                    notes: `Stock consumed to reverse packing adjustments on reset order ${order.orderNumber}`,
-                    createdBy: ctx.userId || 'system',
-                  },
-                });
-
-                try {
-                  await consumeResetStock(productId, absQuantity, resetTransaction.id, input.orderId, order.orderNumber, tx);
-                } catch (error) {
-                  console.warn(
-                    `Could not consume ${absQuantity} for product ${productId} during packing reset: ${error}`
-                  );
-                }
-
-                const syncedResetStock = await syncResetStock(productId, tx);
-
-                const subproducts = await tx.product.findMany({
-                  where: { parentProductId: productId },
-                  select: { id: true, parentProductId: true, estimatedLossPercentage: true },
-                });
-
-                if (subproducts.length > 0) {
-                  const updatedStocks = calculateAllSubproductStocks(syncedResetStock, subproducts);
-                  for (const { id, newStock: subStock } of updatedStocks) {
-                    await tx.product.update({
-                      where: { id },
-                      data: { currentStock: Math.max(0, subStock) },
-                    });
-                  }
+              if (subproducts.length > 0) {
+                const updatedStocks = calculateAllSubproductStocks(syncedResetStock, subproducts);
+                for (const { id, newStock: subStock } of updatedStocks) {
+                  await tx.product.update({
+                    where: { id },
+                    data: { currentStock: Math.max(0, subStock) },
+                  });
                 }
               }
             }

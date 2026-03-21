@@ -16,7 +16,7 @@ import {
   type SubproductForStockCalc,
 } from '@joho-erp/shared';
 import { generateBatchNumber } from './batch-number';
-import { consumeStock, syncProductCurrentStock } from './inventory-batch';
+import { consumeStock, syncProductCurrentStock, restoreBatchConsumptions } from './inventory-batch';
 
 // Type for transaction client
 type TransactionClient = Omit<
@@ -479,12 +479,20 @@ export async function reversePackingAdjustments(
 
     if (quantity > 0) {
       // Net positive: stock was consumed by adjustments, needs to be returned
-      const previousStock = product.currentStock;
-      const newStock = previousStock + quantity;
+      // Restore original supplier batches via BatchConsumption reversal instead of creating anonymous batches
+      const consumingTxnIds = unreversedAdjustments
+        .filter(txn => txn.productId === productId && txn.quantity < 0)
+        .map(txn => txn.id);
 
+      if (consumingTxnIds.length > 0) {
+        await restoreBatchConsumptions(consumingTxnIds, client);
+      }
+
+      const previousStock = product.currentStock;
       const reversalBatchNumber = await generateBatchNumber(client, 'packing_reset');
 
-      const reversalTransaction = await client.inventoryTransaction.create({
+      // Create audit transaction (no batch creation — originals are restored)
+      await client.inventoryTransaction.create({
         data: {
           productId,
           type: 'adjustment',
@@ -492,24 +500,11 @@ export async function reversePackingAdjustments(
           batchNumber: reversalBatchNumber,
           quantity: quantity, // Positive to add back
           previousStock,
-          newStock,
+          newStock: previousStock + quantity,
           referenceType: 'order',
           referenceId: orderId,
           notes: `Stock restored from packing adjustments on cancelled order ${orderNumber}: ${reason}`,
           createdBy: userId,
-        },
-      });
-
-      await client.inventoryBatch.create({
-        data: {
-          productId,
-          batchNumber: reversalBatchNumber,
-          quantityRemaining: quantity,
-          initialQuantity: quantity,
-          costPerUnit: 0, // Unknown cost for returned stock
-          receivedAt: new Date(),
-          receiveTransactionId: reversalTransaction.id,
-          notes: `Stock returned from packing adjustments on cancelled order ${orderNumber}`,
         },
       });
 
@@ -561,6 +556,21 @@ export async function reversePackingAdjustments(
         console.warn(
           `Could not consume ${absQuantity} for product ${productId} during packing reversal: ${error}`
         );
+      }
+
+      // Zero out phantom batches created by returning packing_adjustment transactions
+      const returningTxns = unreversedAdjustments
+        .filter(txn => txn.productId === productId && txn.quantity > 0);
+      for (const txn of returningTxns) {
+        const phantomBatches = await client.inventoryBatch.findMany({
+          where: { receiveTransactionId: txn.id },
+        });
+        for (const batch of phantomBatches) {
+          await client.inventoryBatch.update({
+            where: { id: batch.id },
+            data: { quantityRemaining: 0, isConsumed: true, consumedAt: new Date() },
+          });
+        }
       }
 
       // Sync product stock from batch sums
