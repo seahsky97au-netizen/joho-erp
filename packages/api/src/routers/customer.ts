@@ -1037,6 +1037,34 @@ export const customerRouter = router({
         console.error('Failed to send welcome email:', error);
       }
 
+      // Auto-invite customer to portal
+      try {
+        const clerkBackend = await getCustomerPortalClerkClient();
+        const customerPortalUrl = process.env.NEXT_PUBLIC_CUSTOMER_PORTAL_URL || 'http://localhost:3000';
+
+        await clerkBackend.invitations.createInvitation({
+          emailAddress: input.contactPerson.email,
+          publicMetadata: {
+            role: 'customer',
+            customerId: customer.id,
+          },
+          redirectUrl: `${customerPortalUrl}/sign-up`,
+        });
+
+        // Update invitation status
+        await prisma.customer.update({
+          where: { id: customer.id },
+          data: {
+            portalInvitationStatus: 'invited',
+            portalInvitedAt: new Date(),
+            portalInvitedEmail: input.contactPerson.email,
+          },
+        });
+      } catch (error) {
+        // Don't fail customer creation if invitation fails
+        console.error('Failed to auto-invite customer to portal:', error);
+      }
+
       // Log to audit trail
       await logCustomerCreatedByAdmin(
         ctx.userId,
