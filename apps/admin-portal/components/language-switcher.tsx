@@ -43,7 +43,7 @@ export function LanguageSwitcher() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-        aria-label="Change language"
+        aria-label={t('aria.changeLanguage')}
       >
         <Languages className="w-5 h-5" />
         <span className="hidden lg:inline-block text-sm font-medium">

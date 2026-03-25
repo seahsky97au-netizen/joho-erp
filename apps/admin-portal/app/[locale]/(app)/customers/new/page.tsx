@@ -61,6 +61,7 @@ type TradeReferenceInfo = {
 export default function NewCustomerPage() {
   const router = useRouter();
   const t = useTranslations('customerForm');
+  const tCommon = useTranslations('common');
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState('business');
@@ -75,7 +76,7 @@ export default function NewCustomerPage() {
     },
     onError: (error: { message?: string }) => {
       toast({
-        title: 'Error',
+        title: tCommon('error'),
         description: error.message || t('messages.createError'),
         variant: 'destructive',
       });
@@ -646,7 +647,7 @@ export default function NewCustomerPage() {
 
     if (!validateForm()) {
       toast({
-        title: 'Validation Error',
+        title: tCommon('validationError'),
         description: t('messages.fixValidationErrors'),
         variant: 'destructive',
       });

@@ -198,7 +198,7 @@ export default function SupplierDetailPage({ params }: PageProps) {
     // Validate ABN if provided
     if (editForm.abn && !validateABN(editForm.abn)) {
       toast({
-        title: 'Error',
+        title: tCommon('error'),
         description: t('validation.abnInvalid'),
         variant: 'destructive',
       });

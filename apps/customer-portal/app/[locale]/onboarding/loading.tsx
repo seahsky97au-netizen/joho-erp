@@ -1,8 +1,10 @@
 import { Skeleton, Card, CardContent, CardHeader } from "@joho-erp/ui";
+import { getTranslations } from "next-intl/server";
 
-export default function OnboardingLoading() {
+export default async function OnboardingLoading() {
+  const t = await getTranslations("common");
   return (
-    <div className="min-h-screen bg-background" aria-busy="true" role="status" aria-label="Loading onboarding">
+    <div className="min-h-screen bg-background" aria-busy="true" role="status" aria-label={t("aria.loadingOnboarding")}>
       {/* Header skeleton */}
       <div className="border-b bg-card">
         <div className="container py-4 flex items-center justify-between">

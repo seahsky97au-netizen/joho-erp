@@ -50,7 +50,19 @@
     "signUp": "注册",
     "retry": "重试",
     "errorOccurred": "出了点问题",
-    "unavailable": "不可用"
+    "unavailable": "不可用",
+    "confirm": "确认",
+    "brand": "Joho Foods",
+    "aria": {
+      "loadingPage": "正在加载页面",
+      "loadingProducts": "正在加载产品",
+      "loadingOrders": "正在加载订单",
+      "loadingDashboard": "正在加载仪表板",
+      "loadingCart": "正在加载购物车",
+      "loadingCheckout": "正在加载结账",
+      "loadingProfile": "正在加载个人资料",
+      "loadingOnboarding": "正在加载引导"
+    }
   },
   "errors": {
     "operationFailed": "操作失败，请重试。",

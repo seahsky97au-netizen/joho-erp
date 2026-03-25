@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl';
 
 export function CustomerMobileHeader({ locale }: { locale: string }) {
   const t = useTranslations('navigation');
+  const tCommon = useTranslations('common');
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-neutral-200/60 shadow-sm pt-[env(safe-area-inset-top)]">
@@ -17,7 +18,7 @@ export function CustomerMobileHeader({ locale }: { locale: string }) {
         >
           <Image
             src="/logo.png"
-            alt="Joho Foods"
+            alt={tCommon('brand')}
             width={36}
             height={36}
             className="rounded-lg shadow-sm group-hover:shadow-md transition-all duration-300"

@@ -111,6 +111,7 @@ function SortableAreaRow({
   onDelete: (area: AreaWithCounts) => void;
   tColors: (key: string) => string;
 }) {
+  const tCommon = useTranslations('common');
   const {
     attributes,
     listeners,
@@ -133,7 +134,7 @@ function SortableAreaRow({
           {...attributes}
           {...listeners}
           className="cursor-grab touch-none p-1 hover:bg-muted rounded"
-          aria-label="Drag to reorder"
+          aria-label={tCommon('aria.dragToReorder')}
         >
           <GripVertical className="h-4 w-4 text-muted-foreground" />
         </button>

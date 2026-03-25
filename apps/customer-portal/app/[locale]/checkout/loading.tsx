@@ -1,8 +1,10 @@
 import { Skeleton, Card, CardContent, CardHeader } from "@joho-erp/ui";
+import { getTranslations } from "next-intl/server";
 
-export default function CheckoutLoading() {
+export default async function CheckoutLoading() {
+  const t = await getTranslations("common");
   return (
-    <div className="container py-6 space-y-6" aria-busy="true" role="status" aria-label="Loading checkout">
+    <div className="container py-6 space-y-6" aria-busy="true" role="status" aria-label={t("aria.loadingCheckout")}>
       {/* Header skeleton */}
       <div className="flex items-center gap-4">
         <Skeleton className="h-10 w-10 rounded-full" />

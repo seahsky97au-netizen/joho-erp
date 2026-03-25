@@ -82,7 +82,26 @@
     "back": "返回",
     "previous": "上一頁",
     "next": "下一頁",
-    "editing": "編輯中"
+    "editing": "編輯中",
+    "error": "錯誤",
+    "validationError": "驗證錯誤",
+    "confirm": "確認",
+    "aria": {
+      "loadingCustomers": "正在載入客戶",
+      "loadingProducts": "正在載入產品",
+      "loadingInventory": "正在載入庫存",
+      "loadingOrders": "正在載入訂單",
+      "loadingPacking": "正在載入打包",
+      "loadingDeliveries": "正在載入配送",
+      "loadingDashboard": "正在載入儀表板",
+      "loadingPricing": "正在載入定價",
+      "changeLanguage": "切換語言",
+      "notifications": "通知",
+      "dragToReorder": "拖曳以重新排序",
+      "companyLogo": "公司標誌",
+      "podPreview": "送貨證明預覽",
+      "proofOfDelivery": "送貨證明"
+    }
   },
   "statusBadges": {
     "awaiting_approval": "待審批",
@@ -4246,5 +4265,9 @@
   "packingErrors": {
     "productDeleted": "產品 {name} ({sku}) 已被刪除，無法打包",
     "deliveryDatePassed": "無法標記訂單就緒 - 配送日期已過"
+  },
+  "metadata": {
+    "title": "管理後台 - Joho Foods ERP",
+    "description": "Joho Foods 營運管理儀表板"
   }
 }

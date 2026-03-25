@@ -8,6 +8,7 @@ import { PermissionProvider } from './permission-provider';
 import { MobileAppBar } from '@joho-erp/ui';
 import { useIsMobileOrTablet } from '@joho-erp/ui';
 import { UserButton } from '@clerk/nextjs';
+import { useTranslations } from 'next-intl';
 import { Bell } from 'lucide-react';
 import { Button } from '@joho-erp/ui';
 import type { SerializableUser } from '@/types/user';
@@ -26,6 +27,7 @@ export function AdminLayoutWrapper({
   const [drawerOpen, setDrawerOpen] = React.useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
   const isMobileOrTablet = useIsMobileOrTablet();
+  const t = useTranslations('common');
 
   return (
     <PermissionProvider>
@@ -36,7 +38,7 @@ export function AdminLayoutWrapper({
             onMenuClick={() => setDrawerOpen(true)}
             rightActions={
               <>
-                <Button variant="ghost" size="icon" aria-label="Notifications">
+                <Button variant="ghost" size="icon" aria-label={t('aria.notifications')}>
                   <Bell className="h-5 w-5" />
                 </Button>
                 <UserButton />

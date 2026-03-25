@@ -23,6 +23,7 @@ import { AddressSearch, type AddressResult } from '@/components/address-search';
 
 export default function CompanySettingsPage() {
   const t = useTranslations('settings.company');
+  const tCommon = useTranslations('common');
   const tErrors = useTranslations('errors');
   const { toast } = useToast();
   const utils = api.useUtils();
@@ -394,7 +395,7 @@ export default function CompanySettingsPage() {
                 <div className="w-24 h-24 border-2 border-border rounded-lg flex items-center justify-center overflow-hidden">
                   <Image
                     src={logoUrl}
-                    alt="Company Logo"
+                    alt={tCommon('aria.companyLogo')}
                     className="w-full h-full object-contain"
                     width={96}
                     height={96}

@@ -1,6 +1,6 @@
 'use client';
 
-import { X, Package, Users, ShoppingBag, AlertCircle } from 'lucide-react';
+import { X, ShoppingBag } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 
@@ -12,45 +12,15 @@ export function NotificationsDropdown({ onClose }: NotificationsDropdownProps) {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const t = useTranslations('notifications');
 
-  // Sample notifications - in production, these would come from an API
-  const notifications = [
-    {
-      id: 1,
-      type: 'order',
-      icon: ShoppingBag,
-      title: t('types.order'),
-      description: 'Order #1234 from John Doe',
-      time: '2 min ago',
-      unread: true,
-    },
-    {
-      id: 2,
-      type: 'customer',
-      icon: Users,
-      title: t('types.customer'),
-      description: 'Jane Smith registered an account',
-      time: '15 min ago',
-      unread: true,
-    },
-    {
-      id: 3,
-      type: 'inventory',
-      icon: Package,
-      title: t('types.inventory'),
-      description: 'Ribeye Steak running low (5 units left)',
-      time: '1 hour ago',
-      unread: false,
-    },
-    {
-      id: 4,
-      type: 'system',
-      icon: AlertCircle,
-      title: t('types.system'),
-      description: 'Version 2.1.0 is ready to install',
-      time: '3 hours ago',
-      unread: false,
-    },
-  ];
+  const notifications: Array<{
+    id: number;
+    type: string;
+    icon: typeof ShoppingBag;
+    title: string;
+    description: string;
+    time: string;
+    unread: boolean;
+  }> = [];
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

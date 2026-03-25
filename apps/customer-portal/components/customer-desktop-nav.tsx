@@ -19,6 +19,7 @@ interface NavItem {
 
 export function CustomerDesktopNav({ locale }: { locale: string }) {
   const t = useTranslations('navigation');
+  const tCommon = useTranslations('common');
   const pathname = usePathname();
   const [isCartOpen, setIsCartOpen] = React.useState(false);
 
@@ -58,7 +59,7 @@ export function CustomerDesktopNav({ locale }: { locale: string }) {
             >
               <Image
                 src="/logo.png"
-                alt="Joho Foods"
+                alt={tCommon('brand')}
                 width={48}
                 height={48}
                 className="rounded-xl shadow-md group-hover:shadow-lg transition-all duration-300 group-hover:scale-105"

@@ -182,7 +182,7 @@ export function DeliveryInfo({
               <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
                 <Image
                   src={delivery.proofOfDelivery.fileUrl}
-                  alt="Proof of Delivery"
+                  alt={tCommon('aria.proofOfDelivery')}
                   fill
                   className="object-contain"
                 />

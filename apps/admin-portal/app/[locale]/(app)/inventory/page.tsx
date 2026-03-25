@@ -76,6 +76,7 @@ type AdjustmentTypeFilter = 'stock_received' | undefined;
 export default function InventoryPage() {
   const t = useTranslations('inventory');
   const tStockCounts = useTranslations('inventory.stockCounts');
+  const tCommon = useTranslations('common');
   const searchParams = useSearchParams();
   const router = useRouter();
   const { toast } = useToast();
@@ -99,7 +100,7 @@ export default function InventoryPage() {
     },
     onError: (error) => {
       toast({
-        title: 'Error',
+        title: tCommon('error'),
         description: error.message,
         variant: 'destructive',
       });

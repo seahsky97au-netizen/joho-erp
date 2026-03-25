@@ -1,8 +1,10 @@
 import { Skeleton, Card, CardContent, CardHeader } from "@joho-erp/ui";
+import { getTranslations } from "next-intl/server";
 
-export default function DashboardLoading() {
+export default async function DashboardLoading() {
+  const t = await getTranslations("common");
   return (
-    <div className="container py-6 space-y-6" aria-busy="true" role="status" aria-label="Loading dashboard">
+    <div className="container py-6 space-y-6" aria-busy="true" role="status" aria-label={t("aria.loadingDashboard")}>
       {/* Welcome section skeleton */}
       <div className="space-y-2">
         <Skeleton className="h-8 w-64" />

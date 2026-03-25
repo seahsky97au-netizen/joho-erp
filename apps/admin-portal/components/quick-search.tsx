@@ -1,6 +1,6 @@
 'use client';
 
-import { Search, X, Clock, TrendingUp, FileText, Users, Package, ShoppingBag } from 'lucide-react';
+import { Search, X, TrendingUp, FileText, Users, ShoppingBag } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -8,13 +8,6 @@ import { useTranslations } from 'next-intl';
 interface QuickSearchProps {
   onClose: () => void;
 }
-
-const recentSearches = [
-  { id: 1, text: 'Customer #12345', icon: Users },
-  { id: 2, text: 'Order #98765', icon: ShoppingBag },
-  { id: 3, text: 'Ribeye Steak Inventory', icon: Package },
-];
-
 
 export function QuickSearch({ onClose }: QuickSearchProps) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -80,30 +73,6 @@ export function QuickSearch({ onClose }: QuickSearchProps) {
           <div className="max-h-[500px] overflow-y-auto">
             {!searchQuery && (
               <>
-                {/* Recent Searches */}
-                <div className="px-4 py-3 border-b border-border">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Clock className="w-4 h-4 text-muted-foreground" />
-                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                      {t('recent')}
-                    </h3>
-                  </div>
-                  <div className="space-y-1">
-                    {recentSearches.map((search) => {
-                      const Icon = search.icon;
-                      return (
-                        <button
-                          key={search.id}
-                          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-left"
-                        >
-                          <Icon className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-sm text-foreground">{search.text}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
                 {/* Quick Actions */}
                 <div className="px-4 py-3">
                   <div className="flex items-center gap-2 mb-3">

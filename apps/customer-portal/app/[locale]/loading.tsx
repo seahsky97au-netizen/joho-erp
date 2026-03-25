@@ -1,8 +1,10 @@
 import { Skeleton } from "@joho-erp/ui";
+import { getTranslations } from "next-intl/server";
 
-export default function Loading() {
+export default async function Loading() {
+  const t = await getTranslations("common");
   return (
-    <div className="min-h-screen bg-background" aria-busy="true" role="status" aria-label="Loading page">
+    <div className="min-h-screen bg-background" aria-busy="true" role="status" aria-label={t("aria.loadingPage")}>
       {/* Navigation skeleton */}
       <div className="hidden md:block">
         <div className="h-16 border-b bg-card">

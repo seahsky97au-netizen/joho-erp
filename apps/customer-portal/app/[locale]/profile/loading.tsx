@@ -1,8 +1,10 @@
 import { Skeleton, Card, CardContent, CardHeader } from "@joho-erp/ui";
+import { getTranslations } from "next-intl/server";
 
-export default function ProfileLoading() {
+export default async function ProfileLoading() {
+  const t = await getTranslations("common");
   return (
-    <div className="container py-6 space-y-6" aria-busy="true" role="status" aria-label="Loading profile">
+    <div className="container py-6 space-y-6" aria-busy="true" role="status" aria-label={t("aria.loadingProfile")}>
       {/* Header skeleton */}
       <Skeleton className="h-8 w-32" />
 

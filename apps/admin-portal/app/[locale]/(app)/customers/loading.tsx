@@ -1,8 +1,10 @@
 import { Skeleton, Card, CardContent } from "@joho-erp/ui";
+import { getTranslations } from "next-intl/server";
 
-export default function CustomersLoading() {
+export default async function CustomersLoading() {
+  const t = await getTranslations("common");
   return (
-    <div className="space-y-6" aria-busy="true" role="status" aria-label="Loading customers">
+    <div className="space-y-6" aria-busy="true" role="status" aria-label={t("aria.loadingCustomers")}>
       {/* Page header */}
       <div className="flex items-center justify-between">
         <Skeleton className="h-8 w-36" />

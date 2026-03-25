@@ -82,7 +82,26 @@
     "back": "返回",
     "previous": "上一页",
     "next": "下一页",
-    "editing": "编辑中"
+    "editing": "编辑中",
+    "error": "错误",
+    "validationError": "验证错误",
+    "confirm": "确认",
+    "aria": {
+      "loadingCustomers": "正在加载客户",
+      "loadingProducts": "正在加载产品",
+      "loadingInventory": "正在加载库存",
+      "loadingOrders": "正在加载订单",
+      "loadingPacking": "正在加载打包",
+      "loadingDeliveries": "正在加载配送",
+      "loadingDashboard": "正在加载仪表板",
+      "loadingPricing": "正在加载定价",
+      "changeLanguage": "切换语言",
+      "notifications": "通知",
+      "dragToReorder": "拖拽以重新排序",
+      "companyLogo": "公司标志",
+      "podPreview": "送货证明预览",
+      "proofOfDelivery": "送货证明"
+    }
   },
   "statusBadges": {
     "awaiting_approval": "待审批",
@@ -4246,5 +4265,9 @@
   "packingErrors": {
     "productDeleted": "产品 {name} ({sku}) 已被删除，无法打包",
     "deliveryDatePassed": "无法标记订单就绪 - 送货日期已过"
+  },
+  "metadata": {
+    "title": "管理后台 - Joho Foods ERP",
+    "description": "Joho Foods 运营管理仪表板"
   }
 }

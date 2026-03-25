@@ -1,8 +1,10 @@
 import { Skeleton, Card, CardContent, CardHeader } from "@joho-erp/ui";
+import { getTranslations } from "next-intl/server";
 
-export default function OrdersLoading() {
+export default async function OrdersLoading() {
+  const t = await getTranslations("common");
   return (
-    <div className="container py-6 space-y-6" aria-busy="true" role="status" aria-label="Loading orders">
+    <div className="container py-6 space-y-6" aria-busy="true" role="status" aria-label={t("aria.loadingOrders")}>
       {/* Header skeleton */}
       <div className="flex items-center justify-between">
         <Skeleton className="h-8 w-40" />

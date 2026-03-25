@@ -50,7 +50,19 @@
     "signUp": "Sign Up",
     "retry": "Try Again",
     "errorOccurred": "Something went wrong",
-    "unavailable": "Unavailable"
+    "unavailable": "Unavailable",
+    "confirm": "Confirm",
+    "brand": "Joho Foods",
+    "aria": {
+      "loadingPage": "Loading page",
+      "loadingProducts": "Loading products",
+      "loadingOrders": "Loading orders",
+      "loadingDashboard": "Loading dashboard",
+      "loadingCart": "Loading cart",
+      "loadingCheckout": "Loading checkout",
+      "loadingProfile": "Loading profile",
+      "loadingOnboarding": "Loading onboarding"
+    }
   },
   "errors": {
     "operationFailed": "Something went wrong. Please try again.",

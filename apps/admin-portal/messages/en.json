@@ -82,7 +82,26 @@
     "back": "Back",
     "previous": "Previous",
     "next": "Next",
-    "editing": "Editing"
+    "editing": "Editing",
+    "error": "Error",
+    "validationError": "Validation Error",
+    "confirm": "Confirm",
+    "aria": {
+      "loadingCustomers": "Loading customers",
+      "loadingProducts": "Loading products",
+      "loadingInventory": "Loading inventory",
+      "loadingOrders": "Loading orders",
+      "loadingPacking": "Loading packing",
+      "loadingDeliveries": "Loading deliveries",
+      "loadingDashboard": "Loading dashboard",
+      "loadingPricing": "Loading pricing",
+      "changeLanguage": "Change language",
+      "notifications": "Notifications",
+      "dragToReorder": "Drag to reorder",
+      "companyLogo": "Company Logo",
+      "podPreview": "POD Preview",
+      "proofOfDelivery": "Proof of Delivery"
+    }
   },
   "statusBadges": {
     "awaiting_approval": "Awaiting Approval",
@@ -4246,5 +4265,9 @@
   "packingErrors": {
     "productDeleted": "Product {name} ({sku}) has been deleted and cannot be packed",
     "deliveryDatePassed": "Cannot mark order ready - delivery date has passed"
+  },
+  "metadata": {
+    "title": "Admin Portal - Joho Foods ERP",
+    "description": "Administrative dashboard for Joho Foods operations"
   }
 }

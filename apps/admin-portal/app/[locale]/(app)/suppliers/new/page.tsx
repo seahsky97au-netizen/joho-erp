@@ -57,7 +57,7 @@ export default function NewSupplierPage() {
     },
     onError: (error: { message?: string }) => {
       toast({
-        title: 'Error',
+        title: tCommon('error'),
         description: error.message || t('messages.createError'),
         variant: 'destructive',
       });
@@ -295,7 +295,7 @@ export default function NewSupplierPage() {
 
     if (!validateForm()) {
       toast({
-        title: 'Validation Error',
+        title: tCommon('validationError'),
         description: t('messages.fixValidationErrors'),
         variant: 'destructive',
       });

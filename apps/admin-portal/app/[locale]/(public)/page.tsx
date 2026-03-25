@@ -20,7 +20,7 @@ export default async function LandingPage({
         <div className="flex items-center gap-3">
           <Image
             src="/logo.png"
-            alt="Joho Foods"
+            alt={t('common.brand')}
             width={40}
             height={40}
             className="rounded-lg"

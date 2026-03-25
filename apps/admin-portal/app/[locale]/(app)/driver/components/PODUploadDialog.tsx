@@ -37,6 +37,7 @@ export function PODUploadDialog({
   isSubmitting = false,
 }: PODUploadDialogProps) {
   const t = useTranslations('driver.podDialog');
+  const tCommon = useTranslations('common');
   const tMessages = useTranslations('driver.messages');
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -122,7 +123,7 @@ export function PODUploadDialog({
             <div className="relative">
               <Image
                 src={preview}
-                alt="POD Preview"
+                alt={tCommon('aria.podPreview')}
                 className="w-full rounded-lg border object-cover max-h-64"
                 width={400}
                 height={256}
