@@ -704,6 +704,16 @@
     "messages": {
       "markDeliveredSuccess": "配送已標記為完成",
       "markDeliveredError": "標記配送完成失敗"
+    },
+    "tabs": {
+      "active": "進行中",
+      "unassigned": "未分配"
+    },
+    "unassigned": {
+      "description": "缺少司機或區域的配送",
+      "needsDriver": "需要分配司機",
+      "needsArea": "需要分配區域",
+      "allAssigned": "所有配送均已分配"
     }
   },
   "orders": {

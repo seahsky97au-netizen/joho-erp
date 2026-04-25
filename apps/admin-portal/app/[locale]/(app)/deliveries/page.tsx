@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, TableSkeleton, StatusBadge, type StatusType, useToast, Badge, Input } from '@joho-erp/ui';
-import { MapPin, Navigation, CheckCircle, Package, FileText, Users, Clock, Calendar, Loader2, Truck } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Button, TableSkeleton, StatusBadge, type StatusType, useToast, Badge, Input, Tabs, TabsList, TabsTrigger, TabsContent } from '@joho-erp/ui';
+import { MapPin, Navigation, CheckCircle, Package, FileText, Users, Clock, Calendar, Loader2, Truck, UserX, MapPinOff } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import { api } from '@/trpc/client';
@@ -25,6 +25,7 @@ export default function DeliveriesPage() {
   const utils = api.useUtils();
   const [isRecalculatingRoute, setIsRecalculatingRoute] = useState(false);
   const [selectedDelivery, setSelectedDelivery] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'active' | 'unassigned'>('active');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ready_for_delivery' | 'delivered' | ''>('');
   const [areaFilter, setAreaFilter] = useState<string>(''); // Now uses areaId
@@ -183,16 +184,38 @@ export default function DeliveriesPage() {
     return deliveries.filter((d) => d.driverId === selectedDriverId);
   }, [deliveries, selectedDriverId]);
 
+  // Split deliveries into active (has both driver and area) and unassigned (missing either)
+  const activeDeliveries = useMemo(
+    () => filteredDeliveries.filter((d) => d.driverId && d.areaName),
+    [filteredDeliveries],
+  );
+
+  const unassignedDeliveries = useMemo(
+    () => filteredDeliveries.filter((d) => !d.driverId || !d.areaName),
+    [filteredDeliveries],
+  );
+
+  // Group unassigned deliveries by reason — area-missing comes first since that blocks routing
+  const unassignedGroups = useMemo(() => {
+    const noArea: typeof unassignedDeliveries = [];
+    const noDriver: typeof unassignedDeliveries = [];
+    for (const d of unassignedDeliveries) {
+      if (!d.areaName) noArea.push(d);
+      else noDriver.push(d);
+    }
+    return { noArea, noDriver };
+  }, [unassignedDeliveries]);
+
   // Group deliveries by area for per-area display
   const deliveryAreaGroups = useMemo(() => {
     const groupMap = new Map<string | null, {
       areaName: string | null;
       areaDisplayName: string;
       areaSortOrder: number;
-      deliveries: typeof filteredDeliveries;
+      deliveries: typeof activeDeliveries;
     }>();
 
-    for (const delivery of filteredDeliveries) {
+    for (const delivery of activeDeliveries) {
       const areaName = delivery.areaName ?? null;
       if (!groupMap.has(areaName)) {
         groupMap.set(areaName, {
@@ -219,7 +242,7 @@ export default function DeliveriesPage() {
     }
 
     return groups;
-  }, [filteredDeliveries]);
+  }, [activeDeliveries]);
 
   const hasMultipleAreas = deliveryAreaGroups.length > 1 || (deliveryAreaGroups.length === 1 && deliveryAreaGroups[0].areaName !== null);
 
@@ -413,85 +436,197 @@ export default function DeliveriesPage() {
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Delivery List */}
         <div className="lg:col-span-1 space-y-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle>{t('activeDeliveries')}</CardTitle>
-              <CardDescription>{filteredDeliveries.length} {t('deliveriesInProgress')}</CardDescription>
+          <Card className="lg:h-[600px] lg:flex lg:flex-col">
+            <CardHeader className="pb-3 lg:flex-none">
+              <CardTitle>
+                {activeTab === 'active' ? t('activeDeliveries') : t('tabs.unassigned')}
+              </CardTitle>
+              <CardDescription>
+                {activeTab === 'active'
+                  ? `${activeDeliveries.length} ${t('deliveriesInProgress')}`
+                  : t('unassigned.description')}
+              </CardDescription>
             </CardHeader>
-            <CardContent className="p-4 md:p-6 space-y-4">
-              {isLoading ? (
-                <TableSkeleton rows={4} columns={3} showMobileCards />
-              ) : filteredDeliveries.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">{t('noDeliveriesFound')}</p>
-              ) : hasMultipleAreas ? (
-                /* Grouped by area */
-                <div className="space-y-6">
-                  {deliveryAreaGroups.map((group) => (
-                    <div key={group.areaName ?? 'unassigned'} className="space-y-3">
-                      {/* Area Header */}
-                      <div className="flex items-center gap-2 px-2 py-2 bg-muted/50 rounded-lg">
-                        <Truck className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-semibold text-sm">
-                          {group.areaDisplayName}
-                        </span>
-                        <Badge variant="secondary" className="ml-auto">
-                          {group.deliveries.length} {group.deliveries.length === 1 ? t('order') : t('orders')}
-                        </Badge>
+            <Tabs
+              value={activeTab}
+              onValueChange={(v) => setActiveTab(v as 'active' | 'unassigned')}
+              className="lg:flex-1 lg:flex lg:flex-col lg:min-h-0"
+            >
+              <TabsList className="mx-4 md:mx-6">
+                <TabsTrigger value="active">
+                  {t('tabs.active')}
+                  <Badge variant="secondary" className="ml-2">{activeDeliveries.length}</Badge>
+                </TabsTrigger>
+                <TabsTrigger value="unassigned">
+                  {t('tabs.unassigned')}
+                  <Badge variant="secondary" className="ml-2">{unassignedDeliveries.length}</Badge>
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent
+                value="active"
+                className="lg:flex-1 lg:min-h-0 lg:overflow-y-auto p-4 md:p-6 space-y-4 mt-0"
+              >
+                {isLoading ? (
+                  <TableSkeleton rows={4} columns={3} showMobileCards />
+                ) : activeDeliveries.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">{t('noDeliveriesFound')}</p>
+                ) : hasMultipleAreas ? (
+                  /* Grouped by area */
+                  <div className="space-y-6">
+                    {deliveryAreaGroups.map((group) => (
+                      <div key={group.areaName ?? 'unassigned'} className="space-y-3">
+                        {/* Area Header */}
+                        <div className="flex items-center gap-2 px-2 py-2 bg-muted/50 rounded-lg">
+                          <Truck className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-semibold text-sm">
+                            {group.areaDisplayName}
+                          </span>
+                          <Badge variant="secondary" className="ml-auto">
+                            {group.deliveries.length} {group.deliveries.length === 1 ? t('order') : t('orders')}
+                          </Badge>
+                        </div>
+                        {/* Deliveries in this area */}
+                        {group.deliveries.map((delivery) => (
+                          <DeliveryCard
+                            key={delivery.id}
+                            delivery={delivery}
+                            isSelected={selectedDelivery === delivery.id}
+                            onSelect={() => setSelectedDelivery(delivery.id)}
+                            onMarkDelivered={(e) => {
+                              e.stopPropagation();
+                              setMarkDeliveredDialog({
+                                open: true,
+                                delivery: {
+                                  id: delivery.id,
+                                  orderId: delivery.orderId,
+                                  customer: delivery.customer,
+                                  packedAt: delivery.packedAt ? new Date(delivery.packedAt) : null,
+                                },
+                              });
+                            }}
+                            isMarkDeliveredPending={markDeliveredMutation.isPending}
+                            showAreaSequence
+                            t={t}
+                          />
+                        ))}
                       </div>
-                      {/* Deliveries in this area */}
-                      {group.deliveries.map((delivery) => (
-                        <DeliveryCard
-                          key={delivery.id}
-                          delivery={delivery}
-                          isSelected={selectedDelivery === delivery.id}
-                          onSelect={() => setSelectedDelivery(delivery.id)}
-                          onMarkDelivered={(e) => {
-                            e.stopPropagation();
-                            setMarkDeliveredDialog({
-                              open: true,
-                              delivery: {
-                                id: delivery.id,
-                                orderId: delivery.orderId,
-                                customer: delivery.customer,
-                                packedAt: delivery.packedAt ? new Date(delivery.packedAt) : null,
-                              },
-                            });
-                          }}
-                          isMarkDeliveredPending={markDeliveredMutation.isPending}
-                          showAreaSequence
-                          t={t}
-                        />
-                      ))}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                /* Flat list when single/no area */
-                filteredDeliveries.map((delivery) => (
-                  <DeliveryCard
-                    key={delivery.id}
-                    delivery={delivery}
-                    isSelected={selectedDelivery === delivery.id}
-                    onSelect={() => setSelectedDelivery(delivery.id)}
-                    onMarkDelivered={(e) => {
-                      e.stopPropagation();
-                      setMarkDeliveredDialog({
-                        open: true,
-                        delivery: {
-                          id: delivery.id,
-                          orderId: delivery.orderId,
-                          customer: delivery.customer,
-                          packedAt: delivery.packedAt ? new Date(delivery.packedAt) : null,
-                        },
-                      });
-                    }}
-                    isMarkDeliveredPending={markDeliveredMutation.isPending}
-                    showAreaSequence={false}
-                    t={t}
-                  />
-                ))
-              )}
-            </CardContent>
+                    ))}
+                  </div>
+                ) : (
+                  /* Flat list when single/no area */
+                  activeDeliveries.map((delivery) => (
+                    <DeliveryCard
+                      key={delivery.id}
+                      delivery={delivery}
+                      isSelected={selectedDelivery === delivery.id}
+                      onSelect={() => setSelectedDelivery(delivery.id)}
+                      onMarkDelivered={(e) => {
+                        e.stopPropagation();
+                        setMarkDeliveredDialog({
+                          open: true,
+                          delivery: {
+                            id: delivery.id,
+                            orderId: delivery.orderId,
+                            customer: delivery.customer,
+                            packedAt: delivery.packedAt ? new Date(delivery.packedAt) : null,
+                          },
+                        });
+                      }}
+                      isMarkDeliveredPending={markDeliveredMutation.isPending}
+                      showAreaSequence={false}
+                      t={t}
+                    />
+                  ))
+                )}
+              </TabsContent>
+
+              <TabsContent
+                value="unassigned"
+                className="lg:flex-1 lg:min-h-0 lg:overflow-y-auto p-4 md:p-6 space-y-4 mt-0"
+              >
+                {isLoading ? (
+                  <TableSkeleton rows={4} columns={3} showMobileCards />
+                ) : unassignedDeliveries.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-8">{t('unassigned.allAssigned')}</p>
+                ) : (
+                  <div className="space-y-6">
+                    {unassignedGroups.noArea.length > 0 && (
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 px-2 py-2 bg-muted/50 rounded-lg">
+                          <MapPinOff className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-semibold text-sm">
+                            {t('unassigned.needsArea')}
+                          </span>
+                          <Badge variant="secondary" className="ml-auto">
+                            {unassignedGroups.noArea.length} {unassignedGroups.noArea.length === 1 ? t('order') : t('orders')}
+                          </Badge>
+                        </div>
+                        {unassignedGroups.noArea.map((delivery) => (
+                          <DeliveryCard
+                            key={delivery.id}
+                            delivery={delivery}
+                            isSelected={selectedDelivery === delivery.id}
+                            onSelect={() => setSelectedDelivery(delivery.id)}
+                            onMarkDelivered={(e) => {
+                              e.stopPropagation();
+                              setMarkDeliveredDialog({
+                                open: true,
+                                delivery: {
+                                  id: delivery.id,
+                                  orderId: delivery.orderId,
+                                  customer: delivery.customer,
+                                  packedAt: delivery.packedAt ? new Date(delivery.packedAt) : null,
+                                },
+                              });
+                            }}
+                            isMarkDeliveredPending={markDeliveredMutation.isPending}
+                            showAreaSequence={false}
+                            t={t}
+                          />
+                        ))}
+                      </div>
+                    )}
+                    {unassignedGroups.noDriver.length > 0 && (
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 px-2 py-2 bg-muted/50 rounded-lg">
+                          <UserX className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-semibold text-sm">
+                            {t('unassigned.needsDriver')}
+                          </span>
+                          <Badge variant="secondary" className="ml-auto">
+                            {unassignedGroups.noDriver.length} {unassignedGroups.noDriver.length === 1 ? t('order') : t('orders')}
+                          </Badge>
+                        </div>
+                        {unassignedGroups.noDriver.map((delivery) => (
+                          <DeliveryCard
+                            key={delivery.id}
+                            delivery={delivery}
+                            isSelected={selectedDelivery === delivery.id}
+                            onSelect={() => setSelectedDelivery(delivery.id)}
+                            onMarkDelivered={(e) => {
+                              e.stopPropagation();
+                              setMarkDeliveredDialog({
+                                open: true,
+                                delivery: {
+                                  id: delivery.id,
+                                  orderId: delivery.orderId,
+                                  customer: delivery.customer,
+                                  packedAt: delivery.packedAt ? new Date(delivery.packedAt) : null,
+                                },
+                              });
+                            }}
+                            isMarkDeliveredPending={markDeliveredMutation.isPending}
+                            showAreaSequence={false}
+                            t={t}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
           </Card>
         </div>
 
@@ -504,10 +639,10 @@ export default function DeliveriesPage() {
             </CardHeader>
             <CardContent>
               <DeliveryMap
-                deliveries={filteredDeliveries}
+                deliveries={activeTab === 'active' ? activeDeliveries : unassignedDeliveries}
                 selectedDelivery={selectedDelivery}
-                routeData={mapRouteData}
-                selectedDriverId={selectedDriverId}
+                routeData={activeTab === 'active' ? mapRouteData : undefined}
+                selectedDriverId={activeTab === 'active' ? selectedDriverId : null}
                 warehouseLocation={routeData?.warehouseLocation}
                 emptyStateTitle={t('noDeliveriesAvailable')}
                 emptyStateDescription={t('deliveriesWillAppear')}

@@ -704,6 +704,16 @@
     "messages": {
       "markDeliveredSuccess": "Delivery marked as completed",
       "markDeliveredError": "Failed to mark delivery as completed"
+    },
+    "tabs": {
+      "active": "Active",
+      "unassigned": "Unassigned"
+    },
+    "unassigned": {
+      "description": "Deliveries missing a driver or area",
+      "needsDriver": "Needs driver",
+      "needsArea": "Needs area",
+      "allAssigned": "All deliveries are assigned"
     }
   },
   "orders": {
