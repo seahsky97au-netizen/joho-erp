@@ -133,6 +133,10 @@ export default function DeliveriesPage() {
   // Get ISO date string for route optimization query
   const deliveryDateISO = useMemo(() => deliveryDate.toISOString(), [deliveryDate]);
 
+  // Read company delivery settings to check whether driver assignment is required
+  const { data: companySettings } = api.company.getSettings.useQuery();
+  const requireDriver = !(companySettings?.deliverySettings?.manualDriverAssignment ?? false);
+
   // Fetch deliveries from database, filtered by delivery date
   const { data, isLoading } = api.delivery.getAll.useQuery({
     search: searchQuery || undefined,
@@ -184,27 +188,29 @@ export default function DeliveriesPage() {
     return deliveries.filter((d) => d.driverId === selectedDriverId);
   }, [deliveries, selectedDriverId]);
 
-  // Split deliveries into active (has both driver and area) and unassigned (missing either)
+  // Split deliveries into active and unassigned. When manualDriverAssignment is on,
+  // driver presence is ignored — only the delivery area determines the tab placement.
   const activeDeliveries = useMemo(
-    () => filteredDeliveries.filter((d) => d.driverId && d.areaName),
-    [filteredDeliveries],
+    () => filteredDeliveries.filter((d) => d.areaName && (!requireDriver || d.driverId)),
+    [filteredDeliveries, requireDriver],
   );
 
   const unassignedDeliveries = useMemo(
-    () => filteredDeliveries.filter((d) => !d.driverId || !d.areaName),
-    [filteredDeliveries],
+    () => filteredDeliveries.filter((d) => !d.areaName || (requireDriver && !d.driverId)),
+    [filteredDeliveries, requireDriver],
   );
 
-  // Group unassigned deliveries by reason — area-missing comes first since that blocks routing
+  // Group unassigned deliveries by reason — area-missing comes first since that blocks routing.
+  // The noDriver group is only populated when driver assignment is required.
   const unassignedGroups = useMemo(() => {
     const noArea: typeof unassignedDeliveries = [];
     const noDriver: typeof unassignedDeliveries = [];
     for (const d of unassignedDeliveries) {
       if (!d.areaName) noArea.push(d);
-      else noDriver.push(d);
+      else if (requireDriver) noDriver.push(d);
     }
     return { noArea, noDriver };
-  }, [unassignedDeliveries]);
+  }, [unassignedDeliveries, requireDriver]);
 
   // Group deliveries by area for per-area display
   const deliveryAreaGroups = useMemo(() => {

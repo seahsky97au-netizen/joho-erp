@@ -12,6 +12,7 @@ import {
   Clock,
   Search,
   Navigation2,
+  UserCog,
 } from 'lucide-react';
 import type { DeliverySettingsMapHandle } from './delivery-settings-map';
 
@@ -57,6 +58,39 @@ interface GeocodeResult {
   relevance: number;
 }
 
+// Simple Switch component using checkbox styling
+function Switch({
+  id,
+  checked,
+  onCheckedChange,
+  disabled = false,
+}: {
+  id?: string;
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      id={id}
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      disabled={disabled}
+      onClick={() => onCheckedChange(!checked)}
+      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 ${
+        checked ? 'bg-primary' : 'bg-input'
+      }`}
+    >
+      <span
+        className={`pointer-events-none block h-5 w-5 rounded-full bg-background shadow-lg ring-0 transition-transform ${
+          checked ? 'translate-x-5' : 'translate-x-0'
+        }`}
+      />
+    </button>
+  );
+}
+
 export default function DeliverySettingsPage() {
   const t = useTranslations('settings.delivery');
   const tCommon = useTranslations('common');
@@ -74,6 +108,7 @@ export default function DeliverySettingsPage() {
   const [deliveryWindow, setDeliveryWindow] = useState('9:00-17:00');
   const [minimumOrderAmount, setMinimumOrderAmount] = useState('');
   const [workingDays, setWorkingDays] = useState<number[]>(DEFAULT_WORKING_DAYS);
+  const [manualDriverAssignment, setManualDriverAssignment] = useState(false);
 
   // UI state
   const [addressSearch, setAddressSearch] = useState('');
@@ -114,6 +149,7 @@ export default function DeliverySettingsPage() {
       if (Array.isArray(ds.workingDays) && ds.workingDays.length > 0) {
         setWorkingDays(ds.workingDays);
       }
+      setManualDriverAssignment(Boolean(ds.manualDriverAssignment));
     }
   }, [settings]);
 
@@ -134,6 +170,9 @@ export default function DeliverySettingsPage() {
       settings!.deliverySettings!.workingDays!.length > 0
         ? settings!.deliverySettings!.workingDays!
         : DEFAULT_WORKING_DAYS;
+    const savedManualDriverAssignment = Boolean(
+      settings?.deliverySettings?.manualDriverAssignment
+    );
 
     // Convert current input to cents for comparison
     const currentMinimumCents = minimumOrderAmount ? parseToCents(minimumOrderAmount) : null;
@@ -153,10 +192,11 @@ export default function DeliverySettingsPage() {
       cutoffTime !== savedCutoffTime ||
       deliveryWindow !== savedDeliveryWindow ||
       currentMinimumCents !== savedMinimumOrder ||
-      workingDaysChanged;
+      workingDaysChanged ||
+      manualDriverAssignment !== savedManualDriverAssignment;
 
     setHasChanges(hasModifications);
-  }, [street, suburb, state, postcode, latitude, longitude, cutoffTime, deliveryWindow, minimumOrderAmount, workingDays, settings]);
+  }, [street, suburb, state, postcode, latitude, longitude, cutoffTime, deliveryWindow, minimumOrderAmount, workingDays, manualDriverAssignment, settings]);
 
   // Geocode search
   const handleSearch = async () => {
@@ -247,6 +287,7 @@ export default function DeliverySettingsPage() {
         workingDays,
         defaultDeliveryWindow: deliveryWindow || undefined,
         minimumOrderAmount: minimumOrderCents || undefined,
+        manualDriverAssignment,
       });
 
       toast({
@@ -295,6 +336,7 @@ export default function DeliverySettingsPage() {
       } else {
         setWorkingDays(DEFAULT_WORKING_DAYS);
       }
+      setManualDriverAssignment(Boolean(ds.manualDriverAssignment));
     }
   };
 
@@ -567,6 +609,33 @@ export default function DeliverySettingsPage() {
                     </label>
                   ))}
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Driver Assignment */}
+          <Card className="animate-fade-in-up delay-300">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <UserCog className="h-5 w-5 text-primary" />
+                <CardTitle className="text-base">
+                  {t('manualDriverAssignment.title')}
+                </CardTitle>
+              </div>
+              <CardDescription>
+                {t('manualDriverAssignment.description')}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="manualDriverAssignment" className="cursor-pointer">
+                  {t('manualDriverAssignment.label')}
+                </Label>
+                <Switch
+                  id="manualDriverAssignment"
+                  checked={manualDriverAssignment}
+                  onCheckedChange={setManualDriverAssignment}
+                />
               </div>
             </CardContent>
           </Card>

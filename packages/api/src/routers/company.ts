@@ -262,6 +262,7 @@ export const companyRouter = router({
           .optional(),
         defaultDeliveryWindow: z.string().optional(),
         minimumOrderAmount: z.number().int().positive().optional(), // In cents
+        manualDriverAssignment: z.boolean().optional(),
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -286,6 +287,18 @@ export const companyRouter = router({
           field: 'minimumOrderAmount',
           oldValue: oldSettings?.minimumOrderAmount,
           newValue: input.minimumOrderAmount,
+        });
+      }
+      const oldManualDriverAssignment =
+        typeof oldSettings?.manualDriverAssignment === 'boolean'
+          ? (oldSettings.manualDriverAssignment as boolean)
+          : false;
+      const newManualDriverAssignment = input.manualDriverAssignment ?? false;
+      if (oldManualDriverAssignment !== newManualDriverAssignment) {
+        changes.push({
+          field: 'manualDriverAssignment',
+          oldValue: oldManualDriverAssignment,
+          newValue: newManualDriverAssignment,
         });
       }
       const oldWorkingDays = Array.isArray(oldSettings?.workingDays)
@@ -328,6 +341,7 @@ export const companyRouter = router({
             workingDays: persistedWorkingDays,
             defaultDeliveryWindow: input.defaultDeliveryWindow || null,
             minimumOrderAmount: input.minimumOrderAmount || null,
+            manualDriverAssignment: newManualDriverAssignment,
           },
         },
       });

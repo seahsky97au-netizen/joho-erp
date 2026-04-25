@@ -2689,6 +2689,11 @@
         "fri": "Friday",
         "sat": "Saturday",
         "sun": "Sunday"
+      },
+      "manualDriverAssignment": {
+        "title": "Driver Assignment",
+        "description": "Drivers are assigned manually outside the system. When on, orders without a driver still appear in the Active tab as long as they have a delivery area.",
+        "label": "Manual driver assignment"
       }
     }
   },
