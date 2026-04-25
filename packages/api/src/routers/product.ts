@@ -991,7 +991,22 @@ export const productRouter = router({
         )
     )
     .mutation(async ({ input, ctx }) => {
-      const { productId, adjustmentType, quantity, notes, costPerUnit, expiryDate, supplierInvoiceNumber, stockInDate, mtvNumber, vehicleTemperature, supplierId } = input;
+      const { productId, adjustmentType, notes, costPerUnit, expiryDate, supplierInvoiceNumber, stockInDate, mtvNumber, vehicleTemperature, supplierId } = input;
+
+      // Defensive normalization of signed quantity by adjustment type:
+      //   - stock_write_off: always a deduction (force negative). UI sends positive amount.
+      //   - stock_received: always an increase (force positive). UI sends positive amount.
+      // Why: a positive quantity for stock_write_off would silently no-op (no batch
+      // is created, no consumption happens) and corrupt the audit trail.
+      const rawAbs = Math.abs(input.quantity);
+      if (rawAbs === 0) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Quantity must be non-zero',
+        });
+      }
+      const quantity =
+        adjustmentType === 'stock_write_off' ? -rawAbs : rawAbs;
 
       // Get current product
       const product = await prisma.product.findUnique({
@@ -1126,54 +1141,67 @@ export const productRouter = router({
       return result;
     }),
 
-  // Admin: Process stock (convert raw materials to processed products)
+  // Admin: Process stock (convert raw materials to processed products).
+  // Supports converting one source into N targets in a single atomic operation.
   processStock: requireAnyPermission(['products:adjust_stock', 'inventory:adjust'])
     .input(
       z.object({
         sourceProductId: z.string(),
-        targetProductId: z.string(),
         sourceBatchId: z.string().optional(), // If provided, consume from this specific batch instead of FIFO
         sourceQuantity: z.number().positive(), // Raw material to consume (input quantity)
-        targetOutputQuantity: z.number().positive(), // Desired output quantity (processed goods)
-        lossPercentage: z.number().min(0).max(100).optional(), // Processing loss percentage (calculated if not provided)
-        costPerUnit: z.number().int().positive(), // In cents - cost for target product
-        expiryDate: z.date().optional(),
+        targets: z
+          .array(
+            z.object({
+              productId: z.string(),
+              outputQuantity: z.number().positive(),
+              costPerUnit: z.number().int().positive(), // In cents
+              expiryDate: z.date().optional(),
+            })
+          )
+          .min(1),
         notes: z.string().optional(),
       })
         .refine(
-          (data) => {
-            // Source and target must be different
-            return data.sourceProductId !== data.targetProductId;
-          },
+          (data) => !data.targets.some((t) => t.productId === data.sourceProductId),
           {
             message: 'Source and target products must be different',
-            path: ['targetProductId'],
+            path: ['targets'],
           }
         )
         .refine(
           (data) => {
-            // Output cannot exceed input
-            return data.targetOutputQuantity <= data.sourceQuantity;
+            const ids = data.targets.map((t) => t.productId);
+            return new Set(ids).size === ids.length;
           },
           {
-            message: 'Output quantity cannot exceed raw material input',
-            path: ['targetOutputQuantity'],
+            message: 'Target products must be unique',
+            path: ['targets'],
+          }
+        )
+        .refine(
+          (data) => {
+            const totalOutput = data.targets.reduce((sum, t) => sum + t.outputQuantity, 0);
+            return totalOutput <= data.sourceQuantity;
+          },
+          {
+            message: 'Total output quantity cannot exceed raw material input',
+            path: ['targets'],
           }
         )
     )
     .mutation(async ({ input, ctx }) => {
-      const { sourceProductId, targetProductId, sourceBatchId, sourceQuantity, targetOutputQuantity, lossPercentage: inputLossPercentage, costPerUnit, expiryDate, notes } = input;
+      const { sourceProductId, sourceBatchId, sourceQuantity, targets, notes } = input;
 
       // Use transaction to process stock atomically - ALL validation inside transaction
       const result = await prisma.$transaction(async (tx) => {
-        // STEP 1: Get both products INSIDE transaction (prevents TOCTOU)
-        const [sourceProduct, targetProduct] = await Promise.all([
-          tx.product.findUnique({
-            where: { id: sourceProductId },
-            include: { categoryRelation: true },
-          }),
-          tx.product.findUnique({ where: { id: targetProductId } }),
-        ]);
+        // STEP 1: Get source + all target products INSIDE transaction (prevents TOCTOU)
+        const sourceProduct = await tx.product.findUnique({
+          where: { id: sourceProductId },
+          include: { categoryRelation: true },
+        });
+        const targetProducts = await Promise.all(
+          targets.map((t) => tx.product.findUnique({ where: { id: t.productId } }))
+        );
 
         if (!sourceProduct) {
           throw new TRPCError({
@@ -1182,11 +1210,13 @@ export const productRouter = router({
           });
         }
 
-        if (!targetProduct) {
-          throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: 'Target product not found',
-          });
+        for (let i = 0; i < targetProducts.length; i++) {
+          if (!targetProducts[i]) {
+            throw new TRPCError({
+              code: 'NOT_FOUND',
+              message: `Target product not found: ${targets[i]!.productId}`,
+            });
+          }
         }
 
         // Block subproducts — they derive virtual stock from parent, not from Process Stock
@@ -1196,21 +1226,22 @@ export const productRouter = router({
             message: 'Cannot use a subproduct as source in Process Stock. Use the parent product instead.',
           });
         }
-        if (targetProduct.parentProductId) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'Cannot use a subproduct as target in Process Stock. Use the parent product instead.',
-          });
+        for (const target of targetProducts) {
+          if (target!.parentProductId) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: 'Cannot use a subproduct as target in Process Stock. Use the parent product instead.',
+            });
+          }
         }
 
-        // STEP 2: Use sourceQuantity directly (provided by user)
-        // Calculate loss percentage if not provided: ((input - output) / input) * 100
-        const calculatedLoss = sourceQuantity > 0 
-          ? ((sourceQuantity - targetOutputQuantity) / sourceQuantity) * 100 
-          : 0;
-        const lossPercentage = inputLossPercentage ?? calculatedLoss;
+        // STEP 2: Compute totals & loss percentage
+        const totalOutputQty = targets.reduce((sum, t) => sum + t.outputQuantity, 0);
+        const lossPercentage =
+          sourceQuantity > 0
+            ? ((sourceQuantity - totalOutputQty) / sourceQuantity) * 100
+            : 0;
 
-        // Validate loss percentage
         if (lossPercentage < 0 || lossPercentage > 100) {
           throw new TRPCError({
             code: 'BAD_REQUEST',
@@ -1218,10 +1249,8 @@ export const productRouter = router({
           });
         }
 
-        // Use sourceQuantity directly as the raw material to consume
         const requiredRawMaterial = parseFloat(sourceQuantity.toFixed(2));
 
-        // Validate source has enough stock
         if (sourceProduct.currentStock < requiredRawMaterial) {
           throw new TRPCError({
             code: 'BAD_REQUEST',
@@ -1229,32 +1258,24 @@ export const productRouter = router({
           });
         }
 
-        // Output quantity is the target output quantity requested
-        const outputQty = targetOutputQuantity;
-
-        // Validate output is not zero
-        if (outputQty <= 0) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'Output quantity must be greater than zero.',
-          });
-        }
-
-        // STEP 2.5: Generate batch number for processing
+        // STEP 2.5: Single batch number shared across the whole conversion (one source + N targets)
         const { generateBatchNumber } = await import('../services/batch-number');
         const batchNumber = await generateBatchNumber(tx, 'processing');
 
-        // STEP 3: Create source InventoryTransaction (consumption)
+        // STEP 3: Create source InventoryTransaction (single consumption row)
+        const targetSummary = targetProducts
+          .map((t) => `${t!.name} (${t!.sku})`)
+          .join(', ');
         const sourceTransaction = await tx.inventoryTransaction.create({
           data: {
             productId: sourceProductId,
             type: 'adjustment',
-            adjustmentType: 'processing', // Processing/transformation adjustment
+            adjustmentType: 'processing',
             quantity: -requiredRawMaterial,
             previousStock: sourceProduct.currentStock,
             newStock: sourceProduct.currentStock - requiredRawMaterial,
             referenceType: 'manual',
-            notes: `Processed to ${targetProduct.name} (${targetProduct.sku})${notes ? ' - ' + notes : ''}`,
+            notes: `Processed to ${targetSummary}${notes ? ' - ' + notes : ''}`,
             createdBy: ctx.userId || 'system',
             batchNumber,
           },
@@ -1263,7 +1284,6 @@ export const productRouter = router({
         // STEP 4: Consume from source batches — specific batch or FIFO
         let consumptionResult;
         if (sourceBatchId) {
-          // Validate batch belongs to source product
           const batch = await tx.inventoryBatch.findUnique({ where: { id: sourceBatchId } });
           if (!batch || batch.productId !== sourceProductId) {
             throw new TRPCError({
@@ -1299,102 +1319,115 @@ export const productRouter = router({
         // STEP 5: Sync source product stock from batch sums (defensive)
         const { syncProductCurrentStock } = await import('../services/inventory-batch');
         const syncedSourceStock = await syncProductCurrentStock(sourceProductId, tx);
-
-        // Cascade to source subproducts
         await updateSubproductStocks(sourceProductId, syncedSourceStock, sourceProduct.estimatedLossPercentage, tx);
 
-        // STEP 6: Create target InventoryTransaction (receipt)
-        const targetTransaction = await tx.inventoryTransaction.create({
-          data: {
-            productId: targetProductId,
-            type: 'adjustment',
-            adjustmentType: 'processing',
-            quantity: outputQty,
-            previousStock: targetProduct.currentStock,
-            newStock: targetProduct.currentStock + outputQty,
-            referenceType: 'manual',
-            costPerUnit: costPerUnit,
-            expiryDate: expiryDate || null,
-            notes: `Processed from ${sourceProduct.name} (${sourceProduct.sku})${notes ? ' - ' + notes : ''}`,
-            createdBy: ctx.userId || 'system',
-            batchNumber,
-          },
-        });
+        // STEP 6+7: For each target, create an InventoryTransaction + InventoryBatch
+        const targetResults = await Promise.all(
+          targets.map(async (target, idx) => {
+            const product = targetProducts[idx]!;
+            const targetTx = await tx.inventoryTransaction.create({
+              data: {
+                productId: target.productId,
+                type: 'adjustment',
+                adjustmentType: 'processing',
+                quantity: target.outputQuantity,
+                previousStock: product.currentStock,
+                newStock: product.currentStock + target.outputQuantity,
+                referenceType: 'manual',
+                costPerUnit: target.costPerUnit,
+                expiryDate: target.expiryDate ?? null,
+                notes: `Processed from ${sourceProduct.name} (${sourceProduct.sku})${notes ? ' - ' + notes : ''}`,
+                createdBy: ctx.userId || 'system',
+                batchNumber,
+              },
+            });
 
-        // STEP 7: Create InventoryBatch for target product
-        await tx.inventoryBatch.create({
-          data: {
-            productId: targetProductId,
-            initialQuantity: outputQty,
-            quantityRemaining: outputQty,
-            costPerUnit: costPerUnit,
-            receivedAt: new Date(),
-            expiryDate: expiryDate || null,
-            receiveTransactionId: targetTransaction.id,
-            notes: `Processed from ${sourceProduct.name} - Source COGS: $${(consumptionResult.totalCost / 100).toFixed(2)}`,
-            batchNumber,
-          },
-        });
+            await tx.inventoryBatch.create({
+              data: {
+                productId: target.productId,
+                initialQuantity: target.outputQuantity,
+                quantityRemaining: target.outputQuantity,
+                costPerUnit: target.costPerUnit,
+                receivedAt: new Date(),
+                expiryDate: target.expiryDate ?? null,
+                receiveTransactionId: targetTx.id,
+                notes: `Processed from ${sourceProduct.name} - Source COGS: $${(consumptionResult.totalCost / 100).toFixed(2)}`,
+                batchNumber,
+              },
+            });
 
-        // STEP 8: Sync target product stock from batch sums (defensive)
-        const syncedTargetStock = await syncProductCurrentStock(targetProductId, tx);
+            // STEP 8: Sync target product stock from batch sums (defensive)
+            const syncedTargetStock = await syncProductCurrentStock(target.productId, tx);
+            await updateSubproductStocks(target.productId, syncedTargetStock, product.estimatedLossPercentage, tx);
 
-        // Cascade to target subproducts
-        await updateSubproductStocks(targetProductId, syncedTargetStock, targetProduct.estimatedLossPercentage, tx);
+            return {
+              transaction: targetTx,
+              product,
+              outputQuantity: target.outputQuantity,
+            };
+          })
+        );
 
         return {
           sourceTransaction,
-          targetTransaction,
           quantityProcessed: requiredRawMaterial,
-          quantityProduced: outputQty,
+          totalOutputQty,
           lossPercentage,
           sourceCOGS: consumptionResult.totalCost,
           expiryWarnings: consumptionResult.expiryWarnings,
           sourceProduct,
-          targetProduct,
+          targetResults,
+          batchNumber,
         };
       });
 
-      // Audit logs for both products (outside transaction - non-critical)
-      await Promise.all([
+      // Audit logs (outside transaction - non-critical)
+      const auditPromises: Promise<unknown>[] = [
         logStockAdjustment(ctx.userId, undefined, ctx.userRole, ctx.userName, sourceProductId, {
           sku: result.sourceProduct.sku,
           adjustmentType: 'processing',
           previousStock: result.sourceProduct.currentStock,
           newStock: result.sourceProduct.currentStock - result.quantityProcessed,
           quantity: -result.quantityProcessed,
-          notes: `Processed to ${result.targetProduct.name}`,
+          notes: `Processed to ${result.targetResults.map((r) => r.product.name).join(', ')}`,
         }).catch((error) => {
           console.error('Audit log failed for source product:', error);
         }),
-        logStockAdjustment(ctx.userId, undefined, ctx.userRole, ctx.userName, targetProductId, {
-          sku: result.targetProduct.sku,
-          adjustmentType: 'processing',
-          previousStock: result.targetProduct.currentStock,
-          newStock: result.targetProduct.currentStock + result.quantityProduced,
-          quantity: result.quantityProduced,
-          notes: `Processed from ${result.sourceProduct.name}`,
-        }).catch((error) => {
-          console.error('Audit log failed for target product:', error);
-        }),
-      ]);
+      ];
+      for (const r of result.targetResults) {
+        auditPromises.push(
+          logStockAdjustment(ctx.userId, undefined, ctx.userRole, ctx.userName, r.product.id, {
+            sku: r.product.sku,
+            adjustmentType: 'processing',
+            previousStock: r.product.currentStock,
+            newStock: r.product.currentStock + r.outputQuantity,
+            quantity: r.outputQuantity,
+            notes: `Processed from ${result.sourceProduct.name}`,
+          }).catch((error) => {
+            console.error('Audit log failed for target product:', error);
+          })
+        );
+      }
+      await Promise.all(auditPromises);
 
       return {
         success: true,
+        batchNumber: result.batchNumber,
         sourceProduct: {
           id: result.sourceProduct.id,
           name: result.sourceProduct.name,
           sku: result.sourceProduct.sku,
           newStock: result.sourceProduct.currentStock - result.quantityProcessed,
         },
-        targetProduct: {
-          id: result.targetProduct.id,
-          name: result.targetProduct.name,
-          sku: result.targetProduct.sku,
-          newStock: result.targetProduct.currentStock + result.quantityProduced,
-        },
+        targets: result.targetResults.map((r) => ({
+          id: r.product.id,
+          name: r.product.name,
+          sku: r.product.sku,
+          newStock: r.product.currentStock + r.outputQuantity,
+          outputQuantity: r.outputQuantity,
+        })),
         quantityProcessed: result.quantityProcessed,
-        quantityProduced: result.quantityProduced,
+        totalOutputQty: result.totalOutputQty,
         lossPercentage: result.lossPercentage,
         sourceCOGS: result.sourceCOGS,
         expiryWarnings: result.expiryWarnings,

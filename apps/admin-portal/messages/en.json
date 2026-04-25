@@ -1263,6 +1263,7 @@
       "adjustmentType": "Adjustment Type",
       "quantity": "Quantity",
       "quantityHint": "Enter positive to add stock, negative to reduce",
+      "writeOffQuantityHint": "Enter the positive amount to write off — the system will deduct it from stock",
       "notes": "Notes",
       "notesPlaceholder": "Enter reason for adjustment (required)",
       "currentStock": "Current Stock",
@@ -1321,7 +1322,8 @@
       "stockInDateRequired": "Stock in date is required when receiving stock",
       "stockInDateFuture": "Stock in date cannot be in the future",
       "vehicleTemperatureRange": "Vehicle temperature must be between -30°C and 25°C",
-      "supplierInvoiceRequired": "Supplier invoice number is required when receiving stock"
+      "supplierInvoiceRequired": "Supplier invoice number is required when receiving stock",
+      "writeOffPositive": "Write-off quantity must be a positive amount"
     },
     "messages": {
       "success": "Stock adjusted successfully",
@@ -1355,6 +1357,9 @@
     "fields": {
       "sourceProduct": "Source Product",
       "targetProduct": "Target Product",
+      "targetProducts": "Target Products",
+      "targetIndex": "Target #{index}",
+      "suggestedMaterialCost": "Suggested material: ${amount}/unit",
       "sourceQuantity": "Raw Material Quantity",
       "sourceQuantityHint": "Amount of raw material to consume",
       "targetOutputQuantity": "Target Output Quantity",
@@ -1404,13 +1409,17 @@
       "title": "Conversion Preview",
       "source": "Source",
       "output": "Output",
+      "totalOutput": "Total Output",
+      "acrossTargets": "across {count} target(s)",
+      "totalMaterialCost": "Total material cost",
       "loss": "Loss",
       "yield": "Yield",
       "available": "Available"
     },
     "validation": {
       "sourceRequired": "Source product is required",
-      "targetRequired": "Target product is required",
+      "targetRequired": "Each target row needs a product",
+      "duplicateTarget": "Target products must be unique",
       "sameProduct": "Source and target must be different products",
       "quantityPositive": "Quantity must be greater than 0",
       "sourceQuantityRequired": "Raw material quantity is required",
@@ -1427,6 +1436,7 @@
     "messages": {
       "success": "Stock processed successfully",
       "successDetails": "Processed {processed} {sourceUnit} → {produced} {targetUnit}",
+      "successDetailsMulti": "Processed {processed} {sourceUnit} into {targetCount} target(s)",
       "error": "Failed to process stock"
     },
     "warnings": {
@@ -1435,7 +1445,8 @@
     },
     "buttons": {
       "processStock": "Process Stock",
-      "processing": "Processing..."
+      "processing": "Processing...",
+      "addTarget": "Add target product"
     }
   },
   "pricingDialog": {
@@ -3246,6 +3257,16 @@
         "noBatches": "No purchase batches from suppliers",
         "loading": "Loading batches..."
       },
+      "conversionBatches": {
+        "producedFrom": "Produced from conversion",
+        "consumedIn": "Consumed in conversion",
+        "batchNumber": "Conversion #",
+        "date": "Date",
+        "quantity": "Quantity",
+        "sourceCounterpart": "Source product",
+        "targetCounterpart": "Target product(s)",
+        "unknownCounterpart": "Counterpart not found"
+      },
       "batchTotal": "Batch Total",
       "mismatchWarning": "Mismatch: product shows {currentStock}",
       "reconcile": "Reconcile Stock",
@@ -3448,7 +3469,9 @@
       "notes": "Notes",
       "noNotes": "No notes",
       "performedBy": "Performed By",
-      "dateTime": "Date / Time"
+      "dateTime": "Date / Time",
+      "targetsBreakdown": "Targets Breakdown",
+      "targetProduct": "Target Product"
     },
     "writeOffHistory": {
       "title": "Stock Write-Off History",
@@ -3584,6 +3607,9 @@
       },
       "emptyState": "No processing records found",
       "emptyStateDescription": "No processing transactions match your filters",
+      "multiTarget": {
+        "summary": "{count} target products"
+      },
       "pagination": {
         "showing": "Showing {start}-{end} of {total} processing records",
         "previous": "Previous",

@@ -1263,6 +1263,7 @@
       "adjustmentType": "调整类型",
       "quantity": "数量",
       "quantityHint": "输入正数增加库存，负数减少库存",
+      "writeOffQuantityHint": "请输入要核销的正数数量——系统将从库存中扣减",
       "notes": "备注",
       "notesPlaceholder": "请输入调整原因（必填）",
       "currentStock": "当前库存",
@@ -1321,7 +1322,8 @@
       "stockInDateRequired": "收货时需要入库日期",
       "stockInDateFuture": "入库日期不能是未来日期",
       "vehicleTemperatureRange": "车辆温度必须在-30°C到25°C之间",
-      "supplierInvoiceRequired": "收货时必须填写供应商发票号"
+      "supplierInvoiceRequired": "收货时必须填写供应商发票号",
+      "writeOffPositive": "核销数量必须为正数"
     },
     "messages": {
       "success": "库存调整成功",
@@ -1355,6 +1357,9 @@
     "fields": {
       "sourceProduct": "源产品",
       "targetProduct": "目标产品",
+      "targetProducts": "目标产品",
+      "targetIndex": "目标 #{index}",
+      "suggestedMaterialCost": "建议原料成本：${amount}/单位",
       "sourceQuantity": "原材料数量",
       "sourceQuantityHint": "要消耗的原材料数量",
       "targetOutputQuantity": "目标产出数量",
@@ -1404,13 +1409,17 @@
       "title": "转换预览",
       "source": "源",
       "output": "输出",
+      "totalOutput": "总产出",
+      "acrossTargets": "覆盖 {count} 个目标",
+      "totalMaterialCost": "原料总成本",
       "loss": "损耗",
       "yield": "产量",
       "available": "可用"
     },
     "validation": {
       "sourceRequired": "源产品为必填项",
-      "targetRequired": "目标产品为必填项",
+      "targetRequired": "每行目标都需要选择产品",
+      "duplicateTarget": "目标产品不能重复",
       "sameProduct": "源产品和目标产品必须不同",
       "quantityPositive": "数量必须大于0",
       "sourceQuantityRequired": "原材料数量为必填项",
@@ -1427,6 +1436,7 @@
     "messages": {
       "success": "库存加工成功",
       "successDetails": "已加工 {processed} {sourceUnit} → {produced} {targetUnit}",
+      "successDetailsMulti": "已将 {processed} {sourceUnit} 加工成 {targetCount} 个目标产品",
       "error": "加工库存失败"
     },
     "warnings": {
@@ -1435,7 +1445,8 @@
     },
     "buttons": {
       "processStock": "加工库存",
-      "processing": "加工中..."
+      "processing": "加工中...",
+      "addTarget": "添加目标产品"
     }
   },
   "pricingDialog": {
@@ -3246,6 +3257,16 @@
         "noBatches": "无供应商采购批次",
         "loading": "加载批次中..."
       },
+      "conversionBatches": {
+        "producedFrom": "由加工产生",
+        "consumedIn": "在加工中消耗",
+        "batchNumber": "加工号",
+        "date": "日期",
+        "quantity": "数量",
+        "sourceCounterpart": "原料产品",
+        "targetCounterpart": "目标产品",
+        "unknownCounterpart": "未找到对应方"
+      },
       "batchTotal": "批次合计",
       "mismatchWarning": "不匹配：产品显示 {currentStock}",
       "reconcile": "库存对账",
@@ -3448,7 +3469,9 @@
       "notes": "备注",
       "noNotes": "无备注",
       "performedBy": "操作人",
-      "dateTime": "日期/时间"
+      "dateTime": "日期/时间",
+      "targetsBreakdown": "目标产品明细",
+      "targetProduct": "目标产品"
     },
     "writeOffHistory": {
       "title": "库存报废记录",
@@ -3584,6 +3607,9 @@
       },
       "emptyState": "未找到加工记录",
       "emptyStateDescription": "没有符合筛选条件的加工交易",
+      "multiTarget": {
+        "summary": "{count} 个目标产品"
+      },
       "pagination": {
         "showing": "显示 {start}-{end}，共 {total} 条加工记录",
         "previous": "上一页",

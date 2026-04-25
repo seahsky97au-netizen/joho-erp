@@ -332,6 +332,128 @@ function ProductBatchRows({
   );
 }
 
+function ProductConversionRows({
+  productId,
+  tBatches,
+  onProcessingBatchClick,
+}: {
+  productId: string;
+  tBatches: (key: string, values?: Record<string, string | number>) => string;
+  onProcessingBatchClick: (batchNumber: string) => void;
+}) {
+  const { data, isLoading } = api.inventory.getProductConversions.useQuery(
+    { productId },
+    { staleTime: 30_000 }
+  );
+
+  const formatDate = (date: string | Date) =>
+    new Date(date).toLocaleDateString('en-AU', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+
+  if (isLoading) {
+    return (
+      <TableRow className="bg-muted/30 hover:bg-muted/30">
+        <TableCell colSpan={8} className="py-3 pl-12">
+          <Skeleton className="h-4 w-48" />
+        </TableCell>
+      </TableRow>
+    );
+  }
+
+  if (!data) return null;
+  const { asTarget, asSource } = data;
+  if (asTarget.length === 0 && asSource.length === 0) return null;
+
+  const renderEntries = (
+    entries: typeof asTarget,
+    direction: 'producedFrom' | 'consumedIn'
+  ) => (
+    <>
+      <TableRow className="bg-muted/30 hover:bg-muted/30">
+        <TableCell />
+        <TableCell
+          colSpan={7}
+          className="pl-8 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+        >
+          {tBatches(`conversionBatches.${direction}`)}
+        </TableCell>
+      </TableRow>
+      <TableRow className="bg-muted/30 hover:bg-muted/30">
+        <TableCell />
+        <TableCell className="pl-8 text-xs font-medium text-muted-foreground">
+          {tBatches('conversionBatches.batchNumber')}
+        </TableCell>
+        <TableCell className="text-xs font-medium text-muted-foreground">
+          {tBatches('conversionBatches.date')}
+        </TableCell>
+        <TableCell className="text-right text-xs font-medium text-muted-foreground">
+          {tBatches('conversionBatches.quantity')}
+        </TableCell>
+        <TableCell
+          colSpan={3}
+          className="text-xs font-medium text-muted-foreground"
+        >
+          {direction === 'producedFrom'
+            ? tBatches('conversionBatches.sourceCounterpart')
+            : tBatches('conversionBatches.targetCounterpart')}
+        </TableCell>
+        <TableCell />
+      </TableRow>
+      {entries.map((entry) => (
+        <TableRow
+          key={`${direction}-${entry.batchNumber}`}
+          className="cursor-pointer bg-muted/30 hover:bg-muted/50"
+          onClick={(e) => {
+            e.stopPropagation();
+            onProcessingBatchClick(entry.batchNumber);
+          }}
+        >
+          <TableCell />
+          <TableCell className="pl-8">
+            <BatchLink
+              batchNumber={entry.batchNumber}
+              onClick={() => onProcessingBatchClick(entry.batchNumber)}
+            />
+          </TableCell>
+          <TableCell className="text-sm">{formatDate(entry.date)}</TableCell>
+          <TableCell className="text-right text-sm tabular-nums">
+            {entry.quantity.toFixed(1)}
+          </TableCell>
+          <TableCell colSpan={3} className="text-sm">
+            {entry.counterparts.length === 0 ? (
+              <span className="text-muted-foreground italic">
+                {tBatches('conversionBatches.unknownCounterpart')}
+              </span>
+            ) : (
+              <div className="flex flex-col gap-0.5">
+                {entry.counterparts.map((cp) => (
+                  <span key={cp.id}>
+                    {cp.name}{' '}
+                    <span className="text-muted-foreground">
+                      ({cp.sku}) — {cp.quantity.toFixed(1)} {cp.unit}
+                    </span>
+                  </span>
+                ))}
+              </div>
+            )}
+          </TableCell>
+          <TableCell />
+        </TableRow>
+      ))}
+    </>
+  );
+
+  return (
+    <>
+      {asTarget.length > 0 && renderEntries(asTarget, 'producedFrom')}
+      {asSource.length > 0 && renderEntries(asSource, 'consumedIn')}
+    </>
+  );
+}
+
 export function StockCountsTable({
   initialStatusFilter,
   initialSearch,
@@ -675,20 +797,30 @@ export function StockCountsTable({
                       </TableCell>
                     </TableRow>
                     {isExpanded && (
-                      <ProductBatchRows
-                        productId={product.id}
-                        parentCurrentStock={stockInfo.currentStock}
-                        tBatches={t}
-                        tExpiry={tExpiry}
-                        onBatchClick={(batchId) => {
-                          setSelectedBatchId(batchId);
-                          setShowBatchDialog(true);
-                        }}
-                        onProcessingBatchClick={(batchNumber) => {
-                          setSelectedProcessingBatchNumber(batchNumber);
-                          setShowProcessingDialog(true);
-                        }}
-                      />
+                      <>
+                        <ProductBatchRows
+                          productId={product.id}
+                          parentCurrentStock={stockInfo.currentStock}
+                          tBatches={t}
+                          tExpiry={tExpiry}
+                          onBatchClick={(batchId) => {
+                            setSelectedBatchId(batchId);
+                            setShowBatchDialog(true);
+                          }}
+                          onProcessingBatchClick={(batchNumber) => {
+                            setSelectedProcessingBatchNumber(batchNumber);
+                            setShowProcessingDialog(true);
+                          }}
+                        />
+                        <ProductConversionRows
+                          productId={product.id}
+                          tBatches={t}
+                          onProcessingBatchClick={(batchNumber) => {
+                            setSelectedProcessingBatchNumber(batchNumber);
+                            setShowProcessingDialog(true);
+                          }}
+                        />
+                      </>
                     )}
                   </Fragment>
                 );

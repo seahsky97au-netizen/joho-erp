@@ -171,13 +171,19 @@ export function StockAdjustmentDialog({
     },
   });
 
-  // Calculate new stock preview and effective quantity
+  // Calculate new stock preview and effective quantity.
+  // For stock_write_off, the user enters a positive amount in the input but the
+  // adjustment is always a deduction — flip the sign here so preview and submit agree.
   const { newStock, effectiveQuantity } = useMemo(() => {
     if (!selectedProduct) return { newStock: 0, effectiveQuantity: 0 };
 
-    const qty = parseFloat(quantity) || 0;
-    return { newStock: selectedProduct.currentStock + qty, effectiveQuantity: qty };
-  }, [selectedProduct, quantity]);
+    const raw = parseFloat(quantity) || 0;
+    const signed = adjustmentType === 'stock_write_off' ? -Math.abs(raw) : raw;
+    return {
+      newStock: selectedProduct.currentStock + signed,
+      effectiveQuantity: signed,
+    };
+  }, [selectedProduct, quantity, adjustmentType]);
 
   const isNegativeResult = newStock < 0;
   const quantityNum = effectiveQuantity;
@@ -191,6 +197,15 @@ export function StockAdjustmentDialog({
     if (!quantity || quantityNum === 0) {
       toast({
         title: t('validation.quantityRequired'),
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Write-off must be a positive amount (the dialog flips its sign on submit).
+    if (adjustmentType === 'stock_write_off' && parseFloat(quantity) <= 0) {
+      toast({
+        title: t('validation.writeOffPositive'),
         variant: 'destructive',
       });
       return;
@@ -660,6 +675,7 @@ export function StockAdjustmentDialog({
                 id="quantity"
                 type="number"
                 step="1"
+                min={adjustmentType === 'stock_write_off' ? '0' : undefined}
                 value={quantity}
                 onChange={(e) => setQuantity(e.target.value)}
                 placeholder="0"
@@ -667,7 +683,11 @@ export function StockAdjustmentDialog({
               />
               <span className="text-muted-foreground">{selectedProduct.unit}</span>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">{t('fields.quantityHint')}</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {adjustmentType === 'stock_write_off'
+                ? t('fields.writeOffQuantityHint')
+                : t('fields.quantityHint')}
+            </p>
           </div>
 
           {/* New Stock Preview */}

@@ -91,12 +91,12 @@ export function ProcessingRecordDialog({
           </div>
         ) : record ? (
           <div className="space-y-6">
-            {/* Source → Target Flow */}
+            {/* Source → Target(s) Flow */}
             <div className="p-4 bg-muted/50 rounded-lg">
               <p className="text-xs font-medium text-muted-foreground mb-3">
                 {t('processingFlow')}
               </p>
-              <div className="flex items-center gap-3">
+              <div className="flex items-start gap-3">
                 {/* Source */}
                 {record.source && (
                   <div className="flex-1 text-center p-3 rounded-md bg-destructive/10 border border-destructive/20">
@@ -108,15 +108,22 @@ export function ProcessingRecordDialog({
                     <p className="text-xs text-muted-foreground">{t('inputQuantity')}</p>
                   </div>
                 )}
-                <ArrowRight className="h-5 w-5 text-muted-foreground shrink-0" />
-                {/* Target */}
-                <div className="flex-1 text-center p-3 rounded-md bg-success/10 border border-success/20">
-                  <p className="text-sm font-medium">{record.target.productName}</p>
-                  <p className="text-xs text-muted-foreground">{record.target.productSku}</p>
-                  <p className="text-lg font-bold text-success mt-1">
-                    +{record.target.quantity} {record.target.productUnit}
-                  </p>
-                  <p className="text-xs text-muted-foreground">{t('outputQuantity')}</p>
+                <ArrowRight className="h-5 w-5 text-muted-foreground shrink-0 mt-6" />
+                {/* Targets */}
+                <div className="flex-1 space-y-2">
+                  {record.targets.map((target) => (
+                    <div
+                      key={target.id}
+                      className="text-center p-3 rounded-md bg-success/10 border border-success/20"
+                    >
+                      <p className="text-sm font-medium">{target.productName}</p>
+                      <p className="text-xs text-muted-foreground">{target.productSku}</p>
+                      <p className="text-lg font-bold text-success mt-1">
+                        +{target.quantity} {target.productUnit}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{t('outputQuantity')}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -139,25 +146,73 @@ export function ProcessingRecordDialog({
                   <p className="font-medium">{formatAUD(record.totalMaterialCost)}</p>
                 </div>
               </div>
-              {record.target.costPerUnit != null && (
-                <div className="flex items-center gap-3 text-sm">
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-muted-foreground">{t('outputCostPerUnit')}</p>
-                    <p className="font-medium">{formatAUD(record.target.costPerUnit)}</p>
-                  </div>
-                </div>
-              )}
-              {record.target.expiryDate && (
-                <div className="flex items-center gap-3 text-sm">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-muted-foreground">{t('outputExpiryDate')}</p>
-                    <p className="font-medium">{formatDate(record.target.expiryDate)}</p>
-                  </div>
-                </div>
-              )}
             </div>
+
+            {/* Per-target breakdown */}
+            {record.targets.length > 1 && (
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold">{t('targetsBreakdown')}</h4>
+                <div className="overflow-x-auto rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{t('targetProduct')}</TableHead>
+                        <TableHead className="text-right">{t('outputQuantity')}</TableHead>
+                        <TableHead className="text-right">{t('outputCostPerUnit')}</TableHead>
+                        <TableHead>{t('outputExpiryDate')}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {record.targets.map((target) => (
+                        <TableRow key={target.id}>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium text-sm">{target.productName}</p>
+                              <p className="text-xs text-muted-foreground">{target.productSku}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums text-sm">
+                            {target.quantity.toFixed(1)} {target.productUnit}
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums text-sm">
+                            {target.costPerUnit !== null ? formatAUD(target.costPerUnit) : '-'}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {target.expiryDate ? formatDate(target.expiryDate) : '-'}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            )}
+
+            {/* Single-target detail (only when there's exactly one target) */}
+            {record.targets.length === 1 && (
+              <div className="grid grid-cols-2 gap-4">
+                {record.targets[0]!.costPerUnit != null && (
+                  <div className="flex items-center gap-3 text-sm">
+                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="text-muted-foreground">{t('outputCostPerUnit')}</p>
+                      <p className="font-medium">
+                        {formatAUD(record.targets[0]!.costPerUnit!)}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {record.targets[0]!.expiryDate && (
+                  <div className="flex items-center gap-3 text-sm">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="text-muted-foreground">{t('outputExpiryDate')}</p>
+                      <p className="font-medium">{formatDate(record.targets[0]!.expiryDate!)}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Source Batches Consumed Table */}
             {record.batchConsumptions.length > 0 && (

@@ -227,6 +227,7 @@ export function ProcessingHistoryTable() {
               <TableBody>
                 {items.map((item) => {
                   const isExpanded = expandedRows.has(item.id);
+                  const firstTarget = item.targets[0];
                   return (
                     <Fragment key={item.id}>
                       <TableRow
@@ -259,10 +260,25 @@ export function ProcessingHistoryTable() {
                           )}
                         </TableCell>
                         <TableCell>
-                          <div>
-                            <p className="font-medium">{item.target.productName}</p>
-                            <p className="text-sm text-muted-foreground">{item.target.productSku}</p>
-                          </div>
+                          {item.targets.length === 1 && firstTarget ? (
+                            <div>
+                              <p className="font-medium">{firstTarget.productName}</p>
+                              <p className="text-sm text-muted-foreground">{firstTarget.productSku}</p>
+                            </div>
+                          ) : (
+                            <div>
+                              <p className="font-medium">
+                                {t('multiTarget.summary', { count: item.targets.length })}
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                {item.targets
+                                  .map((tg) => tg.productName)
+                                  .slice(0, 2)
+                                  .join(', ')}
+                                {item.targets.length > 2 ? '…' : ''}
+                              </p>
+                            </div>
+                          )}
                         </TableCell>
                         <TableCell className="text-right tabular-nums">
                           {item.source ? (
@@ -274,9 +290,15 @@ export function ProcessingHistoryTable() {
                           )}
                         </TableCell>
                         <TableCell className="text-right tabular-nums">
-                          <span className="text-success">
-                            +{item.target.quantity.toFixed(1)} {item.target.productUnit}
-                          </span>
+                          {item.targets.length === 1 && firstTarget ? (
+                            <span className="text-success">
+                              +{firstTarget.quantity.toFixed(1)} {firstTarget.productUnit}
+                            </span>
+                          ) : (
+                            <span className="text-success">
+                              +{item.totalOutputQuantity.toFixed(1)}
+                            </span>
+                          )}
                         </TableCell>
                         <TableCell className="text-right tabular-nums">
                           <span className={getLossColor(item.lossPercentage)}>
@@ -359,74 +381,108 @@ export function ProcessingHistoryTable() {
                                 )}
                               </div>
 
-                              {/* Right: Output Summary */}
+                              {/* Right: Targets Summary */}
                               <div>
                                 <h4 className="text-sm font-semibold mb-3">
                                   {t('detail.outputSummary')}
                                 </h4>
-                                <dl className="space-y-2 text-sm">
+                                <div className="space-y-3">
+                                  {item.targets.map((target) => (
+                                    <div
+                                      key={target.id}
+                                      className="rounded-md border p-3 bg-background"
+                                    >
+                                      <div className="flex items-start justify-between gap-2">
+                                        <div className="min-w-0 flex-1">
+                                          <p className="font-medium text-sm truncate">
+                                            {target.productName}
+                                          </p>
+                                          <p className="text-xs text-muted-foreground">
+                                            {target.productSku}
+                                          </p>
+                                        </div>
+                                        <span className="text-success font-semibold tabular-nums">
+                                          +{target.quantity.toFixed(1)} {target.productUnit}
+                                        </span>
+                                      </div>
+                                      <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                                        <dt className="text-muted-foreground">
+                                          {t('detail.outputCostPerUnit')}
+                                        </dt>
+                                        <dd className="text-right tabular-nums">
+                                          {target.costPerUnit !== null
+                                            ? formatAUD(target.costPerUnit)
+                                            : '-'}
+                                        </dd>
+                                        <dt className="text-muted-foreground">
+                                          {t('detail.outputExpiry')}
+                                        </dt>
+                                        <dd className="text-right">
+                                          {target.expiryDate
+                                            ? formatShortDate(target.expiryDate)
+                                            : '-'}
+                                        </dd>
+                                      </dl>
+                                      <div className="mt-2 flex justify-end">
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedTransaction({
+                                              id: target.id,
+                                              productId: target.productId,
+                                              productName: target.productName,
+                                              productSku: target.productSku,
+                                              productUnit: target.productUnit,
+                                              quantity: target.quantity,
+                                              previousStock: 0,
+                                              newStock: 0,
+                                              notes: target.notes ?? item.notes,
+                                            });
+                                            setShowEditDialog(true);
+                                          }}
+                                        >
+                                          <Pencil className="mr-2 h-3 w-3" />
+                                          {t('detail.edit')}
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+
+                                <dl className="mt-4 space-y-1 text-sm border-t pt-3">
                                   <div className="flex justify-between">
-                                    <dt className="text-muted-foreground">{t('detail.outputCostPerUnit')}</dt>
-                                    <dd className="font-medium tabular-nums">
-                                      {item.target.costPerUnit !== null
-                                        ? formatAUD(item.target.costPerUnit)
+                                    <dt className="text-muted-foreground">
+                                      {t('columns.lossPercentage')}
+                                    </dt>
+                                    <dd
+                                      className={`font-medium ${getLossColor(item.lossPercentage)}`}
+                                    >
+                                      {item.lossPercentage !== null
+                                        ? `${item.lossPercentage}%`
                                         : '-'}
                                     </dd>
                                   </div>
                                   <div className="flex justify-between">
-                                    <dt className="text-muted-foreground">{t('detail.outputExpiry')}</dt>
-                                    <dd className="font-medium">
-                                      {item.target.expiryDate
-                                        ? formatShortDate(item.target.expiryDate)
-                                        : '-'}
-                                    </dd>
-                                  </div>
-                                  <div className="flex justify-between">
-                                    <dt className="text-muted-foreground">{t('columns.lossPercentage')}</dt>
-                                    <dd className={`font-medium ${getLossColor(item.lossPercentage)}`}>
-                                      {item.lossPercentage !== null ? `${item.lossPercentage}%` : '-'}
-                                    </dd>
-                                  </div>
-                                  <div className="flex justify-between">
-                                    <dt className="text-muted-foreground">{t('detail.totalMaterialCost')}</dt>
+                                    <dt className="text-muted-foreground">
+                                      {t('detail.totalMaterialCost')}
+                                    </dt>
                                     <dd className="font-medium tabular-nums">
                                       {formatAUD(item.totalMaterialCost)}
                                     </dd>
                                   </div>
                                   {item.notes && (
                                     <div className="flex justify-between">
-                                      <dt className="text-muted-foreground">{t('detail.notes')}</dt>
+                                      <dt className="text-muted-foreground">
+                                        {t('detail.notes')}
+                                      </dt>
                                       <dd className="font-medium text-right max-w-[200px]">
                                         {item.notes}
                                       </dd>
                                     </div>
                                   )}
                                 </dl>
-
-                                <div className="mt-4">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setSelectedTransaction({
-                                        id: item.id,
-                                        productId: item.target.productId,
-                                        productName: item.target.productName,
-                                        productSku: item.target.productSku,
-                                        productUnit: item.target.productUnit,
-                                        quantity: item.target.quantity,
-                                        previousStock: 0,
-                                        newStock: 0,
-                                        notes: item.notes,
-                                      });
-                                      setShowEditDialog(true);
-                                    }}
-                                  >
-                                    <Pencil className="mr-2 h-3 w-3" />
-                                    {t('detail.edit')}
-                                  </Button>
-                                </div>
                               </div>
                             </div>
                           </TableCell>

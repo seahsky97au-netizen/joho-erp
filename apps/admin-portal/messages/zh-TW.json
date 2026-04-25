@@ -1263,6 +1263,7 @@
       "adjustmentType": "調整類型",
       "quantity": "數量",
       "quantityHint": "輸入正數增加庫存，負數減少庫存",
+      "writeOffQuantityHint": "請輸入要核銷的正數數量——系統將從庫存中扣減",
       "notes": "備註",
       "notesPlaceholder": "請輸入調整原因（必填）",
       "currentStock": "目前庫存",
@@ -1321,7 +1322,8 @@
       "stockInDateRequired": "收貨時需要入庫日期",
       "stockInDateFuture": "入庫日期不能是未來日期",
       "vehicleTemperatureRange": "車輛溫度必須在-30°C到25°C之間",
-      "supplierInvoiceRequired": "收貨時必須填寫供應商發票號"
+      "supplierInvoiceRequired": "收貨時必須填寫供應商發票號",
+      "writeOffPositive": "核銷數量必須為正數"
     },
     "messages": {
       "success": "庫存調整成功",
@@ -1355,6 +1357,9 @@
     "fields": {
       "sourceProduct": "來源產品",
       "targetProduct": "目標產品",
+      "targetProducts": "目標產品",
+      "targetIndex": "目標 #{index}",
+      "suggestedMaterialCost": "建議原料成本：${amount}/單位",
       "sourceQuantity": "原材料數量",
       "sourceQuantityHint": "要消耗的原材料數量",
       "targetOutputQuantity": "目標產出數量",
@@ -1404,13 +1409,17 @@
       "title": "轉換預覽",
       "source": "來源",
       "output": "輸出",
+      "totalOutput": "總產出",
+      "acrossTargets": "覆蓋 {count} 個目標",
+      "totalMaterialCost": "原料總成本",
       "loss": "損耗",
       "yield": "產量",
       "available": "可用"
     },
     "validation": {
       "sourceRequired": "來源產品為必填項",
-      "targetRequired": "目標產品為必填項",
+      "targetRequired": "每行目標都需要選擇產品",
+      "duplicateTarget": "目標產品不能重複",
       "sameProduct": "來源產品和目標產品必須不同",
       "quantityPositive": "數量必須大於0",
       "sourceQuantityRequired": "原材料數量為必填項",
@@ -1427,6 +1436,7 @@
     "messages": {
       "success": "庫存加工成功",
       "successDetails": "已加工 {processed} {sourceUnit} → {produced} {targetUnit}",
+      "successDetailsMulti": "已將 {processed} {sourceUnit} 加工成 {targetCount} 個目標產品",
       "error": "加工庫存失敗"
     },
     "warnings": {
@@ -1435,7 +1445,8 @@
     },
     "buttons": {
       "processStock": "加工庫存",
-      "processing": "加工中..."
+      "processing": "加工中...",
+      "addTarget": "新增目標產品"
     }
   },
   "pricingDialog": {
@@ -3246,6 +3257,16 @@
         "noBatches": "無供應商採購批次",
         "loading": "載入批次中..."
       },
+      "conversionBatches": {
+        "producedFrom": "由加工產生",
+        "consumedIn": "在加工中消耗",
+        "batchNumber": "加工號",
+        "date": "日期",
+        "quantity": "數量",
+        "sourceCounterpart": "原料產品",
+        "targetCounterpart": "目標產品",
+        "unknownCounterpart": "未找到對應方"
+      },
       "batchTotal": "批次合計",
       "mismatchWarning": "不匹配：產品顯示 {currentStock}",
       "reconcile": "庫存對帳",
@@ -3448,7 +3469,9 @@
       "notes": "備註",
       "noNotes": "無備註",
       "performedBy": "操作人",
-      "dateTime": "日期/時間"
+      "dateTime": "日期/時間",
+      "targetsBreakdown": "目標產品明細",
+      "targetProduct": "目標產品"
     },
     "writeOffHistory": {
       "title": "庫存報廢記錄",
@@ -3584,6 +3607,9 @@
       },
       "emptyState": "未找到加工記錄",
       "emptyStateDescription": "沒有符合篩選條件的加工交易",
+      "multiTarget": {
+        "summary": "{count} 個目標產品"
+      },
       "pagination": {
         "showing": "顯示 {start}-{end}，共 {total} 條加工記錄",
         "previous": "上一頁",

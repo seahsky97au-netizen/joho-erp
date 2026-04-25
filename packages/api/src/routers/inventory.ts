@@ -1338,11 +1338,15 @@ export const inventoryRouter = router({
     .query(async ({ input }) => {
       const { page, pageSize, sortBy, sortDirection, search, dateFrom, dateTo } = input;
 
-      // Build where clause for target transactions (qty > 0)
+      // Build where clause for target transactions (qty > 0).
+      // Pagination unit is one *conversion* (one batchNumber), not one target tx.
+      // Multi-target conversions yield N target rows sharing the same batchNumber;
+      // we dedupe to one logical row.
       const where: any = {
         type: 'adjustment',
         adjustmentType: 'processing',
         quantity: { gt: 0 },
+        batchNumber: { not: null },
       };
 
       if (search) {
@@ -1377,69 +1381,100 @@ export const inventoryRouter = router({
           break;
       }
 
-      // 1. Count target transactions for pagination
-      const totalCount = await prisma.inventoryTransaction.count({ where });
-
-      // 2. Fetch target transactions (paginated)
-      const targetTransactions = await prisma.inventoryTransaction.findMany({
+      // 1. Find ALL matching target transactions (just batchNumber + ordering keys).
+      const matchingTargets = await prisma.inventoryTransaction.findMany({
         where,
-        include: {
-          product: {
-            select: { id: true, name: true, sku: true, unit: true },
-          },
+        select: {
+          batchNumber: true,
+          createdAt: true,
+          product: { select: { name: true } },
         },
         orderBy,
-        skip: (page - 1) * pageSize,
-        take: pageSize,
       });
 
-      // 3. Fetch source transactions by matching batchNumber
-      const batchNumbers = targetTransactions
-        .map((tx) => tx.batchNumber)
-        .filter((bn): bn is string => bn !== null);
-
-      const sourceTransactions = batchNumbers.length > 0
-        ? await prisma.inventoryTransaction.findMany({
-            where: {
-              type: 'adjustment',
-              adjustmentType: 'processing',
-              quantity: { lt: 0 },
-              batchNumber: { in: batchNumbers },
-            },
-            include: {
-              product: {
-                select: { id: true, name: true, sku: true, unit: true },
-              },
-              batchConsumptions: {
-                include: {
-                  batch: {
-                    select: {
-                      id: true,
-                      batchNumber: true,
-                      expiryDate: true,
-                      costPerUnit: true,
-                      supplier: {
-                        select: { businessName: true },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          })
-        : [];
-
-      // Build a map of batchNumber -> source transaction
-      const sourceMap = new Map<string, (typeof sourceTransactions)[number]>();
-      for (const src of sourceTransactions) {
-        if (src.batchNumber) {
-          sourceMap.set(src.batchNumber, src);
+      // 2. Dedupe by batchNumber, preserving the chosen order.
+      const seen = new Set<string>();
+      const orderedBatchNumbers: string[] = [];
+      for (const tx of matchingTargets) {
+        if (tx.batchNumber && !seen.has(tx.batchNumber)) {
+          seen.add(tx.batchNumber);
+          orderedBatchNumbers.push(tx.batchNumber);
         }
       }
 
-      // Assemble paired events
-      const items = targetTransactions.map((target) => {
-        const source = target.batchNumber ? sourceMap.get(target.batchNumber) ?? null : null;
+      const totalCount = orderedBatchNumbers.length;
+      const pageBatchNumbers = orderedBatchNumbers.slice(
+        (page - 1) * pageSize,
+        page * pageSize
+      );
+
+      if (pageBatchNumbers.length === 0) {
+        return {
+          items: [],
+          totalCount,
+          page,
+          pageSize,
+          totalPages: Math.ceil(totalCount / pageSize),
+        };
+      }
+
+      // 3. Fetch ALL targets for these batches (multi-target may yield N rows per batch).
+      const allTargets = await prisma.inventoryTransaction.findMany({
+        where: {
+          type: 'adjustment',
+          adjustmentType: 'processing',
+          quantity: { gt: 0 },
+          batchNumber: { in: pageBatchNumbers },
+        },
+        include: {
+          product: { select: { id: true, name: true, sku: true, unit: true } },
+        },
+      });
+
+      // 4. Fetch sources for these batches.
+      const allSources = await prisma.inventoryTransaction.findMany({
+        where: {
+          type: 'adjustment',
+          adjustmentType: 'processing',
+          quantity: { lt: 0 },
+          batchNumber: { in: pageBatchNumbers },
+        },
+        include: {
+          product: { select: { id: true, name: true, sku: true, unit: true } },
+          batchConsumptions: {
+            include: {
+              batch: {
+                select: {
+                  id: true,
+                  batchNumber: true,
+                  expiryDate: true,
+                  costPerUnit: true,
+                  supplier: { select: { businessName: true } },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      const sourceByBatch = new Map<string, (typeof allSources)[number]>();
+      for (const s of allSources) {
+        if (s.batchNumber) sourceByBatch.set(s.batchNumber, s);
+      }
+      const targetsByBatch = new Map<string, typeof allTargets>();
+      for (const t of allTargets) {
+        if (!t.batchNumber) continue;
+        const list = targetsByBatch.get(t.batchNumber) ?? [];
+        list.push(t);
+        targetsByBatch.set(t.batchNumber, list);
+      }
+
+      // 5. Assemble one item per batchNumber (preserves page order).
+      const items = pageBatchNumbers.map((batchNumber) => {
+        const source = sourceByBatch.get(batchNumber) ?? null;
+        const targets = (targetsByBatch.get(batchNumber) ?? []).sort(
+          (a, b) => a.createdAt.getTime() - b.createdAt.getTime()
+        );
 
         const batchConsumptions = (source?.batchConsumptions ?? []).map((bc) => ({
           quantityConsumed: bc.quantityConsumed,
@@ -1457,15 +1492,16 @@ export const inventoryRouter = router({
 
         const totalMaterialCost = batchConsumptions.reduce((sum, bc) => sum + bc.totalCost, 0);
         const inputQty = source ? Math.abs(source.quantity) : null;
-        const outputQty = target.quantity;
+        const totalOutputQuantity = targets.reduce((sum, t) => sum + t.quantity, 0);
         const lossPercentage =
           inputQty !== null && inputQty > 0
-            ? Math.round(((inputQty - outputQty) / inputQty) * 1000) / 10
+            ? Math.round(((inputQty - totalOutputQuantity) / inputQty) * 1000) / 10
             : null;
 
+        const earliestTarget = targets[0];
         return {
-          id: target.id,
-          batchNumber: target.batchNumber,
+          id: batchNumber, // stable id per conversion
+          batchNumber,
           source: source
             ? {
                 productId: source.product.id,
@@ -1475,7 +1511,8 @@ export const inventoryRouter = router({
                 quantity: Math.abs(source.quantity),
               }
             : null,
-          target: {
+          targets: targets.map((target) => ({
+            id: target.id,
             productId: target.product.id,
             productName: target.product.name,
             productSku: target.product.sku,
@@ -1483,13 +1520,15 @@ export const inventoryRouter = router({
             quantity: target.quantity,
             costPerUnit: target.costPerUnit, // cents or null
             expiryDate: target.expiryDate,
-          },
+            notes: target.notes,
+          })),
+          totalOutputQuantity,
           lossPercentage,
           batchConsumptions,
           totalMaterialCost, // cents
-          notes: target.notes ?? source?.notes ?? null,
-          createdAt: target.createdAt,
-          createdBy: target.createdBy || 'system',
+          notes: source?.notes ?? earliestTarget?.notes ?? null,
+          createdAt: earliestTarget?.createdAt ?? source?.createdAt ?? new Date(),
+          createdBy: earliestTarget?.createdBy || source?.createdBy || 'system',
         };
       });
 
@@ -1511,8 +1550,8 @@ export const inventoryRouter = router({
     .query(async ({ input }) => {
       const { batchNumber } = input;
 
-      // Find target transaction (qty > 0, processing, matching batchNumber)
-      const target = await prisma.inventoryTransaction.findFirst({
+      // Fetch all targets for this batch (multi-target conversions yield N targets)
+      const targets = await prisma.inventoryTransaction.findMany({
         where: {
           type: 'adjustment',
           adjustmentType: 'processing',
@@ -1522,9 +1561,10 @@ export const inventoryRouter = router({
         include: {
           product: { select: { id: true, name: true, sku: true, unit: true } },
         },
+        orderBy: { createdAt: 'asc' },
       });
 
-      if (!target) return null;
+      if (targets.length === 0) return null;
 
       // Find paired source transaction (qty < 0)
       const source = await prisma.inventoryTransaction.findFirst({
@@ -1568,15 +1608,16 @@ export const inventoryRouter = router({
 
       const totalMaterialCost = batchConsumptions.reduce((sum, bc) => sum + bc.totalCost, 0);
       const inputQty = source ? Math.abs(source.quantity) : null;
-      const outputQty = target.quantity;
+      const totalOutputQuantity = targets.reduce((sum, t) => sum + t.quantity, 0);
       const lossPercentage =
         inputQty !== null && inputQty > 0
-          ? Math.round(((inputQty - outputQty) / inputQty) * 1000) / 10
+          ? Math.round(((inputQty - totalOutputQuantity) / inputQty) * 1000) / 10
           : null;
 
+      const firstTarget = targets[0]!;
       return {
-        id: target.id,
-        batchNumber: target.batchNumber,
+        id: batchNumber,
+        batchNumber,
         source: source
           ? {
               productId: source.product.id,
@@ -1586,7 +1627,8 @@ export const inventoryRouter = router({
               quantity: Math.abs(source.quantity),
             }
           : null,
-        target: {
+        targets: targets.map((target) => ({
+          id: target.id,
           productId: target.product.id,
           productName: target.product.name,
           productSku: target.product.sku,
@@ -1594,14 +1636,119 @@ export const inventoryRouter = router({
           quantity: target.quantity,
           costPerUnit: target.costPerUnit,
           expiryDate: target.expiryDate,
-        },
+          notes: target.notes,
+        })),
+        totalOutputQuantity,
         lossPercentage,
         batchConsumptions,
         totalMaterialCost,
-        notes: target.notes ?? source?.notes ?? null,
-        createdAt: target.createdAt,
-        createdBy: target.createdBy || 'system',
+        notes: source?.notes ?? firstTarget.notes ?? null,
+        createdAt: firstTarget.createdAt,
+        createdBy: firstTarget.createdBy || source?.createdBy || 'system',
       };
+    }),
+
+  /**
+   * Get conversion involvement for a product — returns conversions where the
+   * product appears as either the source (consumed) or the target (produced).
+   * Used by the Stock Count screen to surface PR-prefixed batches in both directions.
+   */
+  getProductConversions: requirePermission('inventory:view')
+    .input(z.object({ productId: z.string() }))
+    .query(async ({ input }) => {
+      const { productId } = input;
+
+      // Fetch all processing transactions touching this product.
+      const transactions = await prisma.inventoryTransaction.findMany({
+        where: {
+          productId,
+          type: 'adjustment',
+          adjustmentType: 'processing',
+          batchNumber: { not: null },
+        },
+        select: {
+          id: true,
+          quantity: true,
+          batchNumber: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      if (transactions.length === 0) {
+        return { asTarget: [], asSource: [] };
+      }
+
+      const batchNumbers = transactions
+        .map((tx) => tx.batchNumber)
+        .filter((bn): bn is string => bn !== null);
+
+      // Look up the counterpart side of each conversion (opposite-sign tx with same batchNumber).
+      const counterparts = await prisma.inventoryTransaction.findMany({
+        where: {
+          type: 'adjustment',
+          adjustmentType: 'processing',
+          batchNumber: { in: batchNumbers },
+          NOT: { productId },
+        },
+        select: {
+          quantity: true,
+          batchNumber: true,
+          product: {
+            select: { id: true, name: true, sku: true, unit: true },
+          },
+        },
+      });
+
+      // Group counterparts by batchNumber (multi-target conversions yield N targets per batch).
+      const counterpartsByBatch = new Map<string, typeof counterparts>();
+      for (const cp of counterparts) {
+        if (!cp.batchNumber) continue;
+        const list = counterpartsByBatch.get(cp.batchNumber) ?? [];
+        list.push(cp);
+        counterpartsByBatch.set(cp.batchNumber, list);
+      }
+
+      type Counterpart = {
+        id: string;
+        name: string;
+        sku: string;
+        unit: string;
+        quantity: number;
+      };
+      type Entry = {
+        batchNumber: string;
+        date: Date;
+        quantity: number;
+        counterparts: Counterpart[];
+      };
+
+      const asTarget: Entry[] = [];
+      const asSource: Entry[] = [];
+
+      for (const tx of transactions) {
+        if (!tx.batchNumber) continue;
+        const rawCounterparts = counterpartsByBatch.get(tx.batchNumber) ?? [];
+        const entry: Entry = {
+          batchNumber: tx.batchNumber,
+          date: tx.createdAt,
+          quantity: Math.abs(tx.quantity),
+          counterparts: rawCounterparts.map((cp) => ({
+            id: cp.product.id,
+            name: cp.product.name,
+            sku: cp.product.sku,
+            unit: cp.product.unit,
+            quantity: Math.abs(cp.quantity),
+          })),
+        };
+        if (tx.quantity > 0) {
+          asTarget.push(entry);
+        } else {
+          asSource.push(entry);
+        }
+      }
+
+      return { asTarget, asSource };
     }),
 
   /**
