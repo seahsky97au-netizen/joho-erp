@@ -306,11 +306,11 @@ export const customerRouter = router({
       }
 
       // Resolve coordinates for delivery address
-      let latitude = input.deliveryAddress.latitude ?? null;
-      let longitude = input.deliveryAddress.longitude ?? null;
+      let latitude: number | null = input.deliveryAddress.latitude ?? null;
+      let longitude: number | null = input.deliveryAddress.longitude ?? null;
 
-      // If coordinates not provided by frontend, try to geocode server-side
-      if (latitude === null || longitude === null) {
+      // If coordinates not provided by frontend (or are 0,0 poison values), try to geocode server-side
+      if (!latitude || !longitude || latitude === 0 || longitude === 0) {
         const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
         if (mapboxToken) {
           try {
@@ -335,7 +335,7 @@ export const customerRouter = router({
       }
 
       // Fallback to SuburbAreaMapping coordinates if geocoding didn't work
-      if ((latitude === null || longitude === null) && !input.deliveryAddress.areaId) {
+      if ((!latitude || !longitude) && !input.deliveryAddress.areaId) {
         const suburbMappingForCoords = await prisma.suburbAreaMapping.findFirst({
           where: {
             suburb: { equals: input.deliveryAddress.suburb, mode: 'insensitive' },
@@ -842,6 +842,8 @@ export const customerRouter = router({
           postcode: z.string(),
           areaId: z.string().optional(), // Manual area override
           deliveryInstructions: z.string().optional(),
+          latitude: z.number().optional(), // From frontend geocoding
+          longitude: z.number().optional(), // From frontend geocoding
         }),
         billingAddress: z
           .object({
@@ -950,6 +952,21 @@ export const customerRouter = router({
         areaName = area?.name ?? null;
       }
 
+      // Resolve coordinates: use frontend-provided values when valid, else geocode server-side.
+      let latitude: number | null | undefined = input.deliveryAddress.latitude;
+      let longitude: number | null | undefined = input.deliveryAddress.longitude;
+
+      if (!latitude || !longitude || latitude === 0 || longitude === 0) {
+        const coords = await geocodeAddressCoordinates({
+          street: input.deliveryAddress.street,
+          suburb: input.deliveryAddress.suburb,
+          state: input.deliveryAddress.state,
+          postcode: input.deliveryAddress.postcode,
+        });
+        latitude = coords.latitude;
+        longitude = coords.longitude;
+      }
+
       // Create customer
       const customer = await prisma.customer.create({
         data: {
@@ -969,6 +986,8 @@ export const customerRouter = router({
             areaId,
             areaName,
             deliveryInstructions: input.deliveryAddress.deliveryInstructions,
+            latitude,
+            longitude,
           },
           billingAddress: input.billingAddress
             ? { ...input.billingAddress, country: 'Australia' }
@@ -1756,8 +1775,13 @@ export const customerRouter = router({
           (input.deliveryAddress.street !== undefined && input.deliveryAddress.street !== currentAddress?.street) ||
           (input.deliveryAddress.suburb !== undefined && input.deliveryAddress.suburb !== currentAddress?.suburb);
 
-        // Handle geocoding if address changed but no valid coordinates provided
-        if (addressChanged) {
+        // Self-healing: also re-geocode when stored coordinates are missing or invalid (0,0).
+        const currentLat = currentAddress?.latitude as number | null | undefined;
+        const currentLng = currentAddress?.longitude as number | null | undefined;
+        const coordsInvalid = !currentLat || !currentLng || currentLat === 0 || currentLng === 0;
+
+        // Handle geocoding if address changed OR existing coords are missing/invalid
+        if (addressChanged || coordsInvalid) {
           let { latitude, longitude } = input.deliveryAddress;
 
           if (!latitude || !longitude || latitude === 0 || longitude === 0) {
@@ -1988,6 +2012,90 @@ export const customerRouter = router({
       });
 
       return customer;
+    }),
+
+  /**
+   * Admin: Re-run geocoding for an existing customer's stored delivery address.
+   * Useful when a customer was created without coordinates (e.g. before geocoding
+   * was wired into the create path) or after expanding SuburbAreaMapping coverage.
+   */
+  regeocodeAddress: requirePermission('customers:edit')
+    .input(z.object({ customerId: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      const resolvedCustomerId = await resolveCustomerId(input.customerId);
+
+      const customer = await prisma.customer.findUnique({
+        where: { id: resolvedCustomerId },
+      });
+
+      if (!customer) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Customer not found',
+        });
+      }
+
+      const addr = customer.deliveryAddress;
+      if (!addr) {
+        throw new TRPCError({
+          code: 'UNPROCESSABLE_CONTENT',
+          message: 'Customer has no delivery address to geocode',
+        });
+      }
+
+      const previousLat = addr.latitude;
+      const previousLng = addr.longitude;
+
+      const coords = await geocodeAddressCoordinates({
+        street: addr.street,
+        suburb: addr.suburb,
+        state: addr.state,
+        postcode: addr.postcode,
+      });
+
+      if (!coords.latitude || !coords.longitude) {
+        throw new TRPCError({
+          code: 'UNPROCESSABLE_CONTENT',
+          message:
+            'Unable to geocode this address. Verify the address is correct or expand SuburbAreaMapping.',
+        });
+      }
+
+      const updated = await prisma.customer.update({
+        where: { id: resolvedCustomerId },
+        data: {
+          deliveryAddress: {
+            ...addr,
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+          },
+        },
+      });
+
+      await prisma.auditLog.create({
+        data: {
+          userId: ctx.userId,
+          action: 'update',
+          entity: 'customer',
+          entityId: updated.id,
+          changes: [
+            {
+              field: 'deliveryAddress.coordinates',
+              oldValue: { latitude: previousLat, longitude: previousLng },
+              newValue: { latitude: coords.latitude, longitude: coords.longitude },
+            },
+          ] as unknown as Array<{ field: string; oldValue: string | null; newValue: string | null }>,
+          metadata: {
+            actionType: 'regeocode_address',
+            businessName: updated.businessName,
+          },
+          timestamp: new Date(),
+        },
+      }).catch((error) => {
+        console.error('Failed to log address re-geocode:', error);
+      });
+
+      return { latitude: coords.latitude, longitude: coords.longitude };
     }),
 
   /**

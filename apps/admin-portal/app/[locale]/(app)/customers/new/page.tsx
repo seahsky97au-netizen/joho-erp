@@ -104,6 +104,8 @@ export default function NewCustomerPage() {
       postcode: '',
       areaId: undefined as string | undefined, // Dynamic area ID from API
       deliveryInstructions: '',
+      latitude: undefined as number | undefined,
+      longitude: undefined as number | undefined,
     },
     billingAddress: {
       street: '',
@@ -1044,6 +1046,8 @@ export default function NewCustomerPage() {
                         state: address.state,
                         postcode: address.postcode,
                         areaId: undefined, // Reset area to trigger auto-lookup
+                        latitude: address.latitude || undefined,
+                        longitude: address.longitude || undefined,
                       },
                     });
                     clearAddressError('delivery.street');

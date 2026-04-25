@@ -3744,6 +3744,14 @@
       "assignedTo": "Assigned to",
       "willAutoAssignTo": "Will be auto-assigned to {area}"
     },
+    "coordinates": {
+      "label": "Coordinates",
+      "missing": "No coordinates",
+      "missingTooltip": "Geocoding has not resolved a location for this address. Delivery routing may fail until this is fixed.",
+      "regeocode": "Re-geocode address",
+      "regeocodeSuccess": "Address re-geocoded successfully",
+      "regeocodeFailed": "Could not geocode this address. Please verify the address is correct."
+    },
     "billingAddress": {
       "title": "Billing Address",
       "street": "Street Address",

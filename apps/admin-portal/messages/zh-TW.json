@@ -3744,6 +3744,14 @@
       "assignedTo": "已分配至",
       "willAutoAssignTo": "將自動分配至 {area}"
     },
+    "coordinates": {
+      "label": "座標",
+      "missing": "缺少座標",
+      "missingTooltip": "尚未為此地址解析地理位置。在修復前，配送路線可能會失敗。",
+      "regeocode": "重新進行地理編碼",
+      "regeocodeSuccess": "地址重新地理編碼成功",
+      "regeocodeFailed": "無法對該地址進行地理編碼。請確認地址是否正確。"
+    },
     "billingAddress": {
       "title": "帳單地址",
       "street": "街道地址",

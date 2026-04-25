@@ -11,8 +11,8 @@ export interface AddressResult {
   suburb: string;
   state: string;
   postcode: string;
-  latitude: number;
-  longitude: number;
+  latitude?: number;
+  longitude?: number;
   fullAddress: string;
 }
 
@@ -140,8 +140,8 @@ export function AddressSearch({
         suburb: manualSuburb,
         state: manualState,
         postcode: manualPostcode,
-        latitude: 0, // Will be geocoded by backend
-        longitude: 0, // Will be geocoded by backend
+        latitude: undefined,
+        longitude: undefined,
         fullAddress: `${manualStreet}, ${manualSuburb}, ${manualState} ${manualPostcode}`,
       });
     }

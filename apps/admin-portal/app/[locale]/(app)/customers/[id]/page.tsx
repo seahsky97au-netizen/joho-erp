@@ -153,6 +153,8 @@ export default function CustomerDetailPage({ params }: PageProps) {
     postcode: '',
     deliveryInstructions: '',
     areaId: undefined as string | undefined,
+    latitude: undefined as number | undefined,
+    longitude: undefined as number | undefined,
     // Business info
     businessName: '',
     tradingName: '',
@@ -469,6 +471,25 @@ export default function CustomerDetailPage({ params }: PageProps) {
     },
   });
 
+  // Re-geocode address mutation (admin recovery for customers with missing coordinates)
+  const regeocodeMutation = api.customer.regeocodeAddress.useMutation({
+    onSuccess: (data) => {
+      toast({
+        title: t('coordinates.regeocodeSuccess'),
+        description: `${data.latitude.toFixed(4)}, ${data.longitude.toFixed(4)}`,
+      });
+      void utils.customer.getById.invalidate({ customerId: resolvedParams.id });
+    },
+    onError: (error) => {
+      console.error('Re-geocode error:', error.message);
+      toast({
+        title: t('coordinates.regeocodeFailed'),
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
   const handleSuspend = () => {
     if (!suspendReason.trim() || suspendReason.length < 10) {
       toast({
@@ -553,6 +574,8 @@ export default function CustomerDetailPage({ params }: PageProps) {
       postcode: customer.deliveryAddress.postcode,
       deliveryInstructions: customer.deliveryAddress.deliveryInstructions || '',
       areaId: customer.deliveryAddress.areaId || undefined,
+      latitude: customer.deliveryAddress.latitude ?? undefined,
+      longitude: customer.deliveryAddress.longitude ?? undefined,
       // Business info
       businessName: customer.businessName,
       tradingName: customer.tradingName || '',
@@ -617,6 +640,8 @@ export default function CustomerDetailPage({ params }: PageProps) {
         postcode: editForm.postcode,
         deliveryInstructions: editForm.deliveryInstructions || undefined,
         areaId: editForm.areaId || undefined,
+        latitude: editForm.latitude || undefined,
+        longitude: editForm.longitude || undefined,
       },
       businessInfo: {
         businessName: editForm.businessName,
@@ -1162,6 +1187,8 @@ export default function CustomerDetailPage({ params }: PageProps) {
                         state: address.state,
                         postcode: address.postcode,
                         areaId: undefined, // Reset area to trigger auto-lookup
+                        latitude: address.latitude || undefined,
+                        longitude: address.longitude || undefined,
                       });
                     }}
                     defaultValues={{
@@ -1243,6 +1270,41 @@ export default function CustomerDetailPage({ params }: PageProps) {
                       <AreaBadge area={customer.deliveryAddress.areaName} />
                     </div>
                   )}
+                  {(() => {
+                    const lat = customer.deliveryAddress.latitude;
+                    const lng = customer.deliveryAddress.longitude;
+                    const hasValidCoords = !!lat && !!lng && lat !== 0 && lng !== 0;
+                    return (
+                      <div className="mt-3 flex items-center gap-2 flex-wrap">
+                        {hasValidCoords ? (
+                          <span className="text-xs text-muted-foreground">
+                            {t('coordinates.label')}: {lat!.toFixed(4)}, {lng!.toFixed(4)}
+                          </span>
+                        ) : (
+                          <Badge variant="destructive" className="text-xs" title={t('coordinates.missingTooltip')}>
+                            {t('coordinates.missing')}
+                          </Badge>
+                        )}
+                        <Button
+                          type="button"
+                          variant={hasValidCoords ? 'ghost' : 'outline'}
+                          size="sm"
+                          className="h-7 px-2 text-xs"
+                          onClick={() =>
+                            regeocodeMutation.mutate({ customerId: resolvedParams.id })
+                          }
+                          disabled={regeocodeMutation.isPending}
+                        >
+                          {regeocodeMutation.isPending ? (
+                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                          ) : (
+                            <RefreshCw className="mr-1 h-3 w-3" />
+                          )}
+                          {t('coordinates.regeocode')}
+                        </Button>
+                      </div>
+                    );
+                  })()}
                   {customer.deliveryAddress.deliveryInstructions && (
                     <div className="mt-4">
                       <p className="text-sm text-muted-foreground">{t('address.deliveryInstructions')}</p>
