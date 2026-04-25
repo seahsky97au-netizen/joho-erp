@@ -3,7 +3,7 @@ import { router, requirePermission } from "../trpc";
 import { prisma, Prisma } from "@joho-erp/database";
 import { TRPCError } from "@trpc/server";
 import { clerkClient } from "@clerk/nextjs/server";
-import { getTodayAsUTCMidnight, toUTCMidnightForMelbourneDay, formatMelbourneDateForDisplay } from "@joho-erp/shared";
+import { getTodayAsUTCMidnight, toUTCMidnightForMelbourneDay, formatMelbourneDateForDisplay, getUTCDayRangeForMelbourneDay } from "@joho-erp/shared";
 
 /**
  * Get user display name and email for audit trail
@@ -69,16 +69,14 @@ export const packingRouter = router({
       const deliveryDate = new Date(input.deliveryDate);
 
       // Get all orders for the delivery date with status 'confirmed' or 'packing'
-      // Frontend sends local midnight - use it as-is for start
-      // End of day is 24 hours minus 1ms from start
-      const startOfDay = new Date(deliveryDate);
-      const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000 - 1);
+      // Use Melbourne-aware day boundaries to avoid DST/UTC drift.
+      const { start: startOfDay, end: endOfDay } = getUTCDayRangeForMelbourneDay(deliveryDate);
 
       const orders = await prisma.order.findMany({
         where: {
           requestedDeliveryDate: {
             gte: startOfDay,
-            lte: endOfDay,
+            lt: endOfDay,
           },
           status: {
             in: ['confirmed', 'packing'],
@@ -2024,17 +2022,14 @@ export const packingRouter = router({
     .query(async ({ input, ctx }) => {
       const deliveryDate = new Date(input.deliveryDate);
 
-      // Get all orders for the delivery date
-      // Frontend sends local midnight - use it as-is for start
-      // End of day is 24 hours minus 1ms from start
-      const startOfDay = new Date(deliveryDate);
-      const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000 - 1);
+      // Get all orders for the delivery date (Melbourne-aware boundaries)
+      const { start: startOfDay, end: endOfDay } = getUTCDayRangeForMelbourneDay(deliveryDate);
 
       // Build base where clause
       const where: Prisma.OrderWhereInput = {
         requestedDeliveryDate: {
           gte: startOfDay,
-          lte: endOfDay,
+          lt: endOfDay,
         },
         status: {
           in: ["confirmed", "packing", "ready_for_delivery"],
@@ -2329,8 +2324,7 @@ export const packingRouter = router({
     )
     .mutation(async ({ input, ctx }) => {
       const deliveryDate = new Date(input.deliveryDate);
-      const startOfDay = new Date(deliveryDate);
-      const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000 - 1);
+      const { start: startOfDay, end: endOfDay } = getUTCDayRangeForMelbourneDay(deliveryDate);
 
       const userDetails = await getUserDetails(ctx.userId ?? null);
       const now = new Date();
@@ -2339,7 +2333,7 @@ export const packingRouter = router({
         const orders = await tx.order.findMany({
           where: {
             id: { in: input.orderIdsInOrder },
-            requestedDeliveryDate: { gte: startOfDay, lte: endOfDay },
+            requestedDeliveryDate: { gte: startOfDay, lt: endOfDay },
             status: { in: ['confirmed', 'packing'] },
             deliveryAddress: { is: { areaId: input.areaId } },
           },
@@ -2385,7 +2379,7 @@ export const packingRouter = router({
 
         const existingLock = await tx.routeOptimization.findFirst({
           where: {
-            deliveryDate: { gte: startOfDay, lte: endOfDay },
+            deliveryDate: { gte: startOfDay, lt: endOfDay },
             areaId: input.areaId,
             routeType: 'packing',
           },
@@ -2437,12 +2431,11 @@ export const packingRouter = router({
     )
     .mutation(async ({ input }) => {
       const deliveryDate = new Date(input.deliveryDate);
-      const startOfDay = new Date(deliveryDate);
-      const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000 - 1);
+      const { start: startOfDay, end: endOfDay } = getUTCDayRangeForMelbourneDay(deliveryDate);
 
       const lockRecord = await prisma.routeOptimization.findFirst({
         where: {
-          deliveryDate: { gte: startOfDay, lte: endOfDay },
+          deliveryDate: { gte: startOfDay, lt: endOfDay },
           areaId: input.areaId,
           routeType: 'packing',
         },
@@ -2461,7 +2454,7 @@ export const packingRouter = router({
 
       const multiArea = await prisma.routeOptimization.findFirst({
         where: {
-          deliveryDate: { gte: startOfDay, lte: endOfDay },
+          deliveryDate: { gte: startOfDay, lt: endOfDay },
           areaId: null,
           routeType: 'packing',
         },

@@ -3,6 +3,7 @@ import { adminCaller, packerCaller } from '../../test-utils/create-test-caller';
 import { cleanAllData } from '../../test-utils/db-helpers';
 import { createTestProduct, createTestCustomer, createTestOrder } from '../../test-utils/factories';
 import { getPrismaClient } from '@joho-erp/database';
+import { getUTCDayRangeForMelbourneDay } from '@joho-erp/shared';
 
 describe('Manual Packing Sequence Override', () => {
   const prisma = getPrismaClient();
@@ -163,11 +164,10 @@ describe('Manual Packing Sequence Override', () => {
         orderIdsInOrder: [o2.id, o1.id],
       });
 
-      const startOfDay = new Date(deliveryDate);
-      const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000 - 1);
+      const { start: startOfDay, end: endOfDay } = getUTCDayRangeForMelbourneDay(deliveryDate);
       const lock = await prisma.routeOptimization.findFirst({
         where: {
-          deliveryDate: { gte: startOfDay, lte: endOfDay },
+          deliveryDate: { gte: startOfDay, lt: endOfDay },
           areaId: northArea.id,
           routeType: 'packing',
         },
@@ -185,7 +185,7 @@ describe('Manual Packing Sequence Override', () => {
       const o2 = await createOrderInArea(northArea);
 
       // Pre-existing per-area route record (e.g., from a prior optimization run)
-      const startOfDay = new Date(deliveryDate);
+      const { start: startOfDay } = getUTCDayRangeForMelbourneDay(deliveryDate);
       await prisma.routeOptimization.create({
         data: {
           deliveryDate: startOfDay,
@@ -272,7 +272,7 @@ describe('Manual Packing Sequence Override', () => {
       const caller = adminCaller();
 
       // Create the multi-area packing record (mirrors the optimizer's output)
-      const startOfDay = new Date(deliveryDate);
+      const { start: startOfDay } = getUTCDayRangeForMelbourneDay(deliveryDate);
       const multi = await prisma.routeOptimization.create({
         data: {
           deliveryDate: startOfDay,

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { TRPCError } from '@trpc/server';
 import { getPrismaClient } from '@joho-erp/database';
+import { getUTCDayRangeForMelbourneDay } from '@joho-erp/shared';
 import { adminCaller, customerCaller } from '../../test-utils/create-test-caller';
 import { cleanTransactionalData } from '../../test-utils/db-helpers';
 import { createTestProduct, createTestCustomer, createTestCompany } from '../../test-utils/factories';
@@ -218,5 +219,93 @@ describe('order.rescheduleDelivery', () => {
         newDeliveryDate: getFutureSunday(),
       })
     ).rejects.toMatchObject({ code: 'BAD_REQUEST' } satisfies Partial<TRPCError>);
+  });
+
+  it('clears stale packing/delivery sequences when rescheduling a confirmed order', async () => {
+    const customerCallerInst = customerCaller(CUSTOMER_CLERK_ID);
+    const adminCallerInst = adminCaller();
+
+    const originalDate = getSafeDeliveryDate(7);
+    const order = await customerCallerInst.order.create({
+      items: [{ productId: product.id, quantity: 1 }],
+      requestedDeliveryDate: originalDate,
+    });
+
+    // Simulate optimizer output: order has sequences for the OLD day
+    await prisma.order.update({
+      where: { id: order.id },
+      data: {
+        packing: {
+          areaPackingSequence: 3,
+          packedItems: [],
+        },
+        delivery: {
+          deliverySequence: 5,
+          areaDeliverySequence: 2,
+          routeId: 'old-route-id',
+          estimatedArrival: new Date(),
+        },
+      },
+    });
+
+    const newDate = getSafeDeliveryDate(21);
+    await adminCallerInst.order.rescheduleDelivery({
+      orderId: order.id,
+      newDeliveryDate: newDate,
+    });
+
+    const persisted = await prisma.order.findUnique({ where: { id: order.id } });
+    // Old-day delivery sequences must be cleared
+    expect(persisted?.delivery?.deliverySequence).toBeNull();
+    expect(persisted?.delivery?.areaDeliverySequence).toBeNull();
+    expect(persisted?.delivery?.routeId).toBeNull();
+    expect(persisted?.delivery?.estimatedArrival).toBeNull();
+    // Packing sequence is reassigned for the NEW day by assignPreliminaryPackingSequence
+    expect(persisted?.packing?.areaPackingSequence).toBe(1);
+  });
+
+  it('flags the old day\'s multi-area packing route for re-optimization', async () => {
+    const customerCallerInst = customerCaller(CUSTOMER_CLERK_ID);
+    const adminCallerInst = adminCaller();
+
+    const originalDate = getSafeDeliveryDate(7);
+    const order = await customerCallerInst.order.create({
+      items: [{ productId: product.id, quantity: 1 }],
+      requestedDeliveryDate: originalDate,
+    });
+
+    // Order has a packing sequence for the OLD day
+    await prisma.order.update({
+      where: { id: order.id },
+      data: {
+        packing: { areaPackingSequence: 1, packedItems: [] },
+      },
+    });
+
+    // Pre-existing optimized route for the OLD day (areaId=null = multi-area)
+    const { start: oldStart } = getUTCDayRangeForMelbourneDay(originalDate);
+    const oldRoute = await prisma.routeOptimization.create({
+      data: {
+        deliveryDate: oldStart,
+        routeType: 'packing',
+        areaId: null,
+        orderCount: 1,
+        totalDistance: 5,
+        totalDuration: 600,
+        routeGeometry: '{}',
+        waypoints: [],
+        optimizedAt: new Date(),
+        optimizedBy: 'system',
+        needsReoptimization: false,
+      },
+    });
+
+    await adminCallerInst.order.rescheduleDelivery({
+      orderId: order.id,
+      newDeliveryDate: getSafeDeliveryDate(21),
+    });
+
+    const refreshed = await prisma.routeOptimization.findUnique({ where: { id: oldRoute.id } });
+    expect(refreshed?.needsReoptimization).toBe(true);
   });
 });

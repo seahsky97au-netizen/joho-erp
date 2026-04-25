@@ -89,15 +89,14 @@ export async function optimizeDeliveryRoute(
     );
   }
 
-  // 2. Fetch orders for the delivery date
-  const startOfDay = new Date(deliveryDate);
-  const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000 - 1);
+  // 2. Fetch orders for the delivery date (Melbourne day boundaries)
+  const { start: startOfDay, end: endOfDay } = getUTCDayRangeForMelbourneDay(deliveryDate);
 
   const orders = await prisma.order.findMany({
     where: {
       requestedDeliveryDate: {
         gte: startOfDay,
-        lte: endOfDay,
+        lt: endOfDay,
       },
       status: {
         in: ["confirmed", "packing", "ready_for_delivery"],
@@ -107,6 +106,8 @@ export async function optimizeDeliveryRoute(
       id: true,
       orderNumber: true,
       deliveryAddress: true,
+      packing: true,
+      delivery: true,
     },
   });
 
@@ -330,25 +331,33 @@ export async function optimizeDeliveryRoute(
     },
   });
 
-  // 12. Update orders with sequences
+  // 12. Update orders with sequences — preserve in-progress packing state
+  // (packedItems, lastPackedBy/At, pausedAt) and existing delivery fields
+  // (driverId, etc.) so a re-optimization run does not destroy work in flight.
   await Promise.all(
-    orderUpdates.map((update) =>
-      prisma.order.update({
+    orderUpdates.map((update) => {
+      const existingOrder = orders.find((o) => o.id === update.orderId);
+      const existingPacking = existingOrder?.packing ?? null;
+      const existingDelivery = existingOrder?.delivery ?? null;
+
+      return prisma.order.update({
         where: { id: update.orderId },
         data: {
           packing: {
+            ...(existingPacking ?? {}),
             areaPackingSequence: update.areaPackingSequence,
-            packedItems: [],
+            packedItems: existingPacking?.packedItems ?? [],
           },
           delivery: {
+            ...(existingDelivery ?? {}),
             deliverySequence: update.deliverySequence,
             areaDeliverySequence: update.areaDeliverySequence,
             routeId: routeOptimization.id,
             estimatedArrival: update.estimatedArrival,
           },
         },
-      })
-    )
+      });
+    })
   );
 
   // 13. Send route optimized email notification
@@ -382,14 +391,13 @@ export async function optimizeDeliveryRoute(
  * per-area lock record (those have a non-null areaId).
  */
 export async function getRouteOptimization(deliveryDate: Date) {
-  const startOfDay = new Date(deliveryDate);
-  const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000 - 1);
+  const { start: startOfDay, end: endOfDay } = getUTCDayRangeForMelbourneDay(deliveryDate);
 
   return prisma.routeOptimization.findFirst({
     where: {
       deliveryDate: {
         gte: startOfDay,
-        lte: endOfDay,
+        lt: endOfDay,
       },
       areaId: null,
     },
@@ -409,7 +417,7 @@ async function getLockedAreaNamesForDate(
 ): Promise<Set<string>> {
   const lockedRecords = await prisma.routeOptimization.findMany({
     where: {
-      deliveryDate: { gte: startOfDay, lte: endOfDay },
+      deliveryDate: { gte: startOfDay, lt: endOfDay },
       routeType: 'packing',
       manuallyLocked: true,
       areaId: { not: null },
@@ -443,14 +451,13 @@ export async function checkIfRouteNeedsReoptimization(
   // optimizer reconsiders the area on the next refetch).
   if (route.needsReoptimization) return true;
 
-  const startOfDay = new Date(deliveryDate);
-  const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000 - 1);
+  const { start: startOfDay, end: endOfDay } = getUTCDayRangeForMelbourneDay(deliveryDate);
 
   const currentOrderCount = await prisma.order.count({
     where: {
       requestedDeliveryDate: {
         gte: startOfDay,
-        lte: endOfDay,
+        lt: endOfDay,
       },
       status: {
         in: ["confirmed", "packing", "ready_for_delivery"],
@@ -468,6 +475,11 @@ export async function checkIfRouteNeedsReoptimization(
  * This gives the order an immediate sequence number (max + 1) without running
  * full route optimization. When the packer opens the packing session, full
  * optimization will recalculate optimal sequences based on geography.
+ *
+ * Returns 0 (and assigns no sequence) when the order's area is manually
+ * locked — admin's manual ordering takes precedence, so the new order is
+ * left unsequenced and surfaces in the UI without a number for admin to
+ * slot in via the drag-and-drop reorder UI.
  */
 export async function assignPreliminaryPackingSequence(
   deliveryDate: Date,
@@ -475,6 +487,15 @@ export async function assignPreliminaryPackingSequence(
   areaName: string | null
 ): Promise<number> {
   const { start: startOfDay, end: endOfDay } = getUTCDayRangeForMelbourneDay(deliveryDate);
+
+  // If this order belongs to a manually-locked area, do NOT auto-assign a
+  // sequence. Doing so would silently violate the admin's manual ordering.
+  if (areaName) {
+    const lockedAreaNames = await getLockedAreaNamesForDate(startOfDay, endOfDay);
+    if (lockedAreaNames.has(areaName)) {
+      return 0;
+    }
+  }
 
   // Build where clause - filter by area if provided for per-area sequencing
   const whereClause: any = {
@@ -514,13 +535,21 @@ export async function assignPreliminaryPackingSequence(
 
   const newSequence = maxSequence + 1;
 
-  // Update the order with preliminary sequence
+  // Preserve any existing packing state on the target order (defensive — for a
+  // freshly-confirmed order this is empty, but the function is also called
+  // from paths where the order may already have progress).
+  const targetOrder = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: { packing: true },
+  });
+
   await prisma.order.update({
     where: { id: orderId },
     data: {
       packing: {
+        ...(targetOrder?.packing ?? {}),
         areaPackingSequence: newSequence,
-        packedItems: [],
+        packedItems: targetOrder?.packing?.packedItems ?? [],
       },
     },
   });

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { router, protectedProcedure, requirePermission } from '../trpc';
 import { prisma } from '@joho-erp/database';
 import { TRPCError } from '@trpc/server';
-import { generateOrderNumber, calculateOrderTotals, paginatePrismaQuery, getEffectivePrice, createMoney, multiplyMoney, toCents, buildPrismaOrderBy, calculateParentConsumption, isSubproduct, validateStatusTransition, formatDateForMelbourne, type UserRole as StateMachineUserRole } from '@joho-erp/shared';
+import { generateOrderNumber, calculateOrderTotals, paginatePrismaQuery, getEffectivePrice, createMoney, multiplyMoney, toCents, buildPrismaOrderBy, calculateParentConsumption, isSubproduct, validateStatusTransition, formatDateForMelbourne, getUTCDayRangeForMelbourneDay, type UserRole as StateMachineUserRole } from '@joho-erp/shared';
 import { sortInputSchema } from '../schemas';
 import {
   sendBackorderSubmittedEmail,
@@ -2739,10 +2739,34 @@ export const orderRouter = router({
 
       const userDetails = await getUserDetails(ctx.userId);
 
+      // Capture sequence-bearing fields before clearing them. These belong to
+      // the OLD delivery date and must not leak into the new day's lists.
+      const hadPackingSequence = order.packing?.areaPackingSequence != null;
+      const hadDeliverySequence =
+        order.delivery?.deliverySequence != null ||
+        order.delivery?.areaDeliverySequence != null ||
+        order.delivery?.routeId != null;
+
       const updated = await prisma.order.update({
         where: { id: orderId },
         data: {
           requestedDeliveryDate: newDeliveryDate,
+          // Clear sequences from the old day. Other packing/delivery fields
+          // (driverId, packedItems, etc.) are not relevant for the
+          // awaiting_approval | confirmed statuses this mutation accepts, but
+          // we preserve them via spread to avoid wiping any unrelated state.
+          packing: {
+            ...(order.packing ?? {}),
+            areaPackingSequence: null,
+            packedItems: order.packing?.packedItems ?? [],
+          },
+          delivery: {
+            ...(order.delivery ?? {}),
+            deliverySequence: null,
+            areaDeliverySequence: null,
+            routeId: null,
+            estimatedArrival: null,
+          },
           statusHistory: {
             push: {
               status: 'delivery_rescheduled',
@@ -2755,6 +2779,29 @@ export const orderRouter = router({
           },
         },
       });
+
+      // Flag the OLD day's multi-area packing route for re-optimization so
+      // its cached order count and waypoint set are recomputed on next view.
+      if (hadPackingSequence || hadDeliverySequence) {
+        const { start: oldStart, end: oldEnd } = getUTCDayRangeForMelbourneDay(oldDate);
+        await prisma.routeOptimization.updateMany({
+          where: {
+            deliveryDate: { gte: oldStart, lt: oldEnd },
+            routeType: 'packing',
+            areaId: null,
+          },
+          data: { needsReoptimization: true },
+        });
+      }
+
+      // Re-assign a preliminary packing sequence on the NEW day so the order
+      // appears in that day's packing list immediately. Mirrors the confirm
+      // flow's behaviour.
+      if (order.status === 'confirmed') {
+        const areaName =
+          (order.deliveryAddress as { areaName?: string } | null)?.areaName ?? null;
+        await assignPreliminaryPackingSequence(newDeliveryDate, orderId, areaName);
+      }
 
       return updated;
     }),
