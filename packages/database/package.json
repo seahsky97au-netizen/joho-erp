@@ -13,6 +13,8 @@
     "db:seed-topside-orders": "tsx src/scripts/seed-topside-orders.ts",
     "backfill:coords": "tsx src/scripts/backfill-customer-coordinates.ts",
     "backfill:coords:apply": "tsx src/scripts/backfill-customer-coordinates.ts --apply",
+    "backfill:order-coords": "tsx src/scripts/backfill-order-coordinates.ts",
+    "backfill:order-coords:apply": "tsx src/scripts/backfill-order-coordinates.ts --apply",
     "prisma:generate": "prisma generate",
     "prisma:studio": "prisma studio",
     "prisma:push": "prisma db push",
