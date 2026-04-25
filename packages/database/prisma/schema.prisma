@@ -818,6 +818,9 @@ model RouteOptimization {
   mapboxRouteData     Json?               // Full Mapbox API response for reference
   needsReoptimization Boolean             @default(false) // Flag when orders changed since optimization
   lastOrderCount      Int?                // Order count at last optimization (to detect changes)
+  manuallyLocked      Boolean             @default(false) // True when admin has overridden packing sequence for (deliveryDate, areaId)
+  manuallyLockedAt    DateTime?           // When the manual override was applied
+  manuallyLockedBy    String?             // Clerk user ID of the admin who set the override
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt
 

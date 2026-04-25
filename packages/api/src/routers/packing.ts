@@ -2128,6 +2128,27 @@ export const packingRouter = router({
         await startPackingSession(ctx.userId, deliveryDate, orderIds);
       }
 
+      // Per-area manual lock state (admin-set packing sequence overrides)
+      const areaLockRecords = await prisma.routeOptimization.findMany({
+        where: {
+          deliveryDate: { gte: startOfDay, lte: endOfDay },
+          routeType: 'packing',
+          areaId: { not: null },
+        },
+        select: {
+          areaId: true,
+          manuallyLocked: true,
+          manuallyLockedAt: true,
+        },
+      });
+      const areaLocks = areaLockRecords
+        .filter((r): r is typeof r & { areaId: string } => r.areaId !== null)
+        .map((r) => ({
+          areaId: r.areaId,
+          manuallyLocked: r.manuallyLocked,
+          manuallyLockedAt: r.manuallyLockedAt,
+        }));
+
       // Auto-trigger route optimization if needed (Task 1.2 requirement)
       let routeOptimization = await getRouteOptimization(deliveryDate);
       let needsReoptimization = await checkIfRouteNeedsReoptimization(deliveryDate);
@@ -2290,6 +2311,169 @@ export const packingRouter = router({
             }
           : null,
       };
+    }),
+
+  /**
+   * Manually reorder the packing sequence within an area.
+   * Locks the area so subsequent auto-optimization runs leave it alone.
+   */
+  reorderArea: requirePermission('packing:manage')
+    .input(
+      z.object({
+        deliveryDate: z.string().datetime(),
+        areaId: z.string(),
+        orderIdsInOrder: z.array(z.string()).min(1),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const deliveryDate = new Date(input.deliveryDate);
+      const startOfDay = new Date(deliveryDate);
+      const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000 - 1);
+
+      const userDetails = await getUserDetails(ctx.userId ?? null);
+      const now = new Date();
+
+      return prisma.$transaction(async (tx) => {
+        const orders = await tx.order.findMany({
+          where: {
+            id: { in: input.orderIdsInOrder },
+            requestedDeliveryDate: { gte: startOfDay, lte: endOfDay },
+            status: { in: ['confirmed', 'packing'] },
+            deliveryAddress: { is: { areaId: input.areaId } },
+          },
+          select: { id: true, status: true, packing: true },
+        });
+
+        if (orders.length !== input.orderIdsInOrder.length) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message:
+              'Some orders no longer match the selected area or have already moved past packing. Please refresh and try again.',
+          });
+        }
+
+        const orderById = new Map(orders.map((o) => [o.id, o]));
+
+        for (let i = 0; i < input.orderIdsInOrder.length; i++) {
+          const orderId = input.orderIdsInOrder[i];
+          const newSeq = i + 1;
+          const order = orderById.get(orderId)!;
+
+          await tx.order.update({
+            where: { id: orderId },
+            data: {
+              packing: {
+                ...(order.packing ?? { packedItems: [] }),
+                areaPackingSequence: newSeq,
+                packedItems: order.packing?.packedItems ?? [],
+              },
+              statusHistory: {
+                push: {
+                  status: order.status,
+                  changedAt: now,
+                  changedBy: ctx.userId ?? 'system',
+                  changedByName: userDetails.changedByName,
+                  changedByEmail: userDetails.changedByEmail,
+                  notes: `Packing sequence manually set to position ${newSeq}`,
+                },
+              },
+            },
+          });
+        }
+
+        const existingLock = await tx.routeOptimization.findFirst({
+          where: {
+            deliveryDate: { gte: startOfDay, lte: endOfDay },
+            areaId: input.areaId,
+            routeType: 'packing',
+          },
+        });
+
+        if (existingLock) {
+          await tx.routeOptimization.update({
+            where: { id: existingLock.id },
+            data: {
+              manuallyLocked: true,
+              manuallyLockedAt: now,
+              manuallyLockedBy: ctx.userId ?? null,
+            },
+          });
+        } else {
+          await tx.routeOptimization.create({
+            data: {
+              deliveryDate: startOfDay,
+              routeType: 'packing',
+              areaId: input.areaId,
+              orderCount: input.orderIdsInOrder.length,
+              totalDistance: 0,
+              totalDuration: 0,
+              routeGeometry: '{}',
+              waypoints: [],
+              optimizedAt: now,
+              optimizedBy: ctx.userId ?? 'system',
+              manuallyLocked: true,
+              manuallyLockedAt: now,
+              manuallyLockedBy: ctx.userId ?? null,
+            },
+          });
+        }
+
+        return { updatedCount: input.orderIdsInOrder.length };
+      });
+    }),
+
+  /**
+   * Clear the manual lock on an area's packing sequence so auto-optimization
+   * can re-run on the next refetch.
+   */
+  resetAreaToOptimized: requirePermission('packing:manage')
+    .input(
+      z.object({
+        deliveryDate: z.string().datetime(),
+        areaId: z.string(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const deliveryDate = new Date(input.deliveryDate);
+      const startOfDay = new Date(deliveryDate);
+      const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000 - 1);
+
+      const lockRecord = await prisma.routeOptimization.findFirst({
+        where: {
+          deliveryDate: { gte: startOfDay, lte: endOfDay },
+          areaId: input.areaId,
+          routeType: 'packing',
+        },
+      });
+
+      if (lockRecord) {
+        await prisma.routeOptimization.update({
+          where: { id: lockRecord.id },
+          data: {
+            manuallyLocked: false,
+            manuallyLockedAt: null,
+            manuallyLockedBy: null,
+          },
+        });
+      }
+
+      const multiArea = await prisma.routeOptimization.findFirst({
+        where: {
+          deliveryDate: { gte: startOfDay, lte: endOfDay },
+          areaId: null,
+          routeType: 'packing',
+        },
+        orderBy: { optimizedAt: 'desc' },
+      });
+
+      if (multiArea) {
+        await prisma.routeOptimization.update({
+          where: { id: multiArea.id },
+          data: { needsReoptimization: true },
+        });
+      }
+
+      return { ok: true };
     }),
 
   /**
