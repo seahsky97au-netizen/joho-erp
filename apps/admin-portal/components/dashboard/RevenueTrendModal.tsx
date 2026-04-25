@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   Dialog,
   DialogContent,
@@ -25,6 +26,7 @@ interface RevenueTrendModalProps {
 }
 
 export function RevenueTrendModal({ isOpen, onClose }: RevenueTrendModalProps) {
+  const t = useTranslations('dashboard.revenueChart');
   const [days, setDays] = useState<7 | 14 | 30>(7);
 
   const { data: trendData, isLoading } = api.dashboard.getRevenueTrend.useQuery(
@@ -55,24 +57,22 @@ export function RevenueTrendModal({ isOpen, onClose }: RevenueTrendModalProps) {
     <Dialog open={isOpen} onOpenChange={(open: boolean) => !open && onClose()}>
       <DialogContent className="max-w-xl">
         <DialogHeader>
-          <DialogTitle>Revenue Trend</DialogTitle>
-          <DialogDescription>
-            View detailed revenue data over time
-          </DialogDescription>
+          <DialogTitle>{t('title')}</DialogTitle>
+          <DialogDescription>{t('description')}</DialogDescription>
         </DialogHeader>
 
         <div className="mt-4 space-y-6">
           {/* Period Selector */}
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">Time Period</span>
+            <span className="text-sm font-medium">{t('timePeriod')}</span>
             <Select value={days.toString()} onValueChange={(v) => setDays(Number(v) as 7 | 14 | 30)}>
               <SelectTrigger className="w-36">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="7">Last 7 Days</SelectItem>
-                <SelectItem value="14">Last 14 Days</SelectItem>
-                <SelectItem value="30">Last 30 Days</SelectItem>
+                <SelectItem value="7">{t('last7Days')}</SelectItem>
+                <SelectItem value="14">{t('last14Days')}</SelectItem>
+                <SelectItem value="30">{t('last30Days')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -91,15 +91,15 @@ export function RevenueTrendModal({ isOpen, onClose }: RevenueTrendModalProps) {
             <div className="grid grid-cols-3 gap-4">
               <div className="revenue-modal-stat">
                 <div className="revenue-modal-stat-value">{formatAUD(totalRevenue)}</div>
-                <div className="revenue-modal-stat-label">Total Revenue</div>
+                <div className="revenue-modal-stat-label">{t('totalRevenue')}</div>
               </div>
               <div className="revenue-modal-stat">
                 <div className="revenue-modal-stat-value">{totalOrders}</div>
-                <div className="revenue-modal-stat-label">Total Orders</div>
+                <div className="revenue-modal-stat-label">{t('totalOrders')}</div>
               </div>
               <div className="revenue-modal-stat">
                 <div className="revenue-modal-stat-value">{formatAUD(avgDailyRevenue)}</div>
-                <div className="revenue-modal-stat-label">Daily Average</div>
+                <div className="revenue-modal-stat-label">{t('dailyAverage')}</div>
                 <div className={`revenue-modal-stat-trend ${trendColor}`}>
                   <TrendIcon className="h-3 w-3" />
                   <span>{trend > 0 ? '+' : ''}{trend}%</span>
@@ -118,7 +118,7 @@ export function RevenueTrendModal({ isOpen, onClose }: RevenueTrendModalProps) {
               <RevenueChart data={trendData} showOrderCount />
             ) : (
               <div className="h-full flex items-center justify-center text-muted-foreground">
-                No revenue data available for this period
+                {t('noDataForPeriod')}
               </div>
             )}
           </div>

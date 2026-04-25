@@ -49,14 +49,7 @@
     "sort": {
       "ascending": "Ascending",
       "descending": "Descending",
-      "sortBy": "Sort by",
-      "clearSort": "Clear sort",
-      "sortAsc": "Sort A to Z",
-      "sortDesc": "Sort Z to A",
-      "sortNewest": "Newest first",
-      "sortOldest": "Oldest first",
-      "sortHighest": "Highest first",
-      "sortLowest": "Lowest first"
+      "sortBy": "Sort by"
     },
     "filters": {
       "all": "All",
@@ -65,7 +58,6 @@
       "allDrivers": "All Drivers",
       "filterByCategory": "Filter by Category",
       "clearFilters": "Clear filters",
-      "applyFilters": "Apply filters",
       "area": "Area",
       "allAreas": "All Areas"
     },
@@ -74,8 +66,7 @@
       "collapse": "Collapse"
     },
     "table": {
-      "noResults": "No results found",
-      "noResultsWithFilters": "No results match your filters. Try adjusting your search or filter criteria."
+      "noResults": "No results found"
     },
     "selectArea": "Select area",
     "unassigned": "Unassigned",
@@ -182,22 +173,11 @@
     "activeCustomers": "Active Customers",
     "activeDeliveries": "Active Deliveries",
     "pendingBackorders": "Pending Backorders",
-    "backordersAwaitingApproval": "Awaiting approval",
     "recentOrders": "Recent Orders",
     "lowStockAlerts": "Low Stock Alerts",
-    "unitsLeft": "units left",
     "viewAll": "View All",
-    "viewBackorders": "View Backorders",
-    "allTime": "All time",
-    "requireProcessing": "Require processing",
-    "activeAccounts": "Active accounts",
-    "latestOrders": "Latest orders from your customers",
     "noRecentOrders": "No recent orders",
-    "ordersWillAppearHere": "Orders will appear here when customers place them",
-    "productsRequiringAttention": "Products requiring attention",
     "threshold": "Threshold:",
-    "noLowStockItems": "No low stock items",
-    "allProductsWellStocked": "All products are well stocked",
     "expiringStock": "Expiring Stock",
     "expired": "expired",
     "expiringSoon": "expiring soon",
@@ -207,9 +187,7 @@
       "expired": "Expired",
       "expiring": "Expiring Soon",
       "expiredDays": "Expired {days}d ago",
-      "expiresIn": "Expires in {days}d",
-      "noItems": "No expiring items",
-      "allGood": "All inventory is within safe expiry ranges"
+      "expiresIn": "Expires in {days}d"
     },
     "needsAttention": {
       "title": "Needs Attention",
@@ -226,14 +204,11 @@
     },
     "financialOverview": {
       "title": "Financial Overview",
-      "todayRevenue": "Today's Revenue",
       "pendingPayments": "Pending Payments",
-      "monthToDate": "Month to Date",
       "trend": "Trend",
       "vsYesterday": "vs yesterday",
       "vsLastWeek": "vs last week",
       "vsLastMonth": "vs last month",
-      "overduePayments": "{count} overdue",
       "invoiceCount": "{count, plural, one {# invoice} other {# invoices}}"
     },
     "periodSelector": {
@@ -262,7 +237,6 @@
       "critical": "Critical",
       "lowStockItems": "{count} Low Stock Items",
       "lowStockLabel": "Low Stock Items",
-      "expiringThisWeek": "{count} Expiring This Week",
       "expiringLabel": "Expiring This Week",
       "outOfStockLabel": "Out of Stock",
       "viewInventory": "View Inventory",
@@ -273,35 +247,34 @@
     "revenueChart": {
       "title": "Revenue Trend",
       "days7": "Revenue Trend (7 days)",
+      "totalRevenue": "Total Revenue",
+      "totalOrders": "Total Orders",
+      "noData": "No data available",
+      "clickToExpand": "Click to expand",
+      "description": "View detailed revenue data over time",
+      "timePeriod": "Time Period",
       "last7Days": "Last 7 Days",
       "last14Days": "Last 14 Days",
       "last30Days": "Last 30 Days",
-      "totalRevenue": "Total Revenue",
-      "totalOrders": "Total Orders",
       "dailyAverage": "Daily Average",
-      "noData": "No data available",
-      "clickToExpand": "Click to expand"
+      "noDataForPeriod": "No revenue data available for this period"
     }
   },
   "errors": {
     "errorTitle": "Error",
     "operationFailed": "Operation failed. Please try again.",
-    "networkError": "Network error. Please check your connection.",
     "saveFailed": "Failed to save changes. Please try again.",
     "deleteFailed": "Failed to delete. Please try again.",
-    "loadFailed": "Failed to load data. Please refresh the page.",
     "syncFailed": "Sync failed. Please try again.",
     "updateFailed": "Failed to update. Please try again.",
     "generationFailed": "Generation failed. Please try again.",
     "optimizationFailed": "Optimization failed. Please try again.",
-    "searchError": "Search failed. Please try again.",
-    "noInvoices": "No invoices found for the selected orders."
+    "searchError": "Search failed. Please try again."
   },
   "suppliers": {
     "title": "Supplier Management",
     "subtitle": "Manage your supplier accounts and relationships",
     "addSupplier": "Add Supplier",
-    "totalSuppliers": "Total Suppliers",
     "listTitle": "Suppliers",
     "listDescription": "A list of all your suppliers and their details",
     "code": "Code",
@@ -309,13 +282,11 @@
     "contact": "Contact",
     "creditLimit": "Credit Limit",
     "status": "Status",
-    "productsLinked": "products",
     "active": "Active",
     "inactive": "Inactive",
     "suspended": "Suspended",
     "pending": "Pending Approval",
     "searchPlaceholder": "Search suppliers...",
-    "filterByStatus": "Filter by status",
     "filterByCategory": "Filter by category",
     "allStatuses": "All Statuses",
     "allCategories": "All Categories",
@@ -397,7 +368,6 @@
     "buttons": {
       "cancel": "Cancel",
       "createSupplier": "Create Supplier",
-      "updateSupplier": "Update Supplier",
       "creating": "Creating...",
       "updating": "Updating..."
     },
@@ -559,10 +529,6 @@
     "rejected": "Rejected",
     "suspended": "Suspended",
     "closed": "Closed",
-    "active_status": "active",
-    "pending_status": "pending",
-    "approved_status": "approved",
-    "rejected_status": "rejected",
     "loading": "Loading customers...",
     "errorLoading": "Error loading customers",
     "noCustomersFound": "No customers found",
@@ -591,8 +557,7 @@
     "stats": {
       "totalDeliveries": "Total Deliveries",
       "readyForDelivery": "Ready for Delivery",
-      "delivered": "Delivered",
-      "assignedDrivers": "Assigned Drivers"
+      "delivered": "Delivered"
     },
     "activeDeliveries": "Active Deliveries",
     "orderId": "Order ID",
@@ -613,10 +578,7 @@
     "noDeliveriesAvailable": "No deliveries available",
     "deliveriesWillAppear": "Deliveries will appear here when ready",
     "selectDate": "Select Delivery Date",
-    "packedOn": "Packed on {date}",
-    "showingOrdersPackedOn": "Showing orders packed on {date}",
     "showingDeliveriesFor": "Showing deliveries for {date}",
-    "noOrdersPackedOnDate": "No orders were packed on this date",
     "order": "order",
     "orders": "orders",
     "searchPlaceholder": "Search by order or customer...",
@@ -691,7 +653,6 @@
       "description": "Confirm that this delivery has been completed",
       "orderNumber": "Order Number",
       "customer": "Customer",
-      "noPodWarning": "Note: No proof of delivery has been uploaded for this order",
       "notesLabel": "Notes (Optional)",
       "notesPlaceholder": "Add any notes about this delivery completion...",
       "confirm": "Mark as Delivered",
@@ -764,12 +725,10 @@
     "area": "Area",
     "createOrderOnBehalf": "Create Order on Behalf",
     "backorderStatus": "Backorder Status",
-    "allBackorderStatuses": "All Backorder Statuses",
     "backorderAlert": {
       "title": "Pending Backorder Approvals",
       "message": "You have {count} backorders awaiting approval",
-      "reviewNow": "Review Now",
-      "filterPending": "Show Pending Backorders"
+      "reviewNow": "Review Now"
     },
     "backorder": {
       "label": "Backorder",
@@ -825,7 +784,6 @@
     },
     "backorderMessages": {
       "approveSuccess": "Backorder approved successfully",
-      "approvePartialSuccess": "Partial quantities approved successfully",
       "rejectSuccess": "Order rejected",
       "approveError": "Failed to approve backorder",
       "rejectError": "Failed to reject order",
@@ -923,7 +881,6 @@
       "adminNotesPrivate": "These notes are only visible to admin users"
     },
     "warnings": {
-      "exceedsCreditLimit": "Warning: Order total exceeds customer credit limit",
       "willExceedCredit": "Warning: This order will exceed available credit"
     },
     "validation": {
@@ -935,7 +892,6 @@
       "postcodeRequired": "Postcode is required",
       "postcodeInvalid": "Postcode must be 4 digits",
       "bypassReasonRequired": "Please provide a reason for bypassing credit limit",
-      "customAddressRequired": "Please fill in all custom address fields",
       "deliveryDateInvalid": "Delivery date must be in the future",
       "invalidInput": "Invalid input",
       "fixErrors": "Please fix the errors in the form",
@@ -1091,7 +1047,6 @@
       "description": "Description",
       "descriptionPlaceholder": "Premium quality beef rump...",
       "category": "Category",
-      "categoryPlaceholder": "Beef",
       "unit": "Unit",
       "unitRequired": "Unit *",
       "packageSize": "Package Size",
@@ -1099,13 +1054,11 @@
       "basePrice": "Base Price * ($)",
       "basePricePlaceholder": "18.50",
       "unitCost": "Unit Cost ($)",
-      "unitCostPlaceholder": "15.00",
       "applyGst": "Apply GST",
       "applyGstDescription": "Enable GST for this product",
       "gstRate": "GST Rate (%)",
       "gstRatePlaceholder": "10",
       "currentStock": "Current Stock",
-      "currentStockPlaceholder": "0",
       "currentStockReadOnly": "Current Stock (Read-Only)",
       "stockAdjustmentHint": "To adjust stock levels, use the Stock Adjustment feature",
       "initialStockHint": "New products start with 0 stock. Use Stock Adjustment after creation to add initial inventory.",
@@ -1164,13 +1117,11 @@
       "adjustStock": "Adjust Stock"
     },
     "validation": {
-      "skuNamePriceRequired": "SKU, name, and base price are required",
       "skuRequired": "SKU is required",
       "nameRequired": "Product name is required",
       "basePriceRequired": "Base price is required",
       "basePricePositive": "Base price must be a positive number",
       "unitRequired": "Unit is required",
-      "unitCostPositive": "Unit cost must be a positive number",
       "packageSizePositive": "Package size must be a positive number",
       "categoryRequired": "Category is required",
       "gstRateRange": "GST rate must be between 0 and 100",
@@ -1228,8 +1179,7 @@
       "customLossPercentage": "Custom Loss Percentage (%)",
       "usingParentLossRate": "Using parent's loss rate: {rate}%",
       "parentHasNoLoss": "Note: Parent product has no loss rate set (0%)",
-      "lossRateInherited": "Inherited",
-      "lossRateCustom": "Custom"
+      "lossRateInherited": "Inherited"
     },
     "buttons": {
       "createSubproduct": "Create Subproduct",
@@ -1242,15 +1192,9 @@
     },
     "messages": {
       "subproductCreated": "Subproduct created successfully",
-      "errorCreating": "Error creating subproduct",
-      "cannotAdjustStock": "Cannot adjust subproduct stock directly. Adjust the parent product instead.",
-      "cannotHaveSubproducts": "Subproducts cannot have their own subproducts"
+      "errorCreating": "Error creating subproduct"
     },
     "table": {
-      "expandRow": "Expand row",
-      "collapseRow": "Collapse row",
-      "subproductOf": "Subproduct of",
-      "virtualStock": "Virtual Stock",
       "virtualStockTooltip": "Calculated from parent stock"
     }
   },
@@ -1339,8 +1283,7 @@
       "after": "After",
       "date": "Date",
       "by": "By",
-      "notes": "Notes",
-      "loadMore": "Load More"
+      "notes": "Notes"
     }
   },
   "processStock": {
@@ -1349,9 +1292,6 @@
       "description": "Convert raw materials to processed products",
       "selectSource": "Select source product (raw material)",
       "selectTarget": "Select target product (processed)",
-      "changeSource": "Change source",
-      "changeTarget": "Change target",
-      "processingDetails": "Processing Details",
       "noProductsFound": "No products found"
     },
     "fields": {
@@ -1363,26 +1303,9 @@
       "sourceQuantity": "Raw Material Quantity",
       "sourceQuantityHint": "Amount of raw material to consume",
       "targetOutputQuantity": "Target Output Quantity",
-      "targetOutputHint": "Desired amount of processed product",
       "willConsume": "Will consume",
-      "maxOutput": "Max output",
       "lossPercentage": "Loss Rate %",
-      "lossPercentageHint": "Processing loss percentage (auto-calculated or manual)",
-      "calculatedLoss": "Calculated Loss %",
-      "calculatedLossHint": "Auto-calculated from input and output quantities",
       "expectedYield": "Expected Yield",
-      "defaultFromCategory": "Default from category: {name}",
-      "materialCostPerUnit": "Material Cost per kg",
-      "materialCostHint": "Cost of raw materials per kg of processed product",
-      "materialCostPending": "Enter quantities above",
-      "materialCostAutoHint": "Auto-calculated from source batch costs",
-      "laborCost": "Labor Cost",
-      "laborCostHint": "Cost of labor for processing",
-      "laborCostType": "Labor Cost Type",
-      "laborCostPerKg": "Per Kg",
-      "laborCostTotal": "Total Cost",
-      "totalCostPerKg": "Total Cost per kg",
-      "totalCostBreakdown": "Cost Breakdown",
       "costPerUnit": "Cost per Unit (Target)",
       "costPerUnitHint": "Cost per unit for the processed product",
       "expiryDate": "Expiry Date (Optional)",
@@ -1423,19 +1346,15 @@
       "sameProduct": "Source and target must be different products",
       "quantityPositive": "Quantity must be greater than 0",
       "sourceQuantityRequired": "Raw material quantity is required",
-      "sourceQuantityExceedsStock": "Exceeds available stock ({available})",
       "outputExceedsInput": "Output cannot exceed raw material input",
-      "exceedsAvailableStock": "Exceeds available stock. Maximum output: {max}",
       "costRequired": "Cost per unit is required",
       "lossPercentageRange": "Loss percentage must be between 0 and 100",
-      "zeroOutput": "Output quantity cannot be zero",
       "batchRequired": "Source batch selection is required",
       "sourceQuantityExceedsBatch": "Exceeds batch available stock ({available})",
       "fixErrors": "Please fix the following errors:"
     },
     "messages": {
       "success": "Stock processed successfully",
-      "successDetails": "Processed {processed} {sourceUnit} → {produced} {targetUnit}",
       "successDetailsMulti": "Processed {processed} {sourceUnit} into {targetCount} target(s)",
       "error": "Failed to process stock"
     },
@@ -1486,8 +1405,7 @@
       "setPrice": "Set Price"
     },
     "validation": {
-      "requiredFields": "Please fill in all required fields",
-      "positivePrice": "Price must be a positive number"
+      "requiredFields": "Please fill in all required fields"
     },
     "pricing": {
       "validation": {
@@ -1678,8 +1596,7 @@
     "stats": {
       "requestedLimit": "Requested Credit Limit",
       "forecastPurchase": "Forecast Purchase",
-      "appliedDate": "Applied Date",
-      "submittedDate": "Submitted Date"
+      "appliedDate": "Applied Date"
     },
     "buttons": {
       "approve": "Approve Credit Application",
@@ -1733,7 +1650,6 @@
       "viewPdf": "View PDF",
       "noDocuments": "No identity documents uploaded",
       "verifyHint": "Verify that the document matches the details entered above",
-      "uploadDocument": "Upload Document",
       "replaceDocument": "Replace Document",
       "uploadFront": "Upload Front",
       "uploadBack": "Upload Back",
@@ -1761,7 +1677,6 @@
       "signature": "Signature",
       "signedAt": "Signed",
       "signatureOf": "{name}'s signature",
-      "viewSignature": "View Signature",
       "fullSizeSignature": "Full Size Signature",
       "witness": "Witness",
       "witnessSignedAt": "Witness signed",
@@ -1836,7 +1751,6 @@
       "postcode": "Postcode",
       "postcodePlaceholder": "2000",
       "areaTag": "Delivery Area",
-      "areaTagPlaceholder": "Select delivery area",
       "area": "Delivery Area",
       "areaAutoDetect": "Auto-detect from suburb",
       "assignedTo": "Assigned to",
@@ -1886,7 +1800,6 @@
       "driverLicenseNumber": "Driver License Number",
       "driverLicenseNumberPlaceholder": "Enter license number",
       "licenseState": "License State",
-      "licenseStatePlaceholder": "Select state",
       "licenseExpiry": "License Expiry",
       "remove": "Remove",
       "states": {
@@ -1978,7 +1891,6 @@
       "businessNameRequired": "Business name is required",
       "abnRequired": "ABN is required",
       "abnInvalid": "Please enter a valid 11-digit ABN",
-      "acnRequired": "ACN is required for companies",
       "acnInvalid": "Please enter a valid 9-digit ACN",
       "firstNameRequired": "First name is required",
       "lastNameRequired": "Last name is required",
@@ -1987,13 +1899,11 @@
       "phoneRequired": "Phone is required",
       "phoneInvalid": "Please enter a valid Australian phone number",
       "mobileInvalid": "Please enter a valid Australian mobile number",
-      "addressRequired": "Address fields are required",
       "streetRequired": "Street address is required",
       "suburbRequired": "Suburb is required",
       "stateRequired": "State is required",
       "postcodeRequired": "Postcode is required",
       "postcodeInvalid": "Postcode must be 4 digits",
-      "areaTagRequired": "Delivery area is required",
       "bsbRequired": "BSB is required",
       "bsbInvalid": "BSB must be 6 digits",
       "creditLimitInvalid": "Credit limit must be a positive number or zero",
@@ -2011,8 +1921,6 @@
     "messages": {
       "createSuccess": "Customer created successfully!",
       "createError": "Failed to create customer",
-      "duplicateEmail": "A customer with this email already exists",
-      "duplicateABN": "An active customer with this ABN already exists",
       "fixValidationErrors": "Please fix the validation errors before submitting"
     }
   },
@@ -2021,12 +1929,9 @@
     "subtitle": "Pack orders efficiently for delivery",
     "packBadge": "Pack",
     "selectDate": "Select Delivery Date",
-    "selectDateDescription": "Choose the date for which to pack orders",
     "productSummary": "Product Summary",
-    "orderByOrder": "Order by Order",
     "summaryPanel": "Preparation Summary",
     "ordersPanel": "Pack Orders",
-    "filterByArea": "Filter by Area",
     "showAllAreas": "Show All Areas",
     "filterByCategory": "Filter by Category",
     "allCategories": "All Categories",
@@ -2046,20 +1951,13 @@
     "sku": "SKU",
     "productName": "Product Name",
     "totalQuantity": "Total Quantity",
-    "ordersRequiring": "Orders Requiring",
-    "gathered": "Gathered",
     "collapse": "Collapse",
     "expand": "Expand",
-    "markAsGathered": "Mark as gathered",
-    "markAsNotGathered": "Mark as not gathered",
-    "productSummaryDescription": "Consolidated product list for efficient gathering",
-    "orderByOrderDescription": "Individual order packing view",
     "orders": "Orders",
     "order": "Order",
     "allAreas": "All Areas",
     "deliveryAddress": "Delivery Address",
     "items": "Items",
-    "itemsPacked": "Items Packed",
     "packingNotes": "Packing Notes",
     "addNotes": "Add notes...",
     "markAsReady": "Mark as Ready for Delivery",
@@ -2076,25 +1974,13 @@
     "noProducts": "No products to pack",
     "noOrdersForArea": "No Orders for Selected Area",
     "noOrdersForAreaDescription": "There are no orders scheduled for this area on this date",
-    "unassignedOrders": "Unassigned Orders",
-    "driverGroup": "Driver: {name}",
     "packingSequence": "Pack #{sequence}",
-    "loadingSession": "Loading packing session...",
     "loadingOrder": "Loading order details...",
     "errorLoading": "Error Loading Data",
     "routeOptimized": "Route optimized successfully",
     "optimizingRoute": "Optimizing delivery route...",
     "regenerateRoute": "Regenerate Route",
-    "lastOptimized": "Last optimized",
-    "routeStatus": "Route Status",
-    "notOptimized": "Not yet optimized",
     "needsReoptimization": "Needs re-optimization",
-    "optimizeNow": "Optimize Now",
-    "orderStatusReady": "Ready for delivery",
-    "orderStatusPacking": "Packing in progress",
-    "orderStatusConfirmed": "Confirmed",
-    "allOrdersReadyForProduct": "All orders ready for this product",
-    "autoRefreshEnabled": "Auto-refreshing every 30 seconds",
     "orderPaused": "Order Paused",
     "orderPausedDescription": "Progress has been saved. You can resume later.",
     "orderPausedBanner": "Packing Paused",
@@ -2112,7 +1998,6 @@
     "resumePausedOrdersDescription": "You have {count} order(s) with saved packing progress.",
     "packed": "packed",
     "startFresh": "Start Fresh",
-    "progressSaved": "Progress Saved",
     "orderResumed": "Order Resumed",
     "orderResumedDescription": "You can continue packing this order.",
     "orderReset": "Order Reset",
@@ -2132,8 +2017,6 @@
     "cancelEdit": "Cancel",
     "quantityUpdated": "Quantity Updated",
     "quantityUpdatedDescription": "Item quantity and order total have been updated",
-    "itemQuantityZeroed": "Item quantity set to 0",
-    "itemQuantityZeroedDescription": "The item quantity has been set to 0. Stock has been returned to inventory.",
     "quantityZeroedWithReturn": "Item quantity has been set to 0. Stock has been returned to inventory.",
     "quantityNoChange": "No stock was changed.",
     "errorUpdatingQuantity": "Error Updating Quantity",
@@ -2159,14 +2042,7 @@
       "itemPacked": "Item packed - stock deducted"
     },
     "removeItem": "Remove item",
-    "removeItemTitle": "Remove item?",
-    "removeItemDescription": "Remove {productName} from order {orderNumber}? The stock will be returned to inventory.",
-    "removeLastItemWarning": "This is the last item in the order. Removing it will cancel the order.",
-    "confirmRemove": "Remove",
     "itemRemoved": "Item removed",
-    "itemRemovedDescription": "The item has been removed and stock returned to inventory.",
-    "orderCancelledByRemoval": "Order cancelled",
-    "orderCancelledByRemovalDescription": "All items were removed. The order has been cancelled.",
     "printSummary": "Print Summary",
     "printingSummary": "Printing...",
     "preparationSummary": "Preparation Summary",
@@ -2187,9 +2063,7 @@
       "internalNotesLabel": "Order Notes"
     },
     "merge": {
-      "mergedFromBadge": "Merged from {numbers}",
-      "toastTitle": "Orders merged",
-      "toastDescription": "{count} orders combined into #{primary}"
+      "mergedFromBadge": "Merged from {numbers}"
     }
   },
   "settings": {
@@ -2535,7 +2409,11 @@
         "settings.delivery": "Delivery Settings",
         "settings.integrations": "Integrations",
         "settings.notifications": "Notifications",
-        "settings.xero": "Xero Integration"
+        "settings.xero": "Xero Integration",
+        "suppliers": "Suppliers",
+        "settings.audit": "Audit Logs",
+        "settings.packing": "Packing Settings",
+        "settings.sms": "SMS Settings"
       },
       "actions": {
         "view": "View",
@@ -2552,7 +2430,8 @@
         "adjust_stock": "Adjust Stock",
         "adjust": "Adjust",
         "complete": "Complete",
-        "upload_pod": "Upload POD"
+        "upload_pod": "Upload POD",
+        "export": "Export"
       },
       "accessDenied": {
         "title": "Access Denied",
@@ -2888,9 +2767,6 @@
     "resyncConfirmTitle": "Confirm Resync",
     "resyncConfirmMessage": "This will update the invoice in Xero with the current order data. Any manual changes in Xero may be overwritten.",
     "resyncConfirm": "Resync",
-    "resyncContactConfirmMessage": "This will update the contact in Xero with the current customer data. Any manual changes in Xero may be overwritten.",
-    "resyncJob": "Resync Job",
-    "lastSyncedAt": "Last synced: {date}",
     "syncPreview": {
       "title": "Sync Customer to Xero",
       "description": "Review the customer data before syncing to Xero.",
@@ -3097,7 +2973,6 @@
       "type": "Type",
       "allTypes": "All Types",
       "adjustmentType": "Adjustment Type",
-      "allAdjustments": "All Adjustments",
       "stockIn": "Stock In"
     },
     "types": {
@@ -3123,7 +2998,6 @@
       "createdBy": "Created By",
       "timestamp": "Date & Time",
       "notes": "Notes",
-      "referenceOrder": "Related Order",
       "noNotes": "No notes provided",
       "viewOrder": "View Order",
       "previousStock": "Previous Stock",
@@ -3214,8 +3088,6 @@
         "stockOut": "Stock Out",
         "transactions": "Transactions",
         "netMovement": "Net Movement",
-        "thisPeriod": "This Period",
-        "lastPeriod": "Last Period",
         "change": "Change"
       }
     },
@@ -3238,7 +3110,6 @@
       },
       "filters": {
         "allSuppliers": "All Suppliers",
-        "supplierLabel": "Supplier",
         "suppliersSelected": "{count} selected",
         "allExpiry": "All Expiry",
         "expired": "Expired",
@@ -3276,7 +3147,6 @@
         "unknownCounterpart": "Counterpart not found"
       },
       "batchTotal": "Batch Total",
-      "mismatchWarning": "Mismatch: product shows {currentStock}",
       "reconcile": "Reconcile Stock",
       "reconcileConfirm": "This will update all product stock levels to match batch totals. Continue?",
       "reconcileSuccess": "Reconciled {count} products",
@@ -3381,13 +3251,7 @@
         "page": "Page",
         "showingFirst": "Showing first",
         "costPerUnit": "Cost per Unit",
-        "costPerUnitHelp": "Enter the actual cost you paid (in dollars)",
-        "expiryDate": "Expiry Date",
-        "expiryDateHelp": "Leave empty if no expiry date"
-      },
-      "validation": {
-        "costPerUnitRequired": "Cost per unit required when receiving stock",
-        "expiryDateFuture": "Expiry date must be in the future"
+        "expiryDate": "Expiry Date"
       }
     },
     "expiringList": {
@@ -3950,13 +3814,8 @@
       "abnInvalid": "Invalid ABN - checksum validation failed"
     },
     "validation": {
-      "abnLength": "ABN must be 11 digits",
-      "acnLength": "ACN must be 9 digits",
-      "bsbFormat": "BSB must be 6 digits",
-      "accountNumberLength": "Account number must be 6-10 digits",
       "emailRequired": "Email is required",
-      "emailInvalid": "Invalid email format",
-      "fieldRequired": "This field is required"
+      "emailInvalid": "Invalid email format"
     },
     "states": {
       "NSW": "New South Wales",
@@ -3978,7 +3837,6 @@
       "sendButton": "Send Invitation",
       "sending": "Sending...",
       "resending": "Resending...",
-      "statusNotInvited": "Not Invited",
       "statusInvited": "Invited",
       "statusAccepted": "Portal Active",
       "inviteSuccess": "Invitation Sent",
@@ -3986,18 +3844,14 @@
       "inviteError": "Invitation Failed",
       "resendSuccess": "Invitation Resent",
       "resendSuccessMessage": "The invitation has been resent to {email}",
-      "resendError": "Resend Failed",
-      "adminCreatedAccount": "Admin-created account"
+      "resendError": "Resend Failed"
     },
     "smsReminder": {
       "title": "SMS Order Reminder",
       "description": "Send SMS reminders on selected days to place orders",
       "enable": "Enable SMS Reminders",
       "reminderDays": "Reminder Days",
-      "selectDays": "Select reminder days",
-      "noDaysSelected": "No days selected",
       "mobileRequired": "A mobile number is required to enable SMS reminders",
-      "globalDisabled": "SMS reminders are currently disabled by administrator",
       "notConfigured": "SMS service is not configured"
     }
   },
@@ -4007,7 +3861,6 @@
     "errorLoading": "Error loading order",
     "header": {
       "orderNumber": "Order #{number}",
-      "placedOn": "Placed on",
       "customer": "Customer"
     },
     "items": {
@@ -4056,8 +3909,7 @@
         "cancel": "Cancel",
         "success": "Delivery rescheduled",
         "failed": "Failed to reschedule",
-        "notWorkingDay": "Selected day is not a configured working day.",
-        "statusNotEditable": "Delivery date can only be changed while the order is awaiting approval or confirmed."
+        "notWorkingDay": "Selected day is not a configured working day."
       }
     },
     "driverAssignment": {
@@ -4101,7 +3953,6 @@
       "issueCreditNote": "Issue Credit Note"
     },
     "creditNote": {
-      "issueButton": "Issue Credit Note",
       "dialogTitle": "Issue Partial Credit Note",
       "dialogDescription": "Select items and quantities to credit against this invoice.",
       "reason": "Reason",
@@ -4116,7 +3967,6 @@
       "totalCredit": "Total Credit",
       "nearLimitWarning": "This credit note will use most of the remaining creditable amount.",
       "exceedsLimitError": "Total credits would exceed the invoice total.",
-      "noItemsSelected": "Please select at least one item to credit.",
       "reasonRequired": "A reason is required.",
       "cancel": "Cancel",
       "submit": "Submit Credit Note",
@@ -4134,7 +3984,6 @@
     "actions": {
       "title": "Order Actions",
       "updateStatus": "Update Status",
-      "selectStatus": "Select status...",
       "statusUpdated": "Status Updated",
       "statusUpdatedMessage": "Order status has been updated successfully",
       "statusError": "Update Failed",
@@ -4190,7 +4039,6 @@
   "notifications": {
     "title": "Notifications",
     "markAllAsRead": "Mark all as read",
-    "noNotifications": "No notifications",
     "types": {
       "order": "New order received",
       "customer": "New customer registration",
@@ -4283,7 +4131,6 @@
     "subtitle": "Configure delivery zones used for driver assignment and route optimization",
     "createArea": "Create Area",
     "editArea": "Edit Area",
-    "deleteArea": "Delete Area",
     "noAreas": "No areas configured yet",
     "noAreasDescription": "Create your first delivery area to get started",
     "fields": {
@@ -4324,7 +4171,6 @@
     },
     "errors": {
       "nameExists": "An area with this name already exists",
-      "hasDependencies": "Cannot delete area with active suburb mappings or driver assignments",
       "createFailed": "Failed to create area",
       "updateFailed": "Failed to update area",
       "deleteFailed": "Failed to delete area",
@@ -4352,5 +4198,12 @@
   "metadata": {
     "title": "Admin Portal - Joho Foods ERP",
     "description": "Administrative dashboard for Joho Foods operations"
+  },
+  "paymentMethods": {
+    "bank_transfer": "Bank Transfer",
+    "credit_card": "Credit Card",
+    "cheque": "Cheque",
+    "cash_on_delivery": "Cash on Delivery",
+    "account_credit": "Account Credit"
   }
 }

@@ -43,6 +43,7 @@ export default function NewSupplierPage() {
   const router = useRouter();
   const t = useTranslations('supplierForm');
   const tCommon = useTranslations('common');
+  const tPayment = useTranslations('paymentMethods');
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState('business');
@@ -701,11 +702,11 @@ export default function NewSupplierPage() {
                         })
                       }
                     >
-                      <option value="bank_transfer">Bank Transfer</option>
-                      <option value="credit_card">Credit Card</option>
-                      <option value="cheque">Cheque</option>
-                      <option value="cash_on_delivery">Cash on Delivery</option>
-                      <option value="account_credit">Account Credit</option>
+                      <option value="bank_transfer">{tPayment('bank_transfer')}</option>
+                      <option value="credit_card">{tPayment('credit_card')}</option>
+                      <option value="cheque">{tPayment('cheque')}</option>
+                      <option value="cash_on_delivery">{tPayment('cash_on_delivery')}</option>
+                      <option value="account_credit">{tPayment('account_credit')}</option>
                     </select>
                   </div>
                   <div className="space-y-2">

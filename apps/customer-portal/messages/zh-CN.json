@@ -49,7 +49,6 @@
     "close": "关闭",
     "signUp": "注册",
     "retry": "重试",
-    "errorOccurred": "出了点问题",
     "unavailable": "不可用",
     "confirm": "确认",
     "brand": "Joho Foods",
@@ -66,10 +65,8 @@
   },
   "errors": {
     "operationFailed": "操作失败，请重试。",
-    "networkError": "网络错误，请检查您的网络连接。",
     "cartUpdateFailed": "购物车更新失败，请重试。",
     "orderFailed": "订单处理失败，请重试。",
-    "loadFailed": "加载数据失败，请刷新页面。",
     "searchError": "搜索失败，请重试。"
   },
   "statusBadges": {
@@ -170,7 +167,6 @@
     "subtitle": "浏览我们的优质肉品系列",
     "searchPlaceholder": "搜索产品...",
     "category": "类别",
-    "priceRange": "价格范围",
     "availability": "供应状态",
     "inStock": "有库存",
     "lowStock": "低库存",
@@ -180,18 +176,12 @@
     "addToCart": "加入购物车",
     "viewDetails": "查看详情",
     "errorLoading": "加载产品时出错",
-    "yourSpecialPrice": "您的专属价格 每{unit}",
     "perUnit": "每{unit}",
-    "inclGst": "(含消费税)",
-    "unitsAvailable": "{count}{unit} 可用",
     "noProductsFound": "未找到产品",
-    "emptyWithCategory": "尝试选择其他类别或清除筛选条件。",
-    "emptyWithSearch": "尝试调整您的搜索词。",
     "allProducts": "全部产品",
     "filterByCategory": "按类别筛选",
     "clearFilters": "清除筛选",
     "showing": "显示 {count} 个产品",
-    "quickAdd": "快速添加",
     "productDetails": "产品详情",
     "description": "描述",
     "quantity": {
@@ -213,10 +203,8 @@
       "enterValidAmount": "请输入0.01到999之间的有效数量",
       "maxExceeded": "数量不能超过{max}"
     },
-    "selectQuantity": "选择数量",
     "increaseQuantity": "增加数量",
     "decreaseQuantity": "减少数量",
-    "closeDetails": "关闭详情",
     "sku": "货号",
     "stock": "库存",
     "basePrice": "基础价格",
@@ -226,13 +214,9 @@
     "noDescription": "暂无描述",
     "incrementBy5": "增加5件",
     "decrementBy5": "减少5件",
-    "tapToEdit": "点击编辑数量",
-    "maxStockReached": "已达到最大库存",
     "onboardingRequired": "请完成注册流程以开始订购",
     "creditPending": "您的账户正在审核中",
     "creditRejected": "您的账户需要审批。请联系我们。",
-    "accountPending": "您的账户正在审核中",
-    "accountRejected": "您的账户需要审批。请联系我们。",
     "completeOnboarding": "完成注册",
     "customPricing": "专属价格",
     "gstIncluded": "含消费税",
@@ -269,9 +253,7 @@
     },
     "sidebar": {
       "categories": "产品分类",
-      "allProducts": "全部产品",
-      "expandCategories": "展开分类",
-      "collapseCategories": "收起分类"
+      "allProducts": "全部产品"
     }
   },
   "categories": {
@@ -329,8 +311,7 @@
       "cancelling": "取消中...",
       "success": "订单已取消",
       "successMessage": "您的订单已成功取消。",
-      "error": "取消失败",
-      "cannotCancel": "只有待处理订单可以取消"
+      "error": "取消失败"
     },
     "invoice": {
       "title": "发票"
@@ -402,7 +383,6 @@
       "download": "下载信用申请 PDF"
     },
     "edit": {
-      "editProfile": "编辑资料",
       "mobile": "手机",
       "deliveryInstructions": "配送说明",
       "saving": "保存中...",
@@ -410,7 +390,6 @@
       "successMessage": "您的资料已成功更新！",
       "error": "更新失败",
       "validationError": "验证错误",
-      "validationErrorMessage": "请修正表单中的错误后再保存。",
       "validation": {
         "phoneRequired": "电话号码为必填项",
         "phoneInvalid": "请输入有效的电话号码",
@@ -434,14 +413,12 @@
     "subtotal": "小计",
     "tax": "税金 (GST)",
     "orderTotal": "订单总计",
-    "proceedToCheckout": "前往结账",
     "clearCart": "清空购物车",
     "itemTotal": "商品总计",
     "creditLimitWarning": "警告：订单总额超出可用信用额度",
     "availableCredit": "可用信用额度",
     "buttons": {
       "addToCart": "加入购物车",
-      "addingToCart": "添加中...",
       "removeItem": "移除",
       "clearCart": "清空购物车",
       "checkout": "前往结账"
@@ -454,7 +431,6 @@
       "errorAddingToCart": "添加商品失败",
       "errorRemovingItem": "移除商品失败",
       "errorClearingCart": "清空购物车失败",
-      "errorLoadingCart": "加载购物车失败",
       "errorUpdatingQuantity": "更新数量失败"
     },
     "itemCount": "{count} 项",
@@ -478,17 +454,13 @@
       "description": "消费税适用于符合条件的商品",
       "withGst": "含消费税的商品",
       "exempt": "免消费税的商品"
-    },
-    "orderBlockedWarning": "无法处理订单。请联系我们。",
-    "checkoutBlocked": "无法结账",
-    "checkoutBlockedWarning": "无法结账。请联系我们。"
+    }
   },
   "miniCart": {
     "title": "您的购物车",
     "empty": "购物车是空的",
     "emptyDescription": "添加一些产品开始购物",
     "viewCart": "查看完整购物车",
-    "checkoutNow": "立即结账",
     "continueShopping": "继续购物",
     "items": "{count}件商品",
     "subtotal": "小计",
@@ -497,7 +469,6 @@
     "cartWithItems": "购物车, {count}件商品",
     "viewImage": "查看产品图片",
     "deliveryDate": "配送日期",
-    "selectDeliveryDate": "选择配送日期",
     "sundayNotAvailable": "周日不提供配送服务",
     "orderPlaced": "订单已提交",
     "orderSuccess": "您的订单已成功提交",
@@ -525,9 +496,7 @@
       "title": "信用申请",
       "approved": "已批准",
       "pending": "审核中",
-      "pendingMessage": "您的信用申请正在审核中。批准后我们会通知您。",
-      "rejected": "未批准",
-      "rejectedMessage": "您的信用申请未获批准。请联系我们获取帮助。"
+      "rejected": "未批准"
     },
     "quickActions": {
       "title": "快捷操作",
@@ -544,8 +513,7 @@
       "title": "结账受限",
       "onboardingRequired": "完成注册后才能下单。",
       "creditPending": "您的账户正在审核中。审核通过后即可下单。",
-      "creditRejected": "您的账户需要审批。请联系我们。",
-      "accountPendingApproval": "您的账户正在审核中。审核通过后即可下单。"
+      "creditRejected": "您的账户需要审批。请联系我们。"
     },
     "recentOrders": {
       "title": "最近订单",
@@ -594,14 +562,10 @@
     "deliveryDate": {
       "label": "配送日期",
       "selectDate": "选择配送日期",
-      "cutoffWarning": "今天的订单截止时间 ({time}) 已过。",
       "nextAvailable": "最早可配送日期：{date}",
-      "minDateTomorrow": "最早配送为明天",
       "sundayNotAvailable": "周日不提供配送服务",
-      "selectWeekday": "请选择工作日（周一至周六）",
       "dayNotAvailable": "{day}不提供配送服务",
-      "selectWorkingDay": "请选择工作日",
-      "invalidDay": "所选配送日期不可用"
+      "selectWorkingDay": "请选择工作日"
     },
     "minimumOrder": {
       "belowMinimum": "低于最低订单",
@@ -611,8 +575,7 @@
       "creditLimit": "信用额度",
       "outstandingBalance": "未结余额",
       "availableCredit": "可用信用额度",
-      "exceedsCredit": "超出信用额度",
-      "exceedsCreditMessage": "您的订单总额 ({total}) 超出了可用信用额度 ({available})。请联系销售人员。"
+      "exceedsCredit": "超出信用额度"
     }
   },
   "orderDetails": {
@@ -1294,10 +1257,7 @@
     "afterCutoffTitle": "今天的截止时间 ({time}) 已过",
     "nextAvailable": "最早可配送日期：{date}",
     "compactBeforeCutoff": "在 {time} 前下单，可于次日送达",
-    "compactAfterCutoff": "下次配送：{date}",
-    "weekdaysOnly": "（仅限周一至周六）",
-    "beforeCutoffMessageWithDays": "今天在 {time} 前下单，可于次日送达（周一至周六）",
-    "nextAvailableWithDays": "最早可配送日期：{date}（周一至周六）"
+    "compactAfterCutoff": "下次配送：{date}"
   },
   "illustratedEmptyState": {
     "emptyCart": {

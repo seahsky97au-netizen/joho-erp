@@ -15,6 +15,30 @@ interface GuaranteeIndemnityStepProps {
   onBack: () => void;
 }
 
+// Mirrors onboarding.guaranteeIndemnity.* in the locale JSON.
+// Each clause is either: a single-paragraph clause (key = 'content'),
+// or a list clause (intro + lower-alpha items), or a definitions clause.
+type ClauseShape =
+  | { kind: 'paragraph' }
+  | { kind: 'list'; items: readonly string[] }
+  | { kind: 'definitions'; terms: readonly string[] };
+
+const RECITALS = ['a', 'b'] as const;
+
+const GI_CLAUSES: ReadonlyArray<{ num: string; shape: ClauseShape }> = [
+  { num: '1', shape: { kind: 'list', items: ['a', 'b', 'c'] } },
+  { num: '2', shape: { kind: 'paragraph' } },
+  { num: '3', shape: { kind: 'list', items: ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'] } },
+  { num: '4', shape: { kind: 'paragraph' } },
+  { num: '5', shape: { kind: 'list', items: ['a', 'b', 'c'] } },
+  { num: '6', shape: { kind: 'paragraph' } },
+  { num: '7', shape: { kind: 'paragraph' } },
+  { num: '8', shape: { kind: 'paragraph' } },
+  { num: '9', shape: { kind: 'paragraph' } },
+  { num: '10', shape: { kind: 'paragraph' } },
+  { num: '11', shape: { kind: 'definitions', terms: ['supplier', 'applicant', 'guarantors'] } },
+];
+
 export function GuaranteeIndemnityStep({
   businessName,
   directors,
@@ -111,118 +135,62 @@ export function GuaranteeIndemnityStep({
         <p className="text-muted-foreground">{t('description')}</p>
       </div>
 
-      {/* Guarantee Content - HARDCODED IN ENGLISH */}
+      {/* Guarantee Content */}
       <Card>
         <CardContent className="p-6">
           <div className="max-h-[500px] overflow-y-auto pr-2 space-y-6">
             {/* Header Section */}
             <div className="rounded-lg bg-muted/50 p-4">
-              <p className="text-sm font-medium leading-relaxed">
-                To: JIMMY&apos;S BEEF PTY LTD ABN 78 673 178 615 (&quot;the Supplier&quot;)
-              </p>
+              <p className="text-sm font-medium leading-relaxed">{t('header')}</p>
             </div>
 
             {/* Recitals */}
             <div className="space-y-3">
-              <h3 className="text-lg font-semibold">Recitals</h3>
+              <h3 className="text-lg font-semibold">{t('recitals.title')}</h3>
               <div className="space-y-2 text-sm">
-                <p><strong>A.</strong> The Applicant ({businessName || '[Business Name]'}) has submitted an application to be supplied credit by the Supplier.</p>
-                <p><strong>B.</strong> This Guarantee and Indemnity applies to all credit supplied by the Supplier to the Applicant, including all branches, divisions and related entities.</p>
+                {RECITALS.map((letter) => (
+                  <p key={letter}>
+                    <strong>{letter.toUpperCase()}.</strong>{' '}
+                    {t(`recitals.${letter}`, {
+                      businessName: businessName || '[Business Name]',
+                    })}
+                  </p>
+                ))}
               </div>
             </div>
 
             {/* Operative Part */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Operative Part</h3>
+              <h3 className="text-lg font-semibold">{t('operativePart.title')}</h3>
 
-              {/* Clause 1: Guarantor Obligations */}
-              <div className="space-y-2">
-                <h4 className="font-semibold">1. Guarantor Obligations</h4>
-                <p className="text-sm">In consideration of the Supplier agreeing to supply credit to the Applicant, each Guarantor:</p>
-                <ol className="list-[lower-alpha] pl-6 space-y-1 text-sm">
-                  <li>unconditionally and irrevocably guarantees to the Supplier the due and punctual payment by the Applicant of all amounts payable to the Supplier;</li>
-                  <li>unconditionally and irrevocably guarantees to the Supplier the due and punctual performance by the Applicant of all its obligations to the Supplier;</li>
-                  <li>unconditionally and irrevocably indemnifies the Supplier against all loss, damage, costs and expenses arising from any default by the Applicant.</li>
-                </ol>
-              </div>
-
-              {/* Clause 2: Principal Obligation */}
-              <div className="space-y-2">
-                <h4 className="font-semibold">2. Principal Obligation</h4>
-                <p className="text-sm">This guarantee and indemnity is a principal obligation and not ancillary to any obligation of the Applicant. The Guarantor&apos;s liability is not affected by any other security or guarantee held by the Supplier.</p>
-              </div>
-
-              {/* Clause 3: Enforceability Conditions */}
-              <div className="space-y-2">
-                <h4 className="font-semibold">3. Enforceability</h4>
-                <p className="text-sm">This guarantee and indemnity remains enforceable against the Guarantor notwithstanding:</p>
-                <ol className="list-[lower-alpha] pl-6 space-y-1 text-sm">
-                  <li>any variation, extension or renewal of any credit facility or payment terms;</li>
-                  <li>any release or discharge of the Applicant or any other guarantor;</li>
-                  <li>any failure to enforce or delay in enforcing any rights against the Applicant;</li>
-                  <li>any arrangement or compromise with the Applicant or any other guarantor;</li>
-                  <li>the insolvency, liquidation, administration or death of the Applicant or any other guarantor;</li>
-                  <li>any change in the constitution of the Applicant or Supplier;</li>
-                  <li>any security interest being void, invalid or unenforceable;</li>
-                  <li>any other act, omission or circumstance which might otherwise affect or discharge the Guarantor&apos;s liability.</li>
-                </ol>
-              </div>
-
-              {/* Clause 4: Continuing Guarantee */}
-              <div className="space-y-2">
-                <h4 className="font-semibold">4. Continuing Guarantee</h4>
-                <p className="text-sm">This is a continuing guarantee and remains in force until all amounts owing by the Applicant are paid in full and the Supplier has no further obligation to provide credit.</p>
-              </div>
-
-              {/* Clause 5: Joint and Several Liability */}
-              <div className="space-y-2">
-                <h4 className="font-semibold">5. Joint and Several Liability</h4>
-                <ol className="list-[lower-alpha] pl-6 space-y-1 text-sm">
-                  <li>If more than one person signs as Guarantor, each is jointly and severally liable under this guarantee and indemnity.</li>
-                  <li>The Supplier may release or compromise with any Guarantor without affecting the liability of any other Guarantor.</li>
-                  <li>Each Guarantor waives any rights to claim contribution from any other Guarantor.</li>
-                </ol>
-              </div>
-
-              {/* Clause 6: Waiver of Rights */}
-              <div className="space-y-2">
-                <h4 className="font-semibold">6. Waiver of Rights</h4>
-                <p className="text-sm">Each Guarantor waives any right to require the Supplier to proceed first against the Applicant or any other guarantor or to enforce any other security before enforcing this guarantee.</p>
-              </div>
-
-              {/* Clause 7: Property Charge */}
-              <div className="space-y-2">
-                <h4 className="font-semibold">7. Property Charge</h4>
-                <p className="text-sm">Each Guarantor charges all of their estate and interest in any real property owned by them (whether solely or jointly) with the payment of all amounts payable under this guarantee and indemnity.</p>
-              </div>
-
-              {/* Clause 8: Credit Reporting Consent */}
-              <div className="space-y-2">
-                <h4 className="font-semibold">8. Credit Reporting Consent</h4>
-                <p className="text-sm">Each Guarantor consents to the Supplier obtaining credit reports and disclosing personal information to credit reporting agencies for the purposes of assessing creditworthiness and debt recovery.</p>
-              </div>
-
-              {/* Clause 9: Trust Authority Warrant */}
-              <div className="space-y-2">
-                <h4 className="font-semibold">9. Trust Authority</h4>
-                <p className="text-sm">If a Guarantor is a trustee, the Guarantor warrants that it has full power and authority to enter into this guarantee and indemnity and to bind the trust assets.</p>
-              </div>
-
-              {/* Clause 10: Notice Provisions */}
-              <div className="space-y-2">
-                <h4 className="font-semibold">10. Notices</h4>
-                <p className="text-sm">Any notice under this guarantee and indemnity must be in writing and may be served by post, email or personal delivery to the last known address of the party.</p>
-              </div>
-
-              {/* Clause 11: Definitions */}
-              <div className="space-y-2">
-                <h4 className="font-semibold">11. Definitions</h4>
-                <ul className="list-disc pl-6 space-y-1 text-sm">
-                  <li><strong>&quot;Supplier&quot;</strong> means JIMMY&apos;S BEEF PTY LTD ABN 78 673 178 615.</li>
-                  <li><strong>&quot;Applicant&quot;</strong> means the person, partnership, corporation, trust or other entity applying for credit.</li>
-                  <li><strong>&quot;Guarantors&quot;</strong> means each person who signs this guarantee and indemnity as a guarantor.</li>
-                </ul>
-              </div>
+              {GI_CLAUSES.map(({ num, shape }) => (
+                <div key={num} className="space-y-2">
+                  <h4 className="font-semibold">{t(`clauses.${num}.title`)}</h4>
+                  {shape.kind === 'paragraph' && (
+                    <p className="text-sm">{t(`clauses.${num}.content`)}</p>
+                  )}
+                  {shape.kind === 'list' && (
+                    <>
+                      <p className="text-sm">{t(`clauses.${num}.intro`)}</p>
+                      <ol className="list-[lower-alpha] pl-6 space-y-1 text-sm">
+                        {shape.items.map((it) => (
+                          <li key={it}>{t(`clauses.${num}.${it}`)}</li>
+                        ))}
+                      </ol>
+                    </>
+                  )}
+                  {shape.kind === 'definitions' && (
+                    <ul className="list-disc pl-6 space-y-1 text-sm">
+                      {shape.terms.map((term) => (
+                        <li key={term}>
+                          <strong>{t(`clauses.${num}.${term}.term`)}</strong>{' '}
+                          {t(`clauses.${num}.${term}.meaning`)}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         </CardContent>

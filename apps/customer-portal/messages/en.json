@@ -49,7 +49,6 @@
     "close": "Close",
     "signUp": "Sign Up",
     "retry": "Try Again",
-    "errorOccurred": "Something went wrong",
     "unavailable": "Unavailable",
     "confirm": "Confirm",
     "brand": "Joho Foods",
@@ -66,10 +65,8 @@
   },
   "errors": {
     "operationFailed": "Something went wrong. Please try again.",
-    "networkError": "Network error. Please check your connection.",
     "cartUpdateFailed": "Failed to update cart. Please try again.",
     "orderFailed": "Failed to process order. Please try again.",
-    "loadFailed": "Failed to load data. Please refresh the page.",
     "searchError": "Search failed. Please try again."
   },
   "statusBadges": {
@@ -170,7 +167,6 @@
     "subtitle": "Browse our selection of premium meat products",
     "searchPlaceholder": "Search products...",
     "category": "Category",
-    "priceRange": "Price Range",
     "availability": "Availability",
     "inStock": "In Stock",
     "lowStock": "Low Stock",
@@ -180,19 +176,13 @@
     "addToCart": "Add to Cart",
     "viewDetails": "View Details",
     "errorLoading": "Error loading products",
-    "yourSpecialPrice": "Your special price per {unit}",
     "perUnit": "per {unit}",
-    "inclGst": "(incl. GST)",
     "gstIncluded": "GST Included",
-    "unitsAvailable": "{count}{unit} available",
     "noProductsFound": "No products found",
-    "emptyWithCategory": "Try selecting a different category or clear your filters.",
-    "emptyWithSearch": "Try adjusting your search terms.",
     "allProducts": "All Products",
     "filterByCategory": "Filter by Category",
     "clearFilters": "Clear Filters",
     "showing": "Showing {count} products",
-    "quickAdd": "Quick Add",
     "productDetails": "Product Details",
     "description": "Description",
     "quantity": {
@@ -214,10 +204,8 @@
       "enterValidAmount": "Please enter a valid quantity between 0.01 and 999",
       "maxExceeded": "Quantity cannot exceed {max}"
     },
-    "selectQuantity": "Select quantity",
     "increaseQuantity": "Increase quantity",
     "decreaseQuantity": "Decrease quantity",
-    "closeDetails": "Close details",
     "sku": "SKU",
     "stock": "Stock",
     "basePrice": "Base Price",
@@ -227,13 +215,9 @@
     "noDescription": "No description available",
     "incrementBy5": "Add 5 more",
     "decrementBy5": "Remove 5",
-    "tapToEdit": "Tap to edit quantity",
-    "maxStockReached": "Maximum stock reached",
     "onboardingRequired": "Complete your onboarding to start ordering",
     "creditPending": "Your account is pending approval",
     "creditRejected": "Your account requires approval. Please contact us.",
-    "accountPending": "Your account is pending approval",
-    "accountRejected": "Your account requires approval. Please contact us.",
     "completeOnboarding": "Complete Onboarding",
     "customPricing": "Special Price",
     "noImage": "No Image",
@@ -269,9 +253,7 @@
     },
     "sidebar": {
       "categories": "Categories",
-      "allProducts": "All Products",
-      "expandCategories": "Show categories",
-      "collapseCategories": "Hide categories"
+      "allProducts": "All Products"
     }
   },
   "categories": {
@@ -329,8 +311,7 @@
       "cancelling": "Cancelling...",
       "success": "Order Cancelled",
       "successMessage": "Your order has been cancelled successfully.",
-      "error": "Cancel Failed",
-      "cannotCancel": "Only pending orders can be cancelled"
+      "error": "Cancel Failed"
     },
     "invoice": {
       "title": "Invoice"
@@ -402,7 +383,6 @@
       "download": "Download Credit Application PDF"
     },
     "edit": {
-      "editProfile": "Edit Profile",
       "mobile": "Mobile",
       "deliveryInstructions": "Delivery Instructions",
       "saving": "Saving...",
@@ -410,7 +390,6 @@
       "successMessage": "Your profile has been updated successfully!",
       "error": "Update Failed",
       "validationError": "Validation Error",
-      "validationErrorMessage": "Please fix the errors in the form before saving.",
       "validation": {
         "phoneRequired": "Phone number is required",
         "phoneInvalid": "Please enter a valid phone number",
@@ -434,14 +413,12 @@
     "subtotal": "Subtotal",
     "tax": "Tax (GST)",
     "orderTotal": "Order Total",
-    "proceedToCheckout": "Proceed to Checkout",
     "clearCart": "Clear Cart",
     "itemTotal": "Item Total",
     "creditLimitWarning": "Warning: Order total exceeds available credit",
     "availableCredit": "Available Credit",
     "buttons": {
       "addToCart": "Add to Cart",
-      "addingToCart": "Adding...",
       "removeItem": "Remove",
       "clearCart": "Clear Cart",
       "checkout": "Proceed to Checkout"
@@ -454,7 +431,6 @@
       "errorAddingToCart": "Failed to add item to cart",
       "errorRemovingItem": "Failed to remove item",
       "errorClearingCart": "Failed to clear cart",
-      "errorLoadingCart": "Failed to load cart",
       "errorUpdatingQuantity": "Failed to update quantity"
     },
     "itemCount": "{count} item",
@@ -478,17 +454,13 @@
       "description": "GST applied to eligible items",
       "withGst": "items with GST",
       "exempt": "GST-exempt items"
-    },
-    "orderBlockedWarning": "Unable to process order. Please contact us.",
-    "checkoutBlocked": "Checkout unavailable",
-    "checkoutBlockedWarning": "Unable to checkout. Please contact us."
+    }
   },
   "miniCart": {
     "title": "Your Cart",
     "empty": "Your cart is empty",
     "emptyDescription": "Add some products to get started",
     "viewCart": "View Full Cart",
-    "checkoutNow": "Checkout Now",
     "continueShopping": "Continue Shopping",
     "items": "{count, plural, one {# item} other {# items}}",
     "subtotal": "Subtotal",
@@ -497,7 +469,6 @@
     "cartWithItems": "Shopping cart, {count, plural, one {# item} other {# items}}",
     "viewImage": "View product image",
     "deliveryDate": "Delivery Date",
-    "selectDeliveryDate": "Select a delivery date",
     "sundayNotAvailable": "Sunday delivery is not available",
     "orderPlaced": "Order Placed",
     "orderSuccess": "Your order has been submitted successfully",
@@ -1104,9 +1075,7 @@
       "title": "Credit Application",
       "approved": "Approved",
       "pending": "Pending Review",
-      "pendingMessage": "Your credit application is being reviewed. We'll notify you once approved.",
-      "rejected": "Not Approved",
-      "rejectedMessage": "Your credit application was not approved. Please contact us for assistance."
+      "rejected": "Not Approved"
     },
     "quickActions": {
       "title": "Quick Actions",
@@ -1123,8 +1092,7 @@
       "title": "Checkout Restricted",
       "onboardingRequired": "Complete your registration to place orders.",
       "creditPending": "Your account is pending approval. Orders will be enabled once approved.",
-      "creditRejected": "Your account requires approval. Please contact us.",
-      "accountPendingApproval": "Your account is pending approval. Orders will be enabled once approved."
+      "creditRejected": "Your account requires approval. Please contact us."
     },
     "recentOrders": {
       "title": "Recent Orders",
@@ -1173,14 +1141,10 @@
     "deliveryDate": {
       "label": "Delivery Date",
       "selectDate": "Select delivery date",
-      "cutoffWarning": "Order cutoff time ({time}) has passed for today.",
       "nextAvailable": "Earliest delivery available: {date}",
-      "minDateTomorrow": "Earliest delivery is tomorrow",
       "sundayNotAvailable": "Sunday delivery is not available",
-      "selectWeekday": "Please select a weekday (Monday-Saturday)",
       "dayNotAvailable": "{day} deliveries are not available",
-      "selectWorkingDay": "Please select a working day",
-      "invalidDay": "The selected delivery day is not available"
+      "selectWorkingDay": "Please select a working day"
     },
     "minimumOrder": {
       "belowMinimum": "Below Minimum Order",
@@ -1190,8 +1154,7 @@
       "creditLimit": "Credit Limit",
       "outstandingBalance": "Outstanding Balance",
       "availableCredit": "Available Credit",
-      "exceedsCredit": "Exceeds Credit Limit",
-      "exceedsCreditMessage": "Your order total ({total}) exceeds your available credit ({available}). Please contact sales for assistance."
+      "exceedsCredit": "Exceeds Credit Limit"
     }
   },
   "orderDetails": {
@@ -1294,10 +1257,7 @@
     "afterCutoffTitle": "Today's cutoff ({time}) has passed",
     "nextAvailable": "Next available delivery: {date}",
     "compactBeforeCutoff": "Order by {time} for next-day delivery",
-    "compactAfterCutoff": "Next delivery: {date}",
-    "weekdaysOnly": "(Monday-Saturday only)",
-    "beforeCutoffMessageWithDays": "Order by {time} today for next-day delivery (Monday-Saturday)",
-    "nextAvailableWithDays": "Next available delivery: {date} (Monday-Saturday)"
+    "compactAfterCutoff": "Next delivery: {date}"
   },
   "illustratedEmptyState": {
     "emptyCart": {

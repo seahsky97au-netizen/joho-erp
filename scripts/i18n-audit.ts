@@ -45,8 +45,13 @@ const PORTALS: Record<string, PortalConfig> = {
   },
 };
 
-// Namespaces that use dynamic key access (t(`status.${var}`)) — exclude from unused detection
+// Namespaces that use dynamic key access (t(`status.${var}`)) — exclude from unused detection.
+// Dotted paths are supported and matched as prefixes (e.g. "settings.users.roles" excludes
+// every key under settings.users.roles.*). Use this list when the audit's dynamic-call
+// detector cannot see the call site — typically because the translation function is passed
+// in as a prop, or because the dynamic substitution contains characters the regex can't span.
 const DYNAMIC_NAMESPACES = [
+  // Top-level enum-style prefixes
   "statusBadges",
   "orderStatusDescriptions",
   "productUnits",
@@ -58,6 +63,26 @@ const DYNAMIC_NAMESPACES = [
   "packingErrors",
   "categories",
   "status",
+  "paymentMethods",
+  // Nested admin-portal prefixes — accessed via t(`prefix.${var}`)
+  "creditReview.creditStatus",
+  "customerDetail.businessInfo.accountTypes",
+  "driver.returnDialog.reasons",
+  "orderDetail.actionBar",
+  "settings.auditLogs.entities",
+  "settings.auditLogs.actions",
+  "settings.delivery.workingDays",
+  "settings.permissions.roles",
+  "settings.permissions.modules",
+  "settings.permissions.actions",
+  "settings.users.roles",
+  "settings.users.roleDescriptions",
+  // Prop-based translation function in StockCountsTable — invisible to binding extractor
+  "inventory.stockCounts.conversionBatches",
+  // Dynamic substitution contains a method call (cat.toLowerCase()) that breaks the regex
+  "packing.categories",
+  // Nested customer-portal prefixes
+  "onboarding.steps",
 ];
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -199,6 +224,10 @@ function extractTranslationBindings(
   const bindings: TranslationBinding[] = [];
   const lines = content.split("\n");
 
+  // Permissive declarator prefix: optional `const|let|var` (so reassignments and
+  // `let user, t;` followed by `t = await getTranslations(...)` are caught too).
+  const D = String.raw`(?:const|let|var\s+)?\s*`;
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
@@ -206,7 +235,7 @@ function extractTranslationBindings(
     // Pattern: const tCommon = useTranslations('common')
     // Pattern: const t = useTranslations()
     const useMatch = line.match(
-      /const\s+(\w+)\s*=\s*useTranslations\(\s*(?:'([^']*)'|"([^"]*)")?\s*\)/
+      new RegExp(`${D}(\\w+)\\s*=\\s*useTranslations\\(\\s*(?:'([^']*)'|"([^"]*)")?\\s*\\)`)
     );
     if (useMatch) {
       bindings.push({
@@ -219,7 +248,7 @@ function extractTranslationBindings(
 
     // Pattern: const t = await getTranslations({ locale, namespace: 'metadata' })
     const getMatchObj = line.match(
-      /const\s+(\w+)\s*=\s*await\s+getTranslations\(\s*\{[^}]*namespace:\s*(?:'([^']*)'|"([^"]*)")/
+      new RegExp(`${D}(\\w+)\\s*=\\s*await\\s+getTranslations\\(\\s*\\{[^}]*namespace:\\s*(?:'([^']*)'|"([^"]*)")`)
     );
     if (getMatchObj) {
       bindings.push({
@@ -232,7 +261,7 @@ function extractTranslationBindings(
 
     // Pattern: const t = await getTranslations('namespace')
     const getMatchSimple = line.match(
-      /const\s+(\w+)\s*=\s*await\s+getTranslations\(\s*(?:'([^']*)'|"([^"]*)")\s*\)/
+      new RegExp(`${D}(\\w+)\\s*=\\s*await\\s+getTranslations\\(\\s*(?:'([^']*)'|"([^"]*)")\\s*\\)`)
     );
     if (getMatchSimple) {
       bindings.push({
@@ -245,7 +274,7 @@ function extractTranslationBindings(
 
     // Pattern: const t = await getTranslations({ locale })  (no namespace = root)
     const getMatchNoNs = line.match(
-      /const\s+(\w+)\s*=\s*await\s+getTranslations\(\s*\{[^}]*\}\s*\)/
+      new RegExp(`${D}(\\w+)\\s*=\\s*await\\s+getTranslations\\(\\s*\\{[^}]*\\}\\s*\\)`)
     );
     if (getMatchNoNs && !getMatchObj) {
       // Only if there's no namespace match
@@ -261,7 +290,7 @@ function extractTranslationBindings(
 
     // Pattern: const t = await getTranslations()  (root, no args)
     const getMatchEmpty = line.match(
-      /const\s+(\w+)\s*=\s*await\s+getTranslations\(\s*\)/
+      new RegExp(`${D}(\\w+)\\s*=\\s*await\\s+getTranslations\\(\\s*\\)`)
     );
     if (getMatchEmpty) {
       bindings.push({
@@ -337,9 +366,11 @@ function extractTranslationCalls(
         });
       }
 
-      // Match t(`template`) — template literal keys (dynamic)
+      // Match t(`template`) — template literal keys (dynamic).
+      // Terminate at the closing backtick so substitutions like ${cat.toLowerCase()} don't
+      // break the match on their internal parens.
       const templatePattern = new RegExp(
-        `\\b${escaped}\\(\\s*\`([^)]+)\``,
+        `\\b${escaped}\\(\\s*\`([^\`]+)\``,
         "g"
       );
       while ((match = templatePattern.exec(line)) !== null) {

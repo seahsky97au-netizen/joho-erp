@@ -49,14 +49,7 @@
     "sort": {
       "ascending": "升序",
       "descending": "降序",
-      "sortBy": "排序方式",
-      "clearSort": "清除排序",
-      "sortAsc": "從A到Z排序",
-      "sortDesc": "從Z到A排序",
-      "sortNewest": "最新優先",
-      "sortOldest": "最早優先",
-      "sortHighest": "最高優先",
-      "sortLowest": "最低優先"
+      "sortBy": "排序方式"
     },
     "filters": {
       "all": "全部",
@@ -65,7 +58,6 @@
       "allDrivers": "所有司機",
       "filterByCategory": "依類別篩選",
       "clearFilters": "清除篩選",
-      "applyFilters": "套用篩選",
       "area": "區域",
       "allAreas": "所有區域"
     },
@@ -74,8 +66,7 @@
       "collapse": "收合"
     },
     "table": {
-      "noResults": "未找到結果",
-      "noResultsWithFilters": "沒有符合篩選條件的結果。請嘗試調整搜尋或篩選條件。"
+      "noResults": "未找到結果"
     },
     "selectArea": "選擇區域",
     "unassigned": "未分配",
@@ -182,22 +173,11 @@
     "activeCustomers": "活躍客戶",
     "activeDeliveries": "進行中配送",
     "pendingBackorders": "待審批缺貨訂單",
-    "backordersAwaitingApproval": "等待審批",
     "recentOrders": "最近訂單",
     "lowStockAlerts": "低庫存警報",
-    "unitsLeft": "件剩餘",
     "viewAll": "檢視全部",
-    "viewBackorders": "檢視缺貨訂單",
-    "allTime": "全部時間",
-    "requireProcessing": "需要處理",
-    "activeAccounts": "活躍帳戶",
-    "latestOrders": "客戶的最新訂單",
     "noRecentOrders": "暫無最近訂單",
-    "ordersWillAppearHere": "客戶下單後訂單將顯示在這裡",
-    "productsRequiringAttention": "需要關注的產品",
     "threshold": "閾值：",
-    "noLowStockItems": "無低庫存商品",
-    "allProductsWellStocked": "所有產品庫存充足",
     "expiringStock": "庫存過期",
     "expired": "已過期",
     "expiringSoon": "即將過期",
@@ -207,9 +187,7 @@
       "expired": "已過期",
       "expiring": "即將過期",
       "expiredDays": "{days}天前過期",
-      "expiresIn": "{days}天後過期",
-      "noItems": "無過期商品",
-      "allGood": "所有庫存都在安全保質期內"
+      "expiresIn": "{days}天後過期"
     },
     "needsAttention": {
       "title": "需要注意",
@@ -226,14 +204,11 @@
     },
     "financialOverview": {
       "title": "財務概覽",
-      "todayRevenue": "今日收入",
       "pendingPayments": "待收款項",
-      "monthToDate": "本月至今",
       "trend": "趨勢",
       "vsYesterday": "較昨日",
       "vsLastWeek": "較上週",
       "vsLastMonth": "較上月",
-      "overduePayments": "{count} 筆逾期",
       "invoiceCount": "{count, plural, other {# 張發票}}"
     },
     "periodSelector": {
@@ -262,7 +237,6 @@
       "critical": "緊急",
       "lowStockItems": "{count} 件低庫存",
       "lowStockLabel": "低庫存商品",
-      "expiringThisWeek": "{count} 件本週過期",
       "expiringLabel": "本週過期",
       "outOfStockLabel": "缺貨商品",
       "viewInventory": "檢視庫存",
@@ -273,35 +247,34 @@
     "revenueChart": {
       "title": "收入趨勢",
       "days7": "收入趨勢 (7天)",
+      "totalRevenue": "總收入",
+      "totalOrders": "總訂單",
+      "noData": "暫無資料",
+      "clickToExpand": "點擊展開",
+      "description": "查看詳細的收入資料趨勢",
+      "timePeriod": "時間區間",
       "last7Days": "最近7天",
       "last14Days": "最近14天",
       "last30Days": "最近30天",
-      "totalRevenue": "總收入",
-      "totalOrders": "總訂單",
       "dailyAverage": "日均",
-      "noData": "暫無資料",
-      "clickToExpand": "點擊展開"
+      "noDataForPeriod": "此時間區間內沒有收入資料"
     }
   },
   "errors": {
     "errorTitle": "錯誤",
     "operationFailed": "操作失敗，請重試。",
-    "networkError": "網路錯誤，請檢查您的網路連線。",
     "saveFailed": "儲存失敗，請重試。",
     "deleteFailed": "刪除失敗，請重試。",
-    "loadFailed": "載入資料失敗，請重新整理頁面。",
     "syncFailed": "同步失敗，請重試。",
     "updateFailed": "更新失敗，請重試。",
     "generationFailed": "生成失敗，請重試。",
     "optimizationFailed": "最佳化失敗，請重試。",
-    "searchError": "搜尋失敗，請重試。",
-    "noInvoices": "未找到所選訂單的發票。"
+    "searchError": "搜尋失敗，請重試。"
   },
   "suppliers": {
     "title": "供應商管理",
     "subtitle": "管理您的供應商帳戶和合作關係",
     "addSupplier": "新增供應商",
-    "totalSuppliers": "供應商總數",
     "listTitle": "供應商列表",
     "listDescription": "所有供應商及其詳細資訊",
     "code": "編碼",
@@ -309,13 +282,11 @@
     "contact": "聯絡人",
     "creditLimit": "信用額度",
     "status": "狀態",
-    "productsLinked": "關聯產品",
     "active": "活躍",
     "inactive": "非活躍",
     "suspended": "已暫停",
     "pending": "待審批",
     "searchPlaceholder": "搜尋供應商...",
-    "filterByStatus": "按狀態篩選",
     "filterByCategory": "按類別篩選",
     "allStatuses": "所有狀態",
     "allCategories": "所有類別",
@@ -397,7 +368,6 @@
     "buttons": {
       "cancel": "取消",
       "createSupplier": "建立供應商",
-      "updateSupplier": "更新供應商",
       "creating": "建立中...",
       "updating": "更新中..."
     },
@@ -559,10 +529,6 @@
     "rejected": "已拒絕",
     "suspended": "已暫停",
     "closed": "已關閉",
-    "active_status": "活躍",
-    "pending_status": "待審核",
-    "approved_status": "已核准",
-    "rejected_status": "已拒絕",
     "loading": "載入客戶中...",
     "errorLoading": "載入客戶時出錯",
     "noCustomersFound": "未找到客戶",
@@ -591,8 +557,7 @@
     "stats": {
       "totalDeliveries": "總配送數",
       "readyForDelivery": "待配送",
-      "delivered": "已送達",
-      "assignedDrivers": "已分配司機"
+      "delivered": "已送達"
     },
     "activeDeliveries": "進行中配送",
     "orderId": "訂單編號",
@@ -613,10 +578,7 @@
     "noDeliveriesAvailable": "暫無配送",
     "deliveriesWillAppear": "配送準備好後將在此顯示",
     "selectDate": "選擇配送日期",
-    "packedOn": "打包於 {date}",
-    "showingOrdersPackedOn": "顯示在 {date} 打包的訂單",
     "showingDeliveriesFor": "顯示 {date} 的配送",
-    "noOrdersPackedOnDate": "此日期沒有打包的訂單",
     "order": "訂單",
     "orders": "訂單",
     "searchPlaceholder": "按訂單或客戶搜尋...",
@@ -691,7 +653,6 @@
       "description": "確認此配送已完成",
       "orderNumber": "訂單編號",
       "customer": "客戶",
-      "noPodWarning": "注意：此訂單尚未上傳簽收證明",
       "notesLabel": "備註（可選）",
       "notesPlaceholder": "添加關於此配送完成的備註...",
       "confirm": "標記為已送達",
@@ -764,12 +725,10 @@
     "area": "區域",
     "createOrderOnBehalf": "代客戶下單",
     "backorderStatus": "缺貨訂單狀態",
-    "allBackorderStatuses": "所有缺貨訂單狀態",
     "backorderAlert": {
       "title": "待審批的缺貨訂單",
       "message": "您有 {count} 個缺貨訂單等待審批",
-      "reviewNow": "立即審閱",
-      "filterPending": "顯示待審批缺貨訂單"
+      "reviewNow": "立即審閱"
     },
     "backorder": {
       "label": "缺貨訂單",
@@ -825,7 +784,6 @@
     },
     "backorderMessages": {
       "approveSuccess": "缺貨訂單批准成功",
-      "approvePartialSuccess": "部分數量批准成功",
       "rejectSuccess": "訂單已拒絕",
       "approveError": "批准缺貨訂單失敗",
       "rejectError": "拒絕訂單失敗",
@@ -923,14 +881,12 @@
       "adminNotesPrivate": "這些備註僅管理員可見"
     },
     "warnings": {
-      "exceedsCreditLimit": "警告：訂單總額超過客戶信用額度",
       "willExceedCredit": "警告：此訂單將超過可用信用額度"
     },
     "validation": {
       "customerRequired": "請選擇客戶",
       "itemsRequired": "請至少新增一個項目至訂單",
       "bypassReasonRequired": "繞過信用額度時必須提供原因",
-      "customAddressRequired": "請填寫所有自訂地址欄位",
       "deliveryDateInvalid": "配送日期必須在未來",
       "fixErrors": "請修正表單中的錯誤",
       "invalidInput": "無效輸入",
@@ -1091,7 +1047,6 @@
       "description": "描述",
       "descriptionPlaceholder": "優質牛肉臀肉...",
       "category": "類別",
-      "categoryPlaceholder": "牛肉",
       "unit": "單位",
       "unitRequired": "單位 *",
       "packageSize": "包裝大小",
@@ -1099,13 +1054,11 @@
       "basePrice": "基礎價格 * ($)",
       "basePricePlaceholder": "18.50",
       "unitCost": "單位成本 ($)",
-      "unitCostPlaceholder": "15.00",
       "applyGst": "適用GST",
       "applyGstDescription": "為此產品啟用GST",
       "gstRate": "GST稅率 (%)",
       "gstRatePlaceholder": "10",
       "currentStock": "當前庫存",
-      "currentStockPlaceholder": "0",
       "currentStockReadOnly": "目前庫存（唯讀）",
       "stockAdjustmentHint": "要調整庫存水準，請使用庫存調整功能",
       "initialStockHint": "新產品從 0 庫存開始。建立後使用庫存調整新增初始庫存。",
@@ -1164,13 +1117,11 @@
       "adjustStock": "調整庫存"
     },
     "validation": {
-      "skuNamePriceRequired": "貨號、名稱和基礎價格為必填項",
       "skuRequired": "貨號為必填項",
       "nameRequired": "產品名稱為必填項",
       "basePriceRequired": "基礎價格為必填項",
       "basePricePositive": "基礎價格必須為正數",
       "unitRequired": "單位為必填項",
-      "unitCostPositive": "單位成本必須為正數",
       "packageSizePositive": "包裝大小必須為正數",
       "categoryRequired": "類別為必填項",
       "gstRateRange": "GST稅率必須在0到100之間",
@@ -1228,8 +1179,7 @@
       "customLossPercentage": "自定義損耗百分比 (%)",
       "usingParentLossRate": "使用母產品損耗率：{rate}%",
       "parentHasNoLoss": "注意：母產品沒有設定損耗率 (0%)",
-      "lossRateInherited": "繼承",
-      "lossRateCustom": "自定義"
+      "lossRateInherited": "繼承"
     },
     "buttons": {
       "createSubproduct": "建立子產品",
@@ -1242,15 +1192,9 @@
     },
     "messages": {
       "subproductCreated": "子產品建立成功",
-      "errorCreating": "建立子產品時發生錯誤",
-      "cannotAdjustStock": "無法直接調整子產品庫存。請改為調整母產品。",
-      "cannotHaveSubproducts": "子產品不能擁有自己的子產品"
+      "errorCreating": "建立子產品時發生錯誤"
     },
     "table": {
-      "expandRow": "展開列",
-      "collapseRow": "收合列",
-      "subproductOf": "是以下產品的子產品",
-      "virtualStock": "虛擬庫存",
       "virtualStockTooltip": "從母產品庫存計算"
     }
   },
@@ -1339,8 +1283,7 @@
       "after": "調整後",
       "date": "日期",
       "by": "操作人",
-      "notes": "備註",
-      "loadMore": "載入更多"
+      "notes": "備註"
     }
   },
   "processStock": {
@@ -1349,9 +1292,6 @@
       "description": "將原材料轉換為加工產品",
       "selectSource": "選擇來源產品（原材料）",
       "selectTarget": "選擇目標產品（加工品）",
-      "changeSource": "更換來源產品",
-      "changeTarget": "更換目標產品",
-      "processingDetails": "加工詳情",
       "noProductsFound": "未找到產品"
     },
     "fields": {
@@ -1363,26 +1303,9 @@
       "sourceQuantity": "原材料數量",
       "sourceQuantityHint": "要消耗的原材料數量",
       "targetOutputQuantity": "目標產出數量",
-      "targetOutputHint": "期望的加工產品數量",
       "willConsume": "將消耗",
-      "maxOutput": "最大產出",
       "lossPercentage": "損耗率 %",
-      "lossPercentageHint": "加工損耗百分比（自動計算或手動輸入）",
-      "calculatedLoss": "計算損耗 %",
-      "calculatedLossHint": "根據輸入和輸出數量自動計算",
       "expectedYield": "預期產出",
-      "defaultFromCategory": "預設來自分類：{name}",
-      "materialCostPerUnit": "原材料成本/公斤",
-      "materialCostHint": "每公斤加工產品的原材料成本",
-      "materialCostPending": "請先輸入上方數量",
-      "materialCostAutoHint": "根據原料批次成本自動計算",
-      "laborCost": "人工成本",
-      "laborCostHint": "加工的人工成本",
-      "laborCostType": "人工成本類型",
-      "laborCostPerKg": "每公斤",
-      "laborCostTotal": "總成本",
-      "totalCostPerKg": "總成本/公斤",
-      "totalCostBreakdown": "成本明細",
       "costPerUnit": "單位成本（目標產品）",
       "costPerUnitHint": "加工產品的單位成本",
       "expiryDate": "有效期（選填）",
@@ -1423,19 +1346,15 @@
       "sameProduct": "來源產品和目標產品必須不同",
       "quantityPositive": "數量必須大於0",
       "sourceQuantityRequired": "原材料數量為必填項",
-      "sourceQuantityExceedsStock": "超出可用庫存 ({available})",
       "outputExceedsInput": "產出不能超過原材料輸入",
-      "exceedsAvailableStock": "超出可用庫存。最大產出：{max}",
       "costRequired": "單位成本為必填項",
       "lossPercentageRange": "損耗百分比必須在0到100之間",
-      "zeroOutput": "輸出數量不能為零",
       "batchRequired": "請選擇原料批次",
       "sourceQuantityExceedsBatch": "超出批次可用庫存 ({available})",
       "fixErrors": "請修正以下錯誤："
     },
     "messages": {
       "success": "庫存加工成功",
-      "successDetails": "已加工 {processed} {sourceUnit} → {produced} {targetUnit}",
       "successDetailsMulti": "已將 {processed} {sourceUnit} 加工成 {targetCount} 個目標產品",
       "error": "加工庫存失敗"
     },
@@ -1486,8 +1405,7 @@
       "setPrice": "設置價格"
     },
     "validation": {
-      "requiredFields": "請填寫所有必填欄位",
-      "positivePrice": "價格必須為正數"
+      "requiredFields": "請填寫所有必填欄位"
     },
     "pricing": {
       "validation": {
@@ -1678,8 +1596,7 @@
     "stats": {
       "requestedLimit": "申請信用額度",
       "forecastPurchase": "預計採購",
-      "appliedDate": "申請日期",
-      "submittedDate": "提交日期"
+      "appliedDate": "申請日期"
     },
     "buttons": {
       "approve": "批准信用申請",
@@ -1733,7 +1650,6 @@
       "viewPdf": "檢視PDF",
       "noDocuments": "未上傳身分證件",
       "verifyHint": "請核實證件與上述填寫的資訊是否一致",
-      "uploadDocument": "上傳證件",
       "replaceDocument": "替換證件",
       "uploadFront": "上傳正面",
       "uploadBack": "上傳背面",
@@ -1761,7 +1677,6 @@
       "signature": "簽名",
       "signedAt": "簽署時間",
       "signatureOf": "{name}的簽名",
-      "viewSignature": "檢視簽名",
       "fullSizeSignature": "完整尺寸簽名",
       "witness": "見證人",
       "witnessSignedAt": "見證人簽署時間",
@@ -1836,7 +1751,6 @@
       "postcode": "郵編",
       "postcodePlaceholder": "2000",
       "areaTag": "配送區域",
-      "areaTagPlaceholder": "選擇配送區域",
       "area": "配送區域",
       "areaAutoDetect": "根據郊區自動偵測",
       "assignedTo": "已分配至",
@@ -1886,7 +1800,6 @@
       "driverLicenseNumber": "駕駛執照號碼",
       "driverLicenseNumberPlaceholder": "輸入執照號碼",
       "licenseState": "執照州",
-      "licenseStatePlaceholder": "選擇州",
       "licenseExpiry": "執照到期日",
       "remove": "移除",
       "states": {
@@ -1978,7 +1891,6 @@
       "businessNameRequired": "公司名稱為必填項",
       "abnRequired": "ABN為必填項",
       "abnInvalid": "ABN必須為11位數字",
-      "acnRequired": "公司需要ACN",
       "acnInvalid": "ACN必須為9位數字",
       "firstNameRequired": "名字為必填項",
       "lastNameRequired": "姓氏為必填項",
@@ -1987,13 +1899,11 @@
       "phoneRequired": "電話為必填項",
       "phoneInvalid": "請輸入有效的澳大利亞電話號碼",
       "mobileInvalid": "請輸入有效的澳大利亞手機號碼",
-      "addressRequired": "地址欄位為必填項",
       "streetRequired": "街道地址為必填項",
       "suburbRequired": "郊區為必填項",
       "stateRequired": "州為必填項",
       "postcodeRequired": "郵編為必填項",
       "postcodeInvalid": "郵編必須為4位數字",
-      "areaTagRequired": "配送區域為必填項",
       "bsbRequired": "BSB為必填項",
       "bsbInvalid": "BSB必須為6位數字",
       "creditLimitInvalid": "信用額度必須為正數或零",
@@ -2011,8 +1921,6 @@
     "messages": {
       "createSuccess": "客戶創建成功！",
       "createError": "創建客戶失敗",
-      "duplicateEmail": "此電子郵件的客戶已存在",
-      "duplicateABN": "此ABN已有活躍客戶存在",
       "fixValidationErrors": "請在提交前修正驗證錯誤"
     }
   },
@@ -2021,12 +1929,9 @@
     "subtitle": "高效打包訂單以便配送",
     "packBadge": "打包",
     "selectDate": "選擇配送日期",
-    "selectDateDescription": "選擇要打包訂單的日期",
     "productSummary": "產品彙總",
-    "orderByOrder": "逐單打包",
     "summaryPanel": "準備工作彙總",
     "ordersPanel": "打包訂單",
-    "filterByArea": "按區域篩選",
     "showAllAreas": "顯示所有區域",
     "filterByCategory": "按類別篩選",
     "allCategories": "所有類別",
@@ -2046,20 +1951,13 @@
     "sku": "SKU",
     "productName": "產品名稱",
     "totalQuantity": "總數量",
-    "ordersRequiring": "需要此產品的訂單",
-    "gathered": "已收集",
     "collapse": "收起",
     "expand": "展開",
-    "markAsGathered": "標記為已收集",
-    "markAsNotGathered": "標記為未收集",
-    "productSummaryDescription": "整合產品列表以便高效收集",
-    "orderByOrderDescription": "單獨訂單打包視圖",
     "orders": "訂單",
     "order": "訂單",
     "allAreas": "所有區域",
     "deliveryAddress": "配送地址",
     "items": "商品",
-    "itemsPacked": "已打包商品",
     "packingNotes": "打包備註",
     "addNotes": "新增備註...",
     "markAsReady": "標記為待配送",
@@ -2076,25 +1974,13 @@
     "noProducts": "沒有要打包的產品",
     "noOrdersForArea": "所選區域沒有訂單",
     "noOrdersForAreaDescription": "此區域在該日期沒有安排的訂單",
-    "unassignedOrders": "未分配的訂單",
-    "driverGroup": "司機: {name}",
     "packingSequence": "打包 #{sequence}",
-    "loadingSession": "載入打包作業...",
     "loadingOrder": "載入訂單詳情...",
     "errorLoading": "載入資料時發生錯誤",
     "routeOptimized": "路線優化成功",
     "optimizingRoute": "正在優化配送路線...",
     "regenerateRoute": "重新生成路線",
-    "lastOptimized": "最後優化",
-    "routeStatus": "路線狀態",
-    "notOptimized": "尚未優化",
     "needsReoptimization": "需要重新優化",
-    "optimizeNow": "立即優化",
-    "orderStatusReady": "準備交付",
-    "orderStatusPacking": "打包中",
-    "orderStatusConfirmed": "已確認",
-    "allOrdersReadyForProduct": "該產品的所有訂單已準備好",
-    "autoRefreshEnabled": "每30秒自動刷新",
     "orderPaused": "訂單已暫停",
     "orderPausedDescription": "進度已儲存，您可以稍後繼續。",
     "orderPausedBanner": "包裝已暫停",
@@ -2112,7 +1998,6 @@
     "resumePausedOrdersDescription": "您有 {count} 個訂單儲存了包裝進度。",
     "packed": "已包裝",
     "startFresh": "重新開始",
-    "progressSaved": "進度已儲存",
     "orderResumed": "訂單已繼續",
     "orderResumedDescription": "您可以繼續包裝此訂單。",
     "orderReset": "訂單已重設",
@@ -2132,8 +2017,6 @@
     "cancelEdit": "取消",
     "quantityUpdated": "數量已更新",
     "quantityUpdatedDescription": "商品數量和訂單總額已更新",
-    "itemQuantityZeroed": "商品數量已設為0",
-    "itemQuantityZeroedDescription": "商品數量已設為0，庫存已退回倉庫。",
     "quantityZeroedWithReturn": "商品數量已設為0，庫存已退回倉庫。",
     "quantityNoChange": "庫存未變更。",
     "errorUpdatingQuantity": "更新數量失敗",
@@ -2159,14 +2042,7 @@
       "itemPacked": "已打包 - 庫存已扣除"
     },
     "removeItem": "移除商品",
-    "removeItemTitle": "移除商品？",
-    "removeItemDescription": "從訂單 {orderNumber} 中移除 {productName}？庫存將退回倉庫。",
-    "removeLastItemWarning": "這是訂單中的最後一個商品。移除後訂單將被取消。",
-    "confirmRemove": "移除",
     "itemRemoved": "商品已移除",
-    "itemRemovedDescription": "商品已移除，庫存已退回倉庫。",
-    "orderCancelledByRemoval": "訂單已取消",
-    "orderCancelledByRemovalDescription": "所有商品已移除，訂單已被取消。",
     "printSummary": "列印彙總",
     "printingSummary": "列印中...",
     "preparationSummary": "備貨彙總",
@@ -2187,9 +2063,7 @@
       "internalNotesLabel": "訂單備註"
     },
     "merge": {
-      "mergedFromBadge": "已合併自 {numbers}",
-      "toastTitle": "訂單已合併",
-      "toastDescription": "已合併 {count} 筆訂單到 #{primary}"
+      "mergedFromBadge": "已合併自 {numbers}"
     }
   },
   "settings": {
@@ -2535,7 +2409,11 @@
         "settings.delivery": "配送設定",
         "settings.integrations": "整合",
         "settings.notifications": "通知",
-        "settings.xero": "Xero整合"
+        "settings.xero": "Xero整合",
+        "suppliers": "供應商",
+        "settings.audit": "稽核日誌",
+        "settings.packing": "包裝設定",
+        "settings.sms": "簡訊設定"
       },
       "actions": {
         "view": "檢視",
@@ -2552,7 +2430,8 @@
         "adjust_stock": "調整庫存",
         "adjust": "調整",
         "complete": "完成",
-        "upload_pod": "上傳送貨證明"
+        "upload_pod": "上傳送貨證明",
+        "export": "匯出"
       },
       "accessDenied": {
         "title": "存取被拒絕",
@@ -2888,9 +2767,6 @@
     "resyncConfirmTitle": "確認重新同步",
     "resyncConfirmMessage": "這將使用目前訂單資料更新 Xero 中的發票。Xero 中的任何手動變更可能會被覆蓋。",
     "resyncConfirm": "重新同步",
-    "resyncContactConfirmMessage": "這將使用目前客戶資料更新 Xero 中的聯絡人。Xero 中的任何手動變更可能會被覆蓋。",
-    "resyncJob": "重新同步任務",
-    "lastSyncedAt": "上次同步：{date}",
     "syncPreview": {
       "title": "同步客戶到 Xero",
       "description": "在同步到 Xero 之前查看客戶資料。",
@@ -3097,7 +2973,6 @@
       "type": "類型",
       "allTypes": "所有類型",
       "adjustmentType": "調整類型",
-      "allAdjustments": "所有調整",
       "stockIn": "入庫"
     },
     "types": {
@@ -3123,7 +2998,6 @@
       "createdBy": "操作人",
       "timestamp": "日期和時間",
       "notes": "備註",
-      "referenceOrder": "相關訂單",
       "noNotes": "無備註",
       "viewOrder": "查看訂單",
       "previousStock": "之前庫存",
@@ -3214,8 +3088,6 @@
         "stockOut": "出庫量",
         "transactions": "交易次數",
         "netMovement": "淨變動",
-        "thisPeriod": "本期",
-        "lastPeriod": "上期",
         "change": "變化"
       }
     },
@@ -3238,7 +3110,6 @@
       },
       "filters": {
         "allSuppliers": "全部供應商",
-        "supplierLabel": "供應商",
         "suppliersSelected": "已選 {count} 個",
         "allExpiry": "全部保質期",
         "expired": "已過期",
@@ -3276,7 +3147,6 @@
         "unknownCounterpart": "未找到對應方"
       },
       "batchTotal": "批次合計",
-      "mismatchWarning": "不匹配：產品顯示 {currentStock}",
       "reconcile": "庫存對帳",
       "reconcileConfirm": "這將更新所有產品庫存以匹配批次合計。是否繼續？",
       "reconcileSuccess": "已對帳 {count} 個產品",
@@ -3381,13 +3251,7 @@
         "page": "頁",
         "showingFirst": "顯示前",
         "costPerUnit": "單位成本",
-        "costPerUnitHelp": "輸入您實際支付的成本（以美元為單位）",
-        "expiryDate": "到期日期",
-        "expiryDateHelp": "如果沒有到期日期，請留空"
-      },
-      "validation": {
-        "costPerUnitRequired": "接收庫存時需要單位成本",
-        "expiryDateFuture": "到期日期必須在未來"
+        "expiryDate": "到期日期"
       }
     },
     "expiringList": {
@@ -3950,13 +3814,8 @@
       "abnInvalid": "無效的 ABN - 校驗和驗證失敗"
     },
     "validation": {
-      "abnLength": "ABN必須為11位數字",
-      "acnLength": "ACN必須為9位數字",
-      "bsbFormat": "BSB必須為6位數字",
-      "accountNumberLength": "帳戶號碼必須為6-10位數字",
       "emailRequired": "電子郵件為必填項",
-      "emailInvalid": "電子郵件格式無效",
-      "fieldRequired": "此欄位為必填項"
+      "emailInvalid": "電子郵件格式無效"
     },
     "states": {
       "NSW": "新南威爾斯州",
@@ -3978,7 +3837,6 @@
       "sendButton": "發送邀請",
       "sending": "發送中...",
       "resending": "重新發送中...",
-      "statusNotInvited": "未邀請",
       "statusInvited": "已邀請",
       "statusAccepted": "入口已啟用",
       "inviteSuccess": "邀請已發送",
@@ -3986,18 +3844,14 @@
       "inviteError": "邀請失敗",
       "resendSuccess": "邀請已重發",
       "resendSuccessMessage": "邀請已重新發送至 {email}",
-      "resendError": "重發失敗",
-      "adminCreatedAccount": "管理員建立的帳戶"
+      "resendError": "重發失敗"
     },
     "smsReminder": {
       "title": "簡訊訂單提醒",
       "description": "在選定的日期發送簡訊提醒下單",
       "enable": "啟用簡訊提醒",
       "reminderDays": "提醒日期",
-      "selectDays": "選擇提醒日期",
-      "noDaysSelected": "未選擇日期",
       "mobileRequired": "啟用簡訊提醒需要填寫手機號碼",
-      "globalDisabled": "管理員已停用簡訊提醒功能",
       "notConfigured": "簡訊服務未配置"
     }
   },
@@ -4007,7 +3861,6 @@
     "errorLoading": "載入訂單時出錯",
     "header": {
       "orderNumber": "訂單 #{number}",
-      "placedOn": "下單時間",
       "customer": "客戶"
     },
     "items": {
@@ -4056,8 +3909,7 @@
         "cancel": "取消",
         "success": "配送日期已重新安排",
         "failed": "重新安排失敗",
-        "notWorkingDay": "所選日期不是已設定的工作日。",
-        "statusNotEditable": "僅在訂單待批准或已確認時可變更配送日期。"
+        "notWorkingDay": "所選日期不是已設定的工作日。"
       }
     },
     "driverAssignment": {
@@ -4101,7 +3953,6 @@
       "issueCreditNote": "開具貸項通知單"
     },
     "creditNote": {
-      "issueButton": "開具貸項通知單",
       "dialogTitle": "開具部分貸項通知單",
       "dialogDescription": "選擇要退款的項目和數量。",
       "reason": "原因",
@@ -4116,7 +3967,6 @@
       "totalCredit": "退款總額",
       "nearLimitWarning": "此貸項通知單將使用大部分剩餘可退款金額。",
       "exceedsLimitError": "總貸項將超過發票總額。",
-      "noItemsSelected": "請至少選擇一個項目進行退款。",
       "reasonRequired": "必須填寫原因。",
       "cancel": "取消",
       "submit": "提交貸項通知單",
@@ -4134,7 +3984,6 @@
     "actions": {
       "title": "訂單操作",
       "updateStatus": "更新狀態",
-      "selectStatus": "選擇狀態...",
       "statusUpdated": "狀態已更新",
       "statusUpdatedMessage": "訂單狀態已成功更新",
       "statusError": "更新失敗",
@@ -4190,7 +4039,6 @@
   "notifications": {
     "title": "通知",
     "markAllAsRead": "全部標為已讀",
-    "noNotifications": "暫無通知",
     "types": {
       "order": "收到新訂單",
       "customer": "新客戶註冊",
@@ -4283,7 +4131,6 @@
     "subtitle": "配置用於司機分配和路線優化的配送區域",
     "createArea": "建立區域",
     "editArea": "編輯區域",
-    "deleteArea": "刪除區域",
     "noAreas": "尚未配置區域",
     "noAreasDescription": "建立您的第一個配送區域以開始使用",
     "fields": {
@@ -4324,7 +4171,6 @@
     },
     "errors": {
       "nameExists": "此名稱的區域已存在",
-      "hasDependencies": "無法刪除有活躍區域映射或司機分配的區域",
       "createFailed": "建立區域失敗",
       "updateFailed": "更新區域失敗",
       "deleteFailed": "刪除區域失敗",
@@ -4352,5 +4198,12 @@
   "metadata": {
     "title": "管理後台 - Joho Foods ERP",
     "description": "Joho Foods 營運管理儀表板"
+  },
+  "paymentMethods": {
+    "bank_transfer": "銀行轉帳",
+    "credit_card": "信用卡",
+    "cheque": "支票",
+    "cash_on_delivery": "貨到付款",
+    "account_credit": "帳戶信用"
   }
 }

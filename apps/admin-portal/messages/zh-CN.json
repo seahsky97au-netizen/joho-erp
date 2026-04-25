@@ -49,14 +49,7 @@
     "sort": {
       "ascending": "升序",
       "descending": "降序",
-      "sortBy": "排序方式",
-      "clearSort": "清除排序",
-      "sortAsc": "从A到Z排序",
-      "sortDesc": "从Z到A排序",
-      "sortNewest": "最新优先",
-      "sortOldest": "最早优先",
-      "sortHighest": "最高优先",
-      "sortLowest": "最低优先"
+      "sortBy": "排序方式"
     },
     "filters": {
       "all": "全部",
@@ -65,7 +58,6 @@
       "allDrivers": "所有司机",
       "filterByCategory": "按类别筛选",
       "clearFilters": "清除筛选",
-      "applyFilters": "应用筛选",
       "area": "区域",
       "allAreas": "所有区域"
     },
@@ -74,8 +66,7 @@
       "collapse": "收起"
     },
     "table": {
-      "noResults": "未找到结果",
-      "noResultsWithFilters": "没有符合筛选条件的结果。请尝试调整搜索或筛选条件。"
+      "noResults": "未找到结果"
     },
     "selectArea": "选择区域",
     "unassigned": "未分配",
@@ -182,22 +173,11 @@
     "activeCustomers": "活跃客户",
     "activeDeliveries": "进行中配送",
     "pendingBackorders": "待审批缺货订单",
-    "backordersAwaitingApproval": "等待审批",
     "recentOrders": "最近订单",
     "lowStockAlerts": "低库存警报",
-    "unitsLeft": "件剩余",
     "viewAll": "查看全部",
-    "viewBackorders": "查看缺货订单",
-    "allTime": "全部时间",
-    "requireProcessing": "需要处理",
-    "activeAccounts": "活跃帐户",
-    "latestOrders": "客户的最新订单",
     "noRecentOrders": "暂无最近订单",
-    "ordersWillAppearHere": "客户下单后订单将显示在这里",
-    "productsRequiringAttention": "需要关注的产品",
     "threshold": "阈值：",
-    "noLowStockItems": "无低库存商品",
-    "allProductsWellStocked": "所有产品库存充足",
     "expiringStock": "库存过期",
     "expired": "已过期",
     "expiringSoon": "即将过期",
@@ -207,9 +187,7 @@
       "expired": "已过期",
       "expiring": "即将过期",
       "expiredDays": "{days}天前过期",
-      "expiresIn": "{days}天后过期",
-      "noItems": "无过期商品",
-      "allGood": "所有库存都在安全保质期内"
+      "expiresIn": "{days}天后过期"
     },
     "needsAttention": {
       "title": "需要注意",
@@ -226,14 +204,11 @@
     },
     "financialOverview": {
       "title": "财务概览",
-      "todayRevenue": "今日收入",
       "pendingPayments": "待收款项",
-      "monthToDate": "本月至今",
       "trend": "趋势",
       "vsYesterday": "较昨日",
       "vsLastWeek": "较上周",
       "vsLastMonth": "较上月",
-      "overduePayments": "{count} 笔逾期",
       "invoiceCount": "{count, plural, other {# 张发票}}"
     },
     "periodSelector": {
@@ -262,7 +237,6 @@
       "critical": "紧急",
       "lowStockItems": "{count} 件低库存",
       "lowStockLabel": "低库存商品",
-      "expiringThisWeek": "{count} 件本周过期",
       "expiringLabel": "本周过期",
       "outOfStockLabel": "缺货商品",
       "viewInventory": "查看库存",
@@ -273,35 +247,34 @@
     "revenueChart": {
       "title": "收入趋势",
       "days7": "收入趋势 (7天)",
+      "totalRevenue": "总收入",
+      "totalOrders": "总订单",
+      "noData": "暂无数据",
+      "clickToExpand": "点击展开",
+      "description": "查看详细的收入数据趋势",
+      "timePeriod": "时间段",
       "last7Days": "最近7天",
       "last14Days": "最近14天",
       "last30Days": "最近30天",
-      "totalRevenue": "总收入",
-      "totalOrders": "总订单",
       "dailyAverage": "日均",
-      "noData": "暂无数据",
-      "clickToExpand": "点击展开"
+      "noDataForPeriod": "此时间段内没有收入数据"
     }
   },
   "errors": {
     "errorTitle": "错误",
     "operationFailed": "操作失败，请重试。",
-    "networkError": "网络错误，请检查您的网络连接。",
     "saveFailed": "保存失败，请重试。",
     "deleteFailed": "删除失败，请重试。",
-    "loadFailed": "加载数据失败，请刷新页面。",
     "syncFailed": "同步失败，请重试。",
     "updateFailed": "更新失败，请重试。",
     "generationFailed": "生成失败，请重试。",
     "optimizationFailed": "优化失败，请重试。",
-    "searchError": "搜索失败，请重试。",
-    "noInvoices": "未找到所选订单的发票。"
+    "searchError": "搜索失败，请重试。"
   },
   "suppliers": {
     "title": "供应商管理",
     "subtitle": "管理您的供应商账户和合作关系",
     "addSupplier": "新增供应商",
-    "totalSuppliers": "供应商总数",
     "listTitle": "供应商列表",
     "listDescription": "所有供应商及其详细信息",
     "code": "编码",
@@ -309,13 +282,11 @@
     "contact": "联系人",
     "creditLimit": "信用额度",
     "status": "状态",
-    "productsLinked": "关联产品",
     "active": "活跃",
     "inactive": "非活跃",
     "suspended": "已暂停",
     "pending": "待审批",
     "searchPlaceholder": "搜索供应商...",
-    "filterByStatus": "按状态筛选",
     "filterByCategory": "按类别筛选",
     "allStatuses": "所有状态",
     "allCategories": "所有类别",
@@ -397,7 +368,6 @@
     "buttons": {
       "cancel": "取消",
       "createSupplier": "创建供应商",
-      "updateSupplier": "更新供应商",
       "creating": "创建中...",
       "updating": "更新中..."
     },
@@ -559,10 +529,6 @@
     "rejected": "已拒绝",
     "suspended": "已暂停",
     "closed": "已关闭",
-    "active_status": "活跃",
-    "pending_status": "待审核",
-    "approved_status": "已核准",
-    "rejected_status": "已拒绝",
     "loading": "加载客户中...",
     "errorLoading": "加载客户时出错",
     "noCustomersFound": "未找到客户",
@@ -591,8 +557,7 @@
     "stats": {
       "totalDeliveries": "总配送数",
       "readyForDelivery": "待配送",
-      "delivered": "已送达",
-      "assignedDrivers": "已分配司机"
+      "delivered": "已送达"
     },
     "activeDeliveries": "进行中配送",
     "orderId": "订单编号",
@@ -613,10 +578,7 @@
     "noDeliveriesAvailable": "暂无配送",
     "deliveriesWillAppear": "配送准备好后将在此显示",
     "selectDate": "选择配送日期",
-    "packedOn": "打包于 {date}",
-    "showingOrdersPackedOn": "显示在 {date} 打包的订单",
     "showingDeliveriesFor": "显示 {date} 的配送",
-    "noOrdersPackedOnDate": "此日期没有打包的订单",
     "order": "订单",
     "orders": "订单",
     "searchPlaceholder": "按订单或客户搜索...",
@@ -691,7 +653,6 @@
       "description": "确认此配送已完成",
       "orderNumber": "订单编号",
       "customer": "客户",
-      "noPodWarning": "注意：此订单尚未上传签收证明",
       "notesLabel": "备注（可选）",
       "notesPlaceholder": "添加关于此配送完成的备注...",
       "confirm": "标记为已送达",
@@ -764,12 +725,10 @@
     "area": "区域",
     "createOrderOnBehalf": "代客户下单",
     "backorderStatus": "缺货订单状态",
-    "allBackorderStatuses": "所有缺货订单状态",
     "backorderAlert": {
       "title": "待审批的缺货订单",
       "message": "您有 {count} 个缺货订单等待审批",
-      "reviewNow": "立即审阅",
-      "filterPending": "显示待审批缺货订单"
+      "reviewNow": "立即审阅"
     },
     "backorder": {
       "label": "缺货订单",
@@ -825,7 +784,6 @@
     },
     "backorderMessages": {
       "approveSuccess": "缺货订单批准成功",
-      "approvePartialSuccess": "部分数量批准成功",
       "rejectSuccess": "订单已拒绝",
       "approveError": "批准缺货订单失败",
       "rejectError": "拒绝订单失败",
@@ -923,14 +881,12 @@
       "adminNotesPrivate": "这些备注仅管理员可见"
     },
     "warnings": {
-      "exceedsCreditLimit": "警告：订单总额超过客户信用额度",
       "willExceedCredit": "警告：此订单将超过可用信用额度"
     },
     "validation": {
       "customerRequired": "请选择客户",
       "itemsRequired": "请至少添加一个项目到订单",
       "bypassReasonRequired": "绕过信用额度时必须提供原因",
-      "customAddressRequired": "请填写所有自定义地址字段",
       "deliveryDateInvalid": "配送日期必须在未来",
       "fixErrors": "请修正表单中的错误",
       "invalidInput": "无效输入",
@@ -1091,7 +1047,6 @@
       "description": "描述",
       "descriptionPlaceholder": "优质牛肉臀肉...",
       "category": "类别",
-      "categoryPlaceholder": "牛肉",
       "unit": "单位",
       "unitRequired": "单位 *",
       "packageSize": "包装大小",
@@ -1099,13 +1054,11 @@
       "basePrice": "基础价格 * ($)",
       "basePricePlaceholder": "18.50",
       "unitCost": "单位成本 ($)",
-      "unitCostPlaceholder": "15.00",
       "applyGst": "适用GST",
       "applyGstDescription": "为此产品启用GST",
       "gstRate": "GST税率 (%)",
       "gstRatePlaceholder": "10",
       "currentStock": "当前库存",
-      "currentStockPlaceholder": "0",
       "currentStockReadOnly": "当前库存（只读）",
       "stockAdjustmentHint": "要调整库存水平，请使用库存调整功能",
       "initialStockHint": "新产品从 0 库存开始。创建后使用库存调整添加初始库存。",
@@ -1164,13 +1117,11 @@
       "adjustStock": "调整库存"
     },
     "validation": {
-      "skuNamePriceRequired": "货号、名称和基础价格为必填项",
       "skuRequired": "货号为必填项",
       "nameRequired": "产品名称为必填项",
       "basePriceRequired": "基础价格为必填项",
       "basePricePositive": "基础价格必须为正数",
       "unitRequired": "单位为必填项",
-      "unitCostPositive": "单位成本必须为正数",
       "packageSizePositive": "包装大小必须为正数",
       "categoryRequired": "类别为必填项",
       "gstRateRange": "GST税率必须在0到100之间",
@@ -1228,8 +1179,7 @@
       "customLossPercentage": "自定义损耗百分比 (%)",
       "usingParentLossRate": "使用母产品损耗率：{rate}%",
       "parentHasNoLoss": "注意：母产品没有设置损耗率 (0%)",
-      "lossRateInherited": "继承",
-      "lossRateCustom": "自定义"
+      "lossRateInherited": "继承"
     },
     "buttons": {
       "createSubproduct": "创建子产品",
@@ -1242,15 +1192,9 @@
     },
     "messages": {
       "subproductCreated": "子产品创建成功",
-      "errorCreating": "创建子产品出错",
-      "cannotAdjustStock": "无法直接调整子产品库存。请改为调整母产品。",
-      "cannotHaveSubproducts": "子产品不能拥有自己的子产品"
+      "errorCreating": "创建子产品出错"
     },
     "table": {
-      "expandRow": "展开行",
-      "collapseRow": "折叠行",
-      "subproductOf": "是以下产品的子产品",
-      "virtualStock": "虚拟库存",
       "virtualStockTooltip": "从母产品库存计算"
     }
   },
@@ -1339,8 +1283,7 @@
       "after": "调整后",
       "date": "日期",
       "by": "操作人",
-      "notes": "备注",
-      "loadMore": "加载更多"
+      "notes": "备注"
     }
   },
   "processStock": {
@@ -1349,9 +1292,6 @@
       "description": "将原材料转换为加工产品",
       "selectSource": "选择源产品（原材料）",
       "selectTarget": "选择目标产品（加工品）",
-      "changeSource": "更换源产品",
-      "changeTarget": "更换目标产品",
-      "processingDetails": "加工详情",
       "noProductsFound": "未找到产品"
     },
     "fields": {
@@ -1363,26 +1303,9 @@
       "sourceQuantity": "原材料数量",
       "sourceQuantityHint": "要消耗的原材料数量",
       "targetOutputQuantity": "目标产出数量",
-      "targetOutputHint": "期望的加工产品数量",
       "willConsume": "将消耗",
-      "maxOutput": "最大产出",
       "lossPercentage": "损耗率 %",
-      "lossPercentageHint": "加工损耗百分比（自动计算或手动输入）",
-      "calculatedLoss": "计算损耗 %",
-      "calculatedLossHint": "根据输入和输出数量自动计算",
       "expectedYield": "预期产出",
-      "defaultFromCategory": "默认来自分类：{name}",
-      "materialCostPerUnit": "原材料成本/公斤",
-      "materialCostHint": "每公斤加工产品的原材料成本",
-      "materialCostPending": "请先输入上方数量",
-      "materialCostAutoHint": "根据原料批次成本自动计算",
-      "laborCost": "人工成本",
-      "laborCostHint": "加工的人工成本",
-      "laborCostType": "人工成本类型",
-      "laborCostPerKg": "每公斤",
-      "laborCostTotal": "总成本",
-      "totalCostPerKg": "总成本/公斤",
-      "totalCostBreakdown": "成本明细",
       "costPerUnit": "单位成本（目标产品）",
       "costPerUnitHint": "加工产品的单位成本",
       "expiryDate": "有效期（可选）",
@@ -1423,19 +1346,15 @@
       "sameProduct": "源产品和目标产品必须不同",
       "quantityPositive": "数量必须大于0",
       "sourceQuantityRequired": "原材料数量为必填项",
-      "sourceQuantityExceedsStock": "超出可用库存 ({available})",
       "outputExceedsInput": "产出不能超过原材料输入",
-      "exceedsAvailableStock": "超出可用库存。最大产出：{max}",
       "costRequired": "单位成本为必填项",
       "lossPercentageRange": "损耗百分比必须在0到100之间",
-      "zeroOutput": "输出数量不能为零",
       "batchRequired": "请选择原料批次",
       "sourceQuantityExceedsBatch": "超出批次可用库存 ({available})",
       "fixErrors": "请修正以下错误："
     },
     "messages": {
       "success": "库存加工成功",
-      "successDetails": "已加工 {processed} {sourceUnit} → {produced} {targetUnit}",
       "successDetailsMulti": "已将 {processed} {sourceUnit} 加工成 {targetCount} 个目标产品",
       "error": "加工库存失败"
     },
@@ -1486,8 +1405,7 @@
       "setPrice": "设置价格"
     },
     "validation": {
-      "requiredFields": "请填写所有必填字段",
-      "positivePrice": "价格必须为正数"
+      "requiredFields": "请填写所有必填字段"
     },
     "pricing": {
       "validation": {
@@ -1678,8 +1596,7 @@
     "stats": {
       "requestedLimit": "申请信用额度",
       "forecastPurchase": "预计采购",
-      "appliedDate": "申请日期",
-      "submittedDate": "提交日期"
+      "appliedDate": "申请日期"
     },
     "buttons": {
       "approve": "批准信用申请",
@@ -1733,7 +1650,6 @@
       "viewPdf": "查看PDF",
       "noDocuments": "未上传身份证件",
       "verifyHint": "请核实证件与上述填写的信息是否一致",
-      "uploadDocument": "上传证件",
       "replaceDocument": "替换证件",
       "uploadFront": "上传正面",
       "uploadBack": "上传背面",
@@ -1761,7 +1677,6 @@
       "signature": "签名",
       "signedAt": "签署时间",
       "signatureOf": "{name}的签名",
-      "viewSignature": "查看签名",
       "fullSizeSignature": "完整尺寸签名",
       "witness": "见证人",
       "witnessSignedAt": "见证人签署时间",
@@ -1836,7 +1751,6 @@
       "postcode": "邮编",
       "postcodePlaceholder": "2000",
       "areaTag": "配送区域",
-      "areaTagPlaceholder": "选择配送区域",
       "area": "配送区域",
       "areaAutoDetect": "根据郊区自动检测",
       "assignedTo": "已分配至",
@@ -1886,7 +1800,6 @@
       "driverLicenseNumber": "驾驶执照号码",
       "driverLicenseNumberPlaceholder": "输入执照号码",
       "licenseState": "执照州",
-      "licenseStatePlaceholder": "选择州",
       "licenseExpiry": "执照到期日",
       "remove": "移除",
       "states": {
@@ -1978,7 +1891,6 @@
       "businessNameRequired": "公司名称为必填项",
       "abnRequired": "ABN为必填项",
       "abnInvalid": "ABN必须为11位数字",
-      "acnRequired": "公司需要ACN",
       "acnInvalid": "ACN必须为9位数字",
       "firstNameRequired": "名字为必填项",
       "lastNameRequired": "姓氏为必填项",
@@ -1987,13 +1899,11 @@
       "phoneRequired": "电话为必填项",
       "phoneInvalid": "请输入有效的澳大利亚电话号码",
       "mobileInvalid": "请输入有效的澳大利亚手机号码",
-      "addressRequired": "地址字段为必填项",
       "streetRequired": "街道地址为必填项",
       "suburbRequired": "郊区为必填项",
       "stateRequired": "州为必填项",
       "postcodeRequired": "邮编为必填项",
       "postcodeInvalid": "邮编必须为4位数字",
-      "areaTagRequired": "配送区域为必填项",
       "bsbRequired": "BSB为必填项",
       "bsbInvalid": "BSB必须为6位数字",
       "creditLimitInvalid": "信用额度必须为正数或零",
@@ -2011,8 +1921,6 @@
     "messages": {
       "createSuccess": "客户创建成功！",
       "createError": "创建客户失败",
-      "duplicateEmail": "此电子邮件的客户已存在",
-      "duplicateABN": "此ABN已有活跃客户存在",
       "fixValidationErrors": "请在提交前修正验证错误"
     }
   },
@@ -2021,12 +1929,9 @@
     "subtitle": "高效打包订单以便配送",
     "packBadge": "打包",
     "selectDate": "选择配送日期",
-    "selectDateDescription": "选择要打包订单的日期",
     "productSummary": "产品汇总",
-    "orderByOrder": "逐单打包",
     "summaryPanel": "准备工作汇总",
     "ordersPanel": "打包订单",
-    "filterByArea": "按区域筛选",
     "showAllAreas": "显示所有区域",
     "filterByCategory": "按类别筛选",
     "allCategories": "所有类别",
@@ -2046,20 +1951,13 @@
     "sku": "SKU",
     "productName": "产品名称",
     "totalQuantity": "总数量",
-    "ordersRequiring": "需要此产品的订单",
-    "gathered": "已收集",
     "collapse": "收起",
     "expand": "展开",
-    "markAsGathered": "标记为已收集",
-    "markAsNotGathered": "标记为未收集",
-    "productSummaryDescription": "整合产品列表以便高效收集",
-    "orderByOrderDescription": "单独订单打包视图",
     "orders": "订单",
     "order": "订单",
     "allAreas": "所有区域",
     "deliveryAddress": "配送地址",
     "items": "商品",
-    "itemsPacked": "已打包商品",
     "packingNotes": "打包备注",
     "addNotes": "添加备注...",
     "markAsReady": "标记为待配送",
@@ -2076,25 +1974,13 @@
     "noProducts": "没有要打包的产品",
     "noOrdersForArea": "所选区域没有订单",
     "noOrdersForAreaDescription": "此区域在该日期没有安排的订单",
-    "unassignedOrders": "未分配的订单",
-    "driverGroup": "司机: {name}",
     "packingSequence": "打包 #{sequence}",
-    "loadingSession": "加载打包会话...",
     "loadingOrder": "加载订单详情...",
     "errorLoading": "加载数据时出错",
     "routeOptimized": "路线优化成功",
     "optimizingRoute": "正在优化配送路线...",
     "regenerateRoute": "重新生成路线",
-    "lastOptimized": "最后优化",
-    "routeStatus": "路线状态",
-    "notOptimized": "尚未优化",
     "needsReoptimization": "需要重新优化",
-    "optimizeNow": "立即优化",
-    "orderStatusReady": "准备交付",
-    "orderStatusPacking": "打包中",
-    "orderStatusConfirmed": "已确认",
-    "allOrdersReadyForProduct": "该产品的所有订单已准备好",
-    "autoRefreshEnabled": "每30秒自动刷新",
     "orderPaused": "订单已暂停",
     "orderPausedDescription": "进度已保存，您可以稍后继续。",
     "orderPausedBanner": "打包已暂停",
@@ -2112,7 +1998,6 @@
     "resumePausedOrdersDescription": "您有 {count} 个订单保存了打包进度。",
     "packed": "已打包",
     "startFresh": "重新开始",
-    "progressSaved": "进度已保存",
     "orderResumed": "订单已继续",
     "orderResumedDescription": "您可以继续打包此订单。",
     "orderReset": "订单已重置",
@@ -2132,8 +2017,6 @@
     "cancelEdit": "取消",
     "quantityUpdated": "数量已更新",
     "quantityUpdatedDescription": "商品数量和订单总额已更新",
-    "itemQuantityZeroed": "商品数量已设为0",
-    "itemQuantityZeroedDescription": "商品数量已设为0，库存已退回仓库。",
     "quantityZeroedWithReturn": "商品数量已设为0，库存已退回仓库。",
     "quantityNoChange": "库存未变更。",
     "errorUpdatingQuantity": "更新数量失败",
@@ -2159,14 +2042,7 @@
       "itemPacked": "已打包 - 库存已扣除"
     },
     "removeItem": "移除商品",
-    "removeItemTitle": "移除商品？",
-    "removeItemDescription": "从订单 {orderNumber} 中移除 {productName}？库存将退回仓库。",
-    "removeLastItemWarning": "这是订单中的最后一个商品。移除后订单将被取消。",
-    "confirmRemove": "移除",
     "itemRemoved": "商品已移除",
-    "itemRemovedDescription": "商品已移除，库存已退回仓库。",
-    "orderCancelledByRemoval": "订单已取消",
-    "orderCancelledByRemovalDescription": "所有商品已移除，订单已被取消。",
     "printSummary": "打印汇总",
     "printingSummary": "打印中...",
     "preparationSummary": "备货汇总",
@@ -2187,9 +2063,7 @@
       "internalNotesLabel": "订单备注"
     },
     "merge": {
-      "mergedFromBadge": "已合并自 {numbers}",
-      "toastTitle": "订单已合并",
-      "toastDescription": "已合并 {count} 笔订单到 #{primary}"
+      "mergedFromBadge": "已合并自 {numbers}"
     }
   },
   "settings": {
@@ -2535,7 +2409,11 @@
         "settings.delivery": "配送设置",
         "settings.integrations": "集成",
         "settings.notifications": "通知",
-        "settings.xero": "Xero集成"
+        "settings.xero": "Xero集成",
+        "suppliers": "供应商",
+        "settings.audit": "审计日志",
+        "settings.packing": "包装设置",
+        "settings.sms": "短信设置"
       },
       "actions": {
         "view": "查看",
@@ -2552,7 +2430,8 @@
         "adjust_stock": "调整库存",
         "adjust": "调整",
         "complete": "完成",
-        "upload_pod": "上传送货证明"
+        "upload_pod": "上传送货证明",
+        "export": "导出"
       },
       "accessDenied": {
         "title": "访问被拒绝",
@@ -2888,9 +2767,6 @@
     "resyncConfirmTitle": "确认重新同步",
     "resyncConfirmMessage": "这将使用当前订单数据更新 Xero 中的发票。Xero 中的任何手动更改可能会被覆盖。",
     "resyncConfirm": "重新同步",
-    "resyncContactConfirmMessage": "这将使用当前客户数据更新 Xero 中的联系人。Xero 中的任何手动更改可能会被覆盖。",
-    "resyncJob": "重新同步任务",
-    "lastSyncedAt": "上次同步：{date}",
     "syncPreview": {
       "title": "同步客户到 Xero",
       "description": "在同步到 Xero 之前查看客户数据。",
@@ -3097,7 +2973,6 @@
       "type": "类型",
       "allTypes": "所有类型",
       "adjustmentType": "调整类型",
-      "allAdjustments": "所有调整",
       "stockIn": "入库"
     },
     "types": {
@@ -3123,7 +2998,6 @@
       "createdBy": "操作人",
       "timestamp": "日期和时间",
       "notes": "备注",
-      "referenceOrder": "相关订单",
       "noNotes": "无备注",
       "viewOrder": "查看订单",
       "previousStock": "之前库存",
@@ -3214,8 +3088,6 @@
         "stockOut": "出库量",
         "transactions": "交易次数",
         "netMovement": "净变动",
-        "thisPeriod": "本期",
-        "lastPeriod": "上期",
         "change": "变化"
       }
     },
@@ -3238,7 +3110,6 @@
       },
       "filters": {
         "allSuppliers": "全部供应商",
-        "supplierLabel": "供应商",
         "suppliersSelected": "已选 {count} 个",
         "allExpiry": "全部保质期",
         "expired": "已过期",
@@ -3276,7 +3147,6 @@
         "unknownCounterpart": "未找到对应方"
       },
       "batchTotal": "批次合计",
-      "mismatchWarning": "不匹配：产品显示 {currentStock}",
       "reconcile": "库存对账",
       "reconcileConfirm": "这将更新所有产品库存以匹配批次合计。是否继续？",
       "reconcileSuccess": "已对账 {count} 个产品",
@@ -3381,13 +3251,7 @@
         "page": "页",
         "showingFirst": "显示前",
         "costPerUnit": "单位成本",
-        "costPerUnitHelp": "输入您实际支付的成本（以美元为单位）",
-        "expiryDate": "到期日期",
-        "expiryDateHelp": "如果没有到期日期，请留空"
-      },
-      "validation": {
-        "costPerUnitRequired": "接收库存时需要单位成本",
-        "expiryDateFuture": "到期日期必须在未来"
+        "expiryDate": "到期日期"
       }
     },
     "expiringList": {
@@ -3950,13 +3814,8 @@
       "abnInvalid": "无效的 ABN - 校验和验证失败"
     },
     "validation": {
-      "abnLength": "ABN必须为11位数字",
-      "acnLength": "ACN必须为9位数字",
-      "bsbFormat": "BSB必须为6位数字",
-      "accountNumberLength": "账户号码必须为6-10位数字",
       "emailRequired": "电子邮件为必填项",
-      "emailInvalid": "电子邮件格式无效",
-      "fieldRequired": "此字段为必填项"
+      "emailInvalid": "电子邮件格式无效"
     },
     "states": {
       "NSW": "新南威尔士州",
@@ -3978,7 +3837,6 @@
       "sendButton": "发送邀请",
       "sending": "发送中...",
       "resending": "重新发送中...",
-      "statusNotInvited": "未邀请",
       "statusInvited": "已邀请",
       "statusAccepted": "门户已激活",
       "inviteSuccess": "邀请已发送",
@@ -3986,18 +3844,14 @@
       "inviteError": "邀请失败",
       "resendSuccess": "邀请已重发",
       "resendSuccessMessage": "邀请已重新发送至 {email}",
-      "resendError": "重发失败",
-      "adminCreatedAccount": "管理员创建的账户"
+      "resendError": "重发失败"
     },
     "smsReminder": {
       "title": "短信订单提醒",
       "description": "在选定的日期发送短信提醒下单",
       "enable": "启用短信提醒",
       "reminderDays": "提醒日期",
-      "selectDays": "选择提醒日期",
-      "noDaysSelected": "未选择日期",
       "mobileRequired": "启用短信提醒需要填写手机号码",
-      "globalDisabled": "管理员已禁用短信提醒功能",
       "notConfigured": "短信服务未配置"
     }
   },
@@ -4007,7 +3861,6 @@
     "errorLoading": "加载订单时出错",
     "header": {
       "orderNumber": "订单 #{number}",
-      "placedOn": "下单时间",
       "customer": "客户"
     },
     "items": {
@@ -4056,8 +3909,7 @@
         "cancel": "取消",
         "success": "配送日期已重新安排",
         "failed": "重新安排失败",
-        "notWorkingDay": "所选日期不是已配置的工作日。",
-        "statusNotEditable": "仅在订单待批准或已确认时可更改配送日期。"
+        "notWorkingDay": "所选日期不是已配置的工作日。"
       }
     },
     "driverAssignment": {
@@ -4101,7 +3953,6 @@
       "issueCreditNote": "开具贷项通知单"
     },
     "creditNote": {
-      "issueButton": "开具贷项通知单",
       "dialogTitle": "开具部分贷项通知单",
       "dialogDescription": "选择要退款的项目和数量。",
       "reason": "原因",
@@ -4116,7 +3967,6 @@
       "totalCredit": "退款总额",
       "nearLimitWarning": "此贷项通知单将使用大部分剩余可退款金额。",
       "exceedsLimitError": "总贷项将超过发票总额。",
-      "noItemsSelected": "请至少选择一个项目进行退款。",
       "reasonRequired": "必须填写原因。",
       "cancel": "取消",
       "submit": "提交贷项通知单",
@@ -4134,7 +3984,6 @@
     "actions": {
       "title": "订单操作",
       "updateStatus": "更新状态",
-      "selectStatus": "选择状态...",
       "statusUpdated": "状态已更新",
       "statusUpdatedMessage": "订单状态已成功更新",
       "statusError": "更新失败",
@@ -4190,7 +4039,6 @@
   "notifications": {
     "title": "通知",
     "markAllAsRead": "全部标为已读",
-    "noNotifications": "暂无通知",
     "types": {
       "order": "收到新订单",
       "customer": "新客户注册",
@@ -4283,7 +4131,6 @@
     "subtitle": "配置用于司机分配和路线优化的配送区域",
     "createArea": "创建区域",
     "editArea": "编辑区域",
-    "deleteArea": "删除区域",
     "noAreas": "尚未配置区域",
     "noAreasDescription": "创建您的第一个配送区域以开始使用",
     "fields": {
@@ -4324,7 +4171,6 @@
     },
     "errors": {
       "nameExists": "此名称的区域已存在",
-      "hasDependencies": "无法删除有活跃区域映射或司机分配的区域",
       "createFailed": "创建区域失败",
       "updateFailed": "更新区域失败",
       "deleteFailed": "删除区域失败",
@@ -4352,5 +4198,12 @@
   "metadata": {
     "title": "管理后台 - Joho Foods ERP",
     "description": "Joho Foods 运营管理仪表板"
+  },
+  "paymentMethods": {
+    "bank_transfer": "银行转账",
+    "credit_card": "信用卡",
+    "cheque": "支票",
+    "cash_on_delivery": "货到付款",
+    "account_credit": "账户信用"
   }
 }
