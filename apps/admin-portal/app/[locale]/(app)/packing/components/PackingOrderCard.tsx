@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { StatusBadge, type StatusType, useToast, Card, CardContent, Button, AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, Input, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@joho-erp/ui';
+import { StatusBadge, type StatusType, useToast, Card, CardContent, Button, AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, Badge, Input, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@joho-erp/ui';
 import { useTranslations } from 'next-intl';
-import { CheckSquare, Square, Loader2, Send, StickyNote, PauseCircle, PlayCircle, RotateCcw, Plus, Minus, Package, AlertTriangle } from 'lucide-react';
+import { CheckSquare, Square, Loader2, Send, StickyNote, PauseCircle, PlayCircle, RotateCcw, Plus, Minus, Package, AlertTriangle, Lock } from 'lucide-react';
 import { api } from '@/trpc/client';
 import { useDebouncedCallback } from 'use-debounce';
 import { PinEntryDialog } from './PinEntryDialog';
@@ -35,6 +35,9 @@ interface PackingOrderCardProps {
     lastPackedAt?: Date | null;
     packedItemsCount?: number;
     totalItemsCount?: number;
+    // Auto-merge fields
+    internalNotes?: string | null;
+    mergedFromOrderNumbers?: string[];
   };
   onOrderUpdated: () => void;
 }
@@ -646,9 +649,16 @@ export function PackingOrderCard({ order, onOrderUpdated }: PackingOrderCardProp
           <div className="flex items-start justify-between gap-4 mb-3">
             {/* Order Info */}
             <div className="flex-1">
-              <h3 className="font-mono font-bold text-xl text-foreground tracking-tight">
-                {order.orderNumber}
-              </h3>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="font-mono font-bold text-xl text-foreground tracking-tight">
+                  {order.orderNumber}
+                </h3>
+                {order.mergedFromOrderNumbers && order.mergedFromOrderNumbers.length > 0 && (
+                  <Badge variant="secondary" className="text-[10px] font-medium">
+                    {t('merge.mergedFromBadge', { numbers: order.mergedFromOrderNumbers.join(', ') })}
+                  </Badge>
+                )}
+              </div>
               <p className="text-sm font-medium text-muted-foreground mt-1">{order.customerName}</p>
             </div>
 
@@ -915,6 +925,23 @@ export function PackingOrderCard({ order, onOrderUpdated }: PackingOrderCardProp
           );
         })}
       </div>
+
+      {/* Internal Order Notes (read-only) — surfaced from Order.internalNotes
+          so packers see customer-supplied / merged context that previously was
+          hidden during packing. */}
+      {orderDetails?.internalNotes && (
+        <div className="px-4 pb-2">
+          <div className="flex items-center gap-1.5 mb-1">
+            <Lock className="h-3 w-3 text-muted-foreground" />
+            <label className="text-xs font-semibold text-muted-foreground">
+              {t('orderCard.internalNotesLabel')}
+            </label>
+          </div>
+          <div className="px-3 py-2 bg-muted/40 border border-border rounded-md text-xs whitespace-pre-line">
+            {orderDetails.internalNotes}
+          </div>
+        </div>
+      )}
 
       {/* Notes Section */}
       <div className="px-4 pb-3">

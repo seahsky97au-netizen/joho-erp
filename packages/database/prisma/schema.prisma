@@ -79,6 +79,7 @@ enum OrderStatus {
   out_for_delivery    // Driver has started delivery
   delivered
   cancelled
+  merged              // Soft-archived; absorbed into another order via mergedIntoOrderId
 }
 
 enum DeliveryReturnReason {
@@ -457,6 +458,12 @@ model Order {
   stockConsumedAt         DateTime?                            // When stock was consumed
   version                 Int                 @default(0)      // Optimistic locking for concurrent updates
 
+  // Auto-merge fields (same customer + delivery date + address absorbed at packing)
+  mergedIntoOrderId       String?             @db.ObjectId     // FK to primary order if absorbed
+  mergedAt                DateTime?
+  mergedBy                String?
+  mergedFromOrderIds      String[]            @db.ObjectId     // On primary: list of absorbed order IDs (for badge + audit)
+
   // Relations
   customer                Customer            @relation(fields: [customerId], references: [id])
 
@@ -470,6 +477,8 @@ model Order {
   @@index([xero.invoiceId])
   @@index([createdAt(sort: Desc)])
   @@index([status, stockShortfall, createdAt(sort: Desc)])  // For backorder queries
+  @@index([customerId, requestedDeliveryDate, status])
+  @@index([mergedIntoOrderId])
   @@map("orders")
 }
 

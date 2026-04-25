@@ -1301,6 +1301,39 @@ export async function logPackingNotesUpdate(
 }
 
 /**
+ * Log auto-merge of orders at packing-screen load time.
+ * Records the primary that absorbed the others and the list of absorbed order numbers.
+ */
+export async function logOrdersMerged(
+  userId: string,
+  userEmail: string | undefined,
+  userRole: string | undefined,
+  userName: string | null | undefined,
+  primaryOrderId: string,
+  metadata: {
+    primaryOrderNumber: string;
+    absorbedOrderIds: string[];
+    absorbedOrderNumbers: string[];
+  }
+): Promise<void> {
+  await createAuditLog({
+    userId,
+    userEmail,
+    userRole,
+    userName,
+    action: 'update',
+    entity: 'order',
+    entityId: primaryOrderId,
+    metadata: {
+      primaryOrderNumber: metadata.primaryOrderNumber,
+      absorbedOrderIds: metadata.absorbedOrderIds,
+      absorbedOrderNumbers: metadata.absorbedOrderNumbers,
+      type: 'packing_orders_merged',
+    },
+  });
+}
+
+/**
  * Log order marked ready for delivery
  */
 export async function logOrderReadyForDelivery(

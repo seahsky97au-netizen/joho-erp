@@ -7,8 +7,10 @@ export const dashboardRouter = router({
   // Get dashboard statistics
   getStats: requirePermission('dashboard:view').query(async () => {
     const [totalOrders, pendingOrders, totalCustomers, activeDeliveries, lowStockCount] = await Promise.all([
-      // Total orders count
-      prisma.order.count(),
+      // Total orders count (exclude merged — absorbed into primary at packing time)
+      prisma.order.count({
+        where: { status: { not: 'merged' } },
+      }),
 
       // Active orders count (awaiting approval or confirmed)
       prisma.order.count({
@@ -67,6 +69,7 @@ export const dashboardRouter = router({
     .query(async ({ input }) => {
       const orders = await prisma.order.findMany({
         take: input.limit,
+        where: { status: { not: 'merged' } },
         orderBy: { orderedAt: 'desc' },
         select: {
           id: true,

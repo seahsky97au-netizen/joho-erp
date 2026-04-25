@@ -63,6 +63,8 @@ export interface PackingOrderCard {
   status: 'confirmed' | 'packing' | 'ready_for_delivery';
   allItemsPacked: boolean;
   packingNotes?: string;
+  internalNotes?: string | null;
+  mergedFromOrderNumbers?: string[];
 }
 
 export interface PackingOrderItem {

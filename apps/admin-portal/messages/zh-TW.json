@@ -2182,7 +2182,15 @@
     "areaSequenceUpdated": "打包順序已更新",
     "areaSequenceReset": "打包順序已重設為最佳化結果",
     "reorderSelectAreaHint": "請選擇單一區域以重新排列其打包順序",
-    "readyForDeliverySection": "待配送"
+    "readyForDeliverySection": "待配送",
+    "orderCard": {
+      "internalNotesLabel": "訂單備註"
+    },
+    "merge": {
+      "mergedFromBadge": "已合併自 {numbers}",
+      "toastTitle": "訂單已合併",
+      "toastDescription": "已合併 {count} 筆訂單到 #{primary}"
+    }
   },
   "settings": {
     "title": "設定",

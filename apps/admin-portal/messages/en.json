@@ -2182,7 +2182,15 @@
     "areaSequenceUpdated": "Packing sequence updated",
     "areaSequenceReset": "Packing sequence reset to optimized",
     "reorderSelectAreaHint": "Select a single area to reorder its packing sequence",
-    "readyForDeliverySection": "Ready for Delivery"
+    "readyForDeliverySection": "Ready for Delivery",
+    "orderCard": {
+      "internalNotesLabel": "Order Notes"
+    },
+    "merge": {
+      "mergedFromBadge": "Merged from {numbers}",
+      "toastTitle": "Orders merged",
+      "toastDescription": "{count} orders combined into #{primary}"
+    }
   },
   "settings": {
     "title": "Settings",

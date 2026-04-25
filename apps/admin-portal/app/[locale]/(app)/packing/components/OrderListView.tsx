@@ -43,6 +43,9 @@ interface OrderListViewProps {
     lastPackedAt?: Date | null;
     packedItemsCount?: number;
     totalItemsCount?: number;
+    // Auto-merge fields — surfaced from getOptimizedSession projection.
+    internalNotes?: string | null;
+    mergedFromOrderNumbers?: string[];
   }>;
   deliveryDate: Date;
   onOrderUpdated: () => void;

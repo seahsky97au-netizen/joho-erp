@@ -50,8 +50,343 @@ import {
   logPackingOrderReset,
   logPackingItemQuantityUpdate,
   logPackingTotalChange,
+  logOrdersMerged,
 } from "../services/audit";
 import { reversePackingAdjustments } from "../services/stock-restoration";
+
+/**
+ * Merge context — minimal subset of tRPC ctx required by the auto-merge helper.
+ * (Avoids importing the full Context type which carries Next.js req/res.)
+ */
+type MergeCtx = {
+  userId: string | null;
+  userRole?: string | null;
+  userName?: string | null;
+};
+
+/**
+ * Hash the address fields that determine "same delivery location" for auto-merge.
+ * Uses sha1 over a delimiter-joined string of the fields the FSD treats as
+ * location-defining. Two addresses with identical street/suburb/state/postcode/
+ * country/areaId hash to the same value regardless of optional fields like
+ * latitude/longitude or deliveryInstructions (those vary between user sessions
+ * and shouldn't break merge eligibility).
+ */
+function hashDeliveryAddress(addr: {
+  street: string;
+  suburb: string;
+  state: string;
+  postcode: string;
+  country: string;
+  areaId?: string | null;
+}): string {
+  const parts = [
+    addr.street.trim().toLowerCase(),
+    addr.suburb.trim().toLowerCase(),
+    addr.state.trim().toLowerCase(),
+    addr.postcode.trim().toLowerCase(),
+    addr.country.trim().toLowerCase(),
+    addr.areaId ?? '',
+  ];
+  return createHash('sha1').update(parts.join('|')).digest('hex');
+}
+
+type MergeResult = {
+  mergedGroups: Array<{
+    primaryId: string;
+    primaryOrderNumber: string;
+    absorbedOrderIds: string[];
+    absorbedOrderNumbers: string[];
+  }>;
+};
+
+/**
+ * Auto-merge eligible orders for a given delivery date (and optional area scope).
+ *
+ * An "eligible group" is two or more orders that share:
+ *   - customerId
+ *   - Melbourne-day-bucketed requestedDeliveryDate
+ *   - Hashed embedded DeliveryAddress (street|suburb|state|postcode|country|areaId)
+ *   - status in ['confirmed', 'packing']
+ *   - mergedIntoOrderId == null
+ *
+ * For each group with size > 1:
+ *   - Promote the order with the lowest orderNumber as primary (or the existing
+ *     primary if one already has mergedFromOrderIds populated).
+ *   - Skip the group if the primary is fully packed (re-merge guard).
+ *   - Sum line items where (productId, unitPrice) matches; otherwise keep as
+ *     separate lines. Recalculate subtotal/taxAmount/totalAmount.
+ *   - Concatenate internalNotes and packing.notes from absorbed orders, prefixed
+ *     with `#<orderNumber>: `.
+ *   - Mark absorbed orders as status='merged' with mergedIntoOrderId pointing
+ *     at the primary, mergedAt, mergedBy.
+ *
+ * Optimistic-lock pattern (mirrors addPackingNotes at packing.ts:1397) — every
+ * order update checks `version` and increments it, throwing CONFLICT if a
+ * concurrent mutation raced us. The caller can retry on the next page load.
+ *
+ * Side effect: when any merge happens, flips `RouteOptimization.needsReoptimization`
+ * for the date so the existing auto-optimizer at services/route-optimizer.ts
+ * re-runs on the next session load (it respects per-area `manuallyLocked`).
+ *
+ * NOTE: This helper does not throw — group-level CONFLICT errors are logged
+ * and swallowed so that the calling resolver (`getOptimizedSession`) is never
+ * blocked by transient merge failures. Failed groups simply re-attempt on the
+ * next refresh.
+ */
+async function mergeEligibleOrdersInternal(
+  deliveryDate: Date,
+  areaId: string | undefined,
+  ctx: MergeCtx
+): Promise<MergeResult> {
+  const { start, end } = getUTCDayRangeForMelbourneDay(deliveryDate);
+
+  const where: Prisma.OrderWhereInput = {
+    requestedDeliveryDate: { gte: start, lt: end },
+    status: { in: ['confirmed', 'packing'] },
+    mergedIntoOrderId: null,
+  };
+  if (areaId) {
+    where.deliveryAddress = { is: { areaId } };
+  }
+
+  const candidates = await prisma.order.findMany({
+    where,
+    select: {
+      id: true,
+      orderNumber: true,
+      customerId: true,
+      deliveryAddress: true,
+      version: true,
+      items: true,
+      packing: true,
+      internalNotes: true,
+      mergedFromOrderIds: true,
+    },
+  });
+
+  // Group by customerId + addressHash
+  const groups = new Map<string, typeof candidates>();
+  for (const order of candidates) {
+    const addrHash = hashDeliveryAddress(order.deliveryAddress);
+    const key = `${order.customerId}|${addrHash}`;
+    const existing = groups.get(key);
+    if (existing) {
+      existing.push(order);
+    } else {
+      groups.set(key, [order]);
+    }
+  }
+
+  const mergedGroups: MergeResult['mergedGroups'] = [];
+
+  for (const [, group] of groups) {
+    if (group.length < 2) continue;
+
+    // Sort by orderNumber ASC
+    const sorted = [...group].sort((a, b) => a.orderNumber.localeCompare(b.orderNumber));
+
+    // Prefer existing primary (one whose mergedFromOrderIds is non-empty); else lowest orderNumber.
+    let primaryIdx = 0;
+    for (let i = 0; i < sorted.length; i++) {
+      const ids = sorted[i].mergedFromOrderIds ?? [];
+      if (ids.length > 0) {
+        primaryIdx = i;
+        break;
+      }
+    }
+    const primaryCandidate = sorted[primaryIdx];
+    const absorbedCandidates = sorted.filter((_, i) => i !== primaryIdx);
+
+    // Re-merge guard: skip group if primary is fully packed.
+    const packedCount = primaryCandidate.packing?.packedItems?.length ?? 0;
+    const totalCount = primaryCandidate.items.length;
+    if (totalCount > 0 && packedCount >= totalCount) continue;
+
+    try {
+      const txResult = await prisma.$transaction(async (tx) => {
+        // Re-fetch primary with version inside the tx.
+        const primary = await tx.order.findUnique({
+          where: { id: primaryCandidate.id },
+          select: {
+            id: true,
+            orderNumber: true,
+            version: true,
+            items: true,
+            packing: true,
+            internalNotes: true,
+            mergedFromOrderIds: true,
+            mergedIntoOrderId: true,
+          },
+        });
+        if (!primary || primary.mergedIntoOrderId !== null) return null;
+
+        // Build merged items map keyed by (productId|unitPrice).
+        const itemKey = (it: { productId: string; unitPrice: number }) =>
+          `${it.productId}|${it.unitPrice}`;
+        const itemMap = new Map<string, (typeof primary.items)[number]>();
+        for (const it of primary.items) {
+          itemMap.set(itemKey(it), { ...it });
+        }
+
+        // Build merged note buffers (primary content first, then absorbed prefixed by #<orderNumber>:).
+        const internalNoteParts: string[] = [];
+        const primaryInternal = (primary.internalNotes ?? '').trim();
+        if (primaryInternal) internalNoteParts.push(primaryInternal);
+
+        const packingNoteParts: string[] = [];
+        const primaryPackingNotes = (primary.packing?.notes ?? '').trim();
+        if (primaryPackingNotes) packingNoteParts.push(primaryPackingNotes);
+
+        const absorbedIds: string[] = [];
+        const absorbedOrderNumbers: string[] = [];
+
+        for (const a of absorbedCandidates) {
+          const fresh = await tx.order.findUnique({
+            where: { id: a.id },
+            select: {
+              id: true,
+              orderNumber: true,
+              version: true,
+              items: true,
+              packing: true,
+              internalNotes: true,
+              mergedIntoOrderId: true,
+            },
+          });
+          if (!fresh || fresh.mergedIntoOrderId !== null) continue;
+
+          for (const it of fresh.items) {
+            const k = itemKey(it);
+            const existing = itemMap.get(k);
+            if (existing) {
+              const newQty = existing.quantity + it.quantity;
+              const itemPriceMoney = createMoney(existing.unitPrice);
+              const newSubtotal = toCents(multiplyMoney(itemPriceMoney, newQty));
+              itemMap.set(k, { ...existing, quantity: newQty, subtotal: newSubtotal });
+            } else {
+              itemMap.set(k, { ...it });
+            }
+          }
+
+          const aInternal = (fresh.internalNotes ?? '').trim();
+          if (aInternal) internalNoteParts.push(`#${fresh.orderNumber}: ${aInternal}`);
+          const aPacking = (fresh.packing?.notes ?? '').trim();
+          if (aPacking) packingNoteParts.push(`#${fresh.orderNumber}: ${aPacking}`);
+
+          // Mark absorbed with optimistic lock.
+          const absorbResult = await tx.order.updateMany({
+            where: { id: fresh.id, version: fresh.version, mergedIntoOrderId: null },
+            data: {
+              status: 'merged',
+              mergedIntoOrderId: primary.id,
+              mergedAt: new Date(),
+              mergedBy: ctx.userId ?? 'system',
+              version: { increment: 1 },
+            },
+          });
+          if (absorbResult.count === 0) {
+            throw new TRPCError({
+              code: 'CONFLICT',
+              message: `Concurrent modification on order ${fresh.orderNumber} during merge`,
+            });
+          }
+          absorbedIds.push(fresh.id);
+          absorbedOrderNumbers.push(fresh.orderNumber);
+        }
+
+        if (absorbedIds.length === 0) return null;
+
+        const mergedItems = Array.from(itemMap.values());
+
+        // Recalculate order totals (subtotal/tax/total) so downstream consumers
+        // — invoicing, deliveries — see consistent monetary state. Per-item
+        // applyGst/gstRate are preserved from the original lines.
+        const totals = calculateOrderTotals(
+          mergedItems.map((it) => ({
+            quantity: it.quantity,
+            unitPrice: it.unitPrice,
+            applyGst: it.applyGst ?? false,
+            gstRate: it.gstRate ?? null,
+          }))
+        );
+
+        const newInternalNotes = internalNoteParts.join('\n');
+        const newPackingNotes = packingNoteParts.join('\n');
+
+        const updateResult = await tx.order.updateMany({
+          where: { id: primary.id, version: primary.version },
+          data: {
+            items: mergedItems,
+            subtotal: totals.subtotal,
+            taxAmount: totals.taxAmount,
+            totalAmount: totals.totalAmount,
+            internalNotes: newInternalNotes.length > 0 ? newInternalNotes : null,
+            packing: {
+              ...(primary.packing ?? { packedItems: [] }),
+              packedItems: primary.packing?.packedItems ?? [],
+              notes: newPackingNotes.length > 0 ? newPackingNotes : null,
+              // pausedAt, lastPackedAt, lastPackedBy intentionally preserved.
+            },
+            mergedFromOrderIds: [...(primary.mergedFromOrderIds ?? []), ...absorbedIds],
+            version: { increment: 1 },
+          },
+        });
+
+        if (updateResult.count === 0) {
+          throw new TRPCError({
+            code: 'CONFLICT',
+            message: `Concurrent modification on primary order ${primary.orderNumber} during merge`,
+          });
+        }
+
+        return {
+          primaryId: primary.id,
+          primaryOrderNumber: primary.orderNumber,
+          absorbedOrderIds: absorbedIds,
+          absorbedOrderNumbers,
+        };
+      });
+
+      if (txResult) mergedGroups.push(txResult);
+    } catch (err) {
+      // CONFLICT or transient failure — skip group, will re-attempt on next refresh.
+      console.error('Merge group failed (will retry on next load):', err);
+    }
+  }
+
+  if (mergedGroups.length > 0) {
+    // Flip needsReoptimization for the date. Multiple RouteOptimization rows can
+    // exist (one per area, plus a multi-area row) — flag them all so the
+    // optimizer re-runs (it still respects per-area manuallyLocked).
+    try {
+      await prisma.routeOptimization.updateMany({
+        where: { deliveryDate: { gte: start, lt: end } },
+        data: { needsReoptimization: true },
+      });
+    } catch (err) {
+      console.error('Failed to flag route for reoptimization after merge:', err);
+    }
+
+    // Audit log per merged group (best-effort — never block).
+    for (const g of mergedGroups) {
+      logOrdersMerged(
+        ctx.userId ?? 'system',
+        undefined,
+        ctx.userRole ?? undefined,
+        ctx.userName ?? undefined,
+        g.primaryId,
+        {
+          primaryOrderNumber: g.primaryOrderNumber,
+          absorbedOrderIds: g.absorbedOrderIds,
+          absorbedOrderNumbers: g.absorbedOrderNumbers,
+        }
+      ).catch((err) => console.error('Audit log failed for orders merged:', err));
+    }
+  }
+
+  return { mergedGroups };
+}
 
 export const packingRouter = router({
   /**
@@ -264,6 +599,16 @@ export const packingRouter = router({
 
       const allItemsPacked = items.length > 0 && items.every((item) => item.packed);
 
+      // Resolve absorbed-order numbers (for the "Merged from" badge in the UI).
+      const mergedFromIds = order.mergedFromOrderIds ?? [];
+      const mergedFromOrders = mergedFromIds.length > 0
+        ? await prisma.order.findMany({
+            where: { id: { in: mergedFromIds } },
+            select: { orderNumber: true },
+          })
+        : [];
+      const mergedFromOrderNumbers = mergedFromOrders.map((o) => o.orderNumber);
+
       return {
         orderId: order.id,
         orderNumber: order.orderNumber,
@@ -281,6 +626,8 @@ export const packingRouter = router({
         status: order.status as 'confirmed' | 'packing' | 'ready_for_delivery',
         allItemsPacked,
         packingNotes: order.packing?.notes ?? undefined,
+        internalNotes: order.internalNotes ?? null,
+        mergedFromOrderNumbers,
       };
     }),
 
@@ -2022,10 +2369,22 @@ export const packingRouter = router({
     .query(async ({ input, ctx }) => {
       const deliveryDate = new Date(input.deliveryDate);
 
+      // Auto-merge eligible orders (same customer + date + address) before
+      // building the session. Best-effort — failures are logged but never block
+      // the screen. Successful merges flip RouteOptimization.needsReoptimization
+      // so the auto-optimizer below picks up the new layout.
+      try {
+        await mergeEligibleOrdersInternal(deliveryDate, input.areaId, ctx);
+      } catch (err) {
+        console.error('mergeEligibleOrders failed:', err);
+      }
+
       // Get all orders for the delivery date (Melbourne-aware boundaries)
       const { start: startOfDay, end: endOfDay } = getUTCDayRangeForMelbourneDay(deliveryDate);
 
-      // Build base where clause
+      // Build base where clause. `mergedIntoOrderId: null` is a defense-in-depth
+      // filter — the `merged` status is already excluded by the `status in` list
+      // below, but this guards against future status filter changes.
       const where: Prisma.OrderWhereInput = {
         requestedDeliveryDate: {
           gte: startOfDay,
@@ -2034,6 +2393,7 @@ export const packingRouter = router({
         status: {
           in: ["confirmed", "packing", "ready_for_delivery"],
         },
+        mergedIntoOrderId: null,
       };
 
       if (input.areaId) {
@@ -2057,6 +2417,18 @@ export const packingRouter = router({
           { orderNumber: "asc" }, // Fallback to order number
         ],
       });
+
+      // Resolve absorbed-order numbers for the "Merged from" badge. Absorbed
+      // orders carry status='merged' and are excluded from the main `orders`
+      // fetch above, so we look them up by id.
+      const allAbsorbedIds = orders.flatMap((o) => o.mergedFromOrderIds ?? []);
+      const absorbedOrders = allAbsorbedIds.length > 0
+        ? await prisma.order.findMany({
+            where: { id: { in: allAbsorbedIds } },
+            select: { id: true, orderNumber: true },
+          })
+        : [];
+      const absorbedNumberById = new Map(absorbedOrders.map((o) => [o.id, o.orderNumber]));
 
       // Build product summary
       const productMap = new Map<string, ProductSummaryItem>();
@@ -2205,12 +2577,25 @@ export const packingRouter = router({
           });
           const areaMap = new Map(areas.map(a => [a.name, a]));
 
+          // Re-resolve absorbed-order numbers (refetchedOrders may have updated mergedFromOrderIds).
+          const refetchedAbsorbedIds = refetchedOrders.flatMap((o) => o.mergedFromOrderIds ?? []);
+          const refetchedAbsorbed = refetchedAbsorbedIds.length > 0
+            ? await prisma.order.findMany({
+                where: { id: { in: refetchedAbsorbedIds } },
+                select: { id: true, orderNumber: true },
+              })
+            : [];
+          const refetchedAbsorbedNumberById = new Map(refetchedAbsorbed.map((o) => [o.id, o.orderNumber]));
+
           // Use updated orders with packing sequences and area info
           return {
             deliveryDate,
             orders: refetchedOrders.map((order) => {
               const areaName = order.deliveryAddress.areaName ?? 'unassigned';
               const area = areaMap.get(areaName);
+              const mergedFromOrderNumbers = (order.mergedFromOrderIds ?? [])
+                .map((id) => refetchedAbsorbedNumberById.get(id))
+                .filter((n): n is string => Boolean(n));
               return {
                 orderId: order.id,
                 orderNumber: order.orderNumber,
@@ -2228,6 +2613,9 @@ export const packingRouter = router({
                 isPaused: !!order.packing?.pausedAt,
                 lastPackedBy: order.packing?.lastPackedBy ?? null,
                 lastPackedAt: order.packing?.lastPackedAt ?? null,
+                // Auto-merge fields
+                internalNotes: order.internalNotes ?? null,
+                mergedFromOrderNumbers,
               };
             }),
             productSummary,
@@ -2277,6 +2665,9 @@ export const packingRouter = router({
         orders: sortedOrders.map((order) => {
           const areaName = order.deliveryAddress.areaName ?? 'unassigned';
           const area = areaMap.get(areaName);
+          const mergedFromOrderNumbers = (order.mergedFromOrderIds ?? [])
+            .map((id) => absorbedNumberById.get(id))
+            .filter((n): n is string => Boolean(n));
           return {
             orderId: order.id,
             orderNumber: order.orderNumber,
@@ -2293,6 +2684,9 @@ export const packingRouter = router({
             isPaused: !!order.packing?.pausedAt,
             lastPackedBy: order.packing?.lastPackedBy ?? null,
             lastPackedAt: order.packing?.lastPackedAt ?? null,
+            // Auto-merge fields
+            internalNotes: order.internalNotes ?? null,
+            mergedFromOrderNumbers,
           };
         }),
         productSummary,
