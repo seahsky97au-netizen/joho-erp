@@ -2246,6 +2246,7 @@ export const packingRouter = router({
                   autoOptimized: true,
                 }
               : null,
+            areaLocks,
           };
         } catch (error) {
           // If auto-optimization fails, continue with existing data
@@ -2310,6 +2311,7 @@ export const packingRouter = router({
               autoOptimized: routeAutoOptimized,
             }
           : null,
+        areaLocks,
       };
     }),
 

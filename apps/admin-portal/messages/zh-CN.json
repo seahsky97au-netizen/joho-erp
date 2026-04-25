@@ -2164,7 +2164,14 @@
     "unit": "单位",
     "orderReferences": "订单",
     "totalProducts": "产品总数",
-    "generatedAt": "生成时间"
+    "generatedAt": "生成时间",
+    "dragToReorder": "拖动以重新排列打包顺序",
+    "manualSequenceLocked": "手动顺序已锁定",
+    "resetToOptimized": "重置为优化顺序",
+    "areaSequenceUpdated": "打包顺序已更新",
+    "areaSequenceReset": "打包顺序已重置为优化结果",
+    "reorderSelectAreaHint": "请选择单一区域以重新排列其打包顺序",
+    "readyForDeliverySection": "待配送"
   },
   "settings": {
     "title": "设置",

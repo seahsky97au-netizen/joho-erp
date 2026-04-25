@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { useState, useMemo, useEffect } from 'react';
 import { Input, EmptyState, Card, CardHeader, CardDescription, Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Badge, useToast, TableSkeleton } from '@joho-erp/ui';
-import { Package, Calendar, PlayCircle, PauseCircle, Loader2, ClipboardList, Navigation, Printer } from 'lucide-react';
+import { Package, Calendar, PlayCircle, PauseCircle, Loader2, ClipboardList, Navigation, Printer, Lock, RotateCcw } from 'lucide-react';
 import { printPdfBlob } from '@/lib/printPdf';
 import { getPdfFontFamily } from '@/lib/pdfFonts';
 import { useTranslations, useLocale } from 'next-intl';
@@ -54,6 +54,31 @@ export default function PackingPage() {
   });
 
   const optimizeRouteMutation = api.packing.optimizeRoute.useMutation();
+  const resetAreaToOptimizedMutation = api.packing.resetAreaToOptimized.useMutation();
+
+  // Determine lock state for the currently selected area
+  const selectedAreaLock = useMemo(() => {
+    if (!areaFilter || !session?.areaLocks) return null;
+    return session.areaLocks.find((l) => l.areaId === areaFilter) ?? null;
+  }, [areaFilter, session?.areaLocks]);
+
+  const handleResetAreaLock = async () => {
+    if (!areaFilter) return;
+    try {
+      await resetAreaToOptimizedMutation.mutateAsync({
+        deliveryDate: deliveryDate.toISOString(),
+        areaId: areaFilter,
+      });
+      toast({ title: t('areaSequenceReset') });
+      await refetch();
+    } catch (error) {
+      toast({
+        title: tErrors('operationFailed'),
+        description: error instanceof Error ? error.message : undefined,
+        variant: 'destructive',
+      });
+    }
+  };
 
   // Resume order mutation
   const resumeOrderMutation = api.packing.resumeOrder.useMutation({
@@ -315,23 +340,49 @@ export default function PackingPage() {
             </p>
           </div>
           <PermissionGate permission="packing:manage">
-            <Button
-              onClick={handleRecalculateRoute}
-              variant="outline"
-              disabled={isRecalculatingRoute || !deliveryDate}
-            >
-              {isRecalculatingRoute ? (
+            <div className="flex items-center gap-2">
+              {selectedAreaLock?.manuallyLocked && (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  {t('optimizingRoute')}
-                </>
-              ) : (
-                <>
-                  <Navigation className="h-4 w-4 mr-2" />
-                  {t('regenerateRoute')}
+                  <Badge
+                    variant="outline"
+                    className="border-warning/50 text-warning-foreground bg-warning/10"
+                  >
+                    <Lock className="h-3 w-3 mr-1" />
+                    {t('manualSequenceLocked')}
+                  </Badge>
+                  <Button
+                    onClick={handleResetAreaLock}
+                    variant="outline"
+                    size="sm"
+                    disabled={resetAreaToOptimizedMutation.isPending}
+                  >
+                    {resetAreaToOptimizedMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                    )}
+                    {t('resetToOptimized')}
+                  </Button>
                 </>
               )}
-            </Button>
+              <Button
+                onClick={handleRecalculateRoute}
+                variant="outline"
+                disabled={isRecalculatingRoute || !deliveryDate}
+              >
+                {isRecalculatingRoute ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    {t('optimizingRoute')}
+                  </>
+                ) : (
+                  <>
+                    <Navigation className="h-4 w-4 mr-2" />
+                    {t('regenerateRoute')}
+                  </>
+                )}
+              </Button>
+            </div>
           </PermissionGate>
         </div>
 

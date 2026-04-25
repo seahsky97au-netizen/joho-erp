@@ -154,6 +154,13 @@ export async function optimizeDeliveryRoute(
     });
   }
 
+  // 4b. Filter out manually-locked areas — admin-set packing sequences for these
+  // areas must not be overwritten by the optimizer.
+  const lockedAreaNames = await getLockedAreaNamesForDate(startOfDay, endOfDay);
+  for (const lockedName of lockedAreaNames) {
+    ordersByArea.delete(lockedName);
+  }
+
   // 5. Optimize routes by area using Mapbox
   const warehouseCoord = {
     longitude: warehouseAddress.longitude,
@@ -370,7 +377,9 @@ export async function optimizeDeliveryRoute(
 }
 
 /**
- * Get existing route optimization for a delivery date
+ * Get existing route optimization for a delivery date.
+ * Returns the multi-area packing route record (areaId: null) — never a
+ * per-area lock record (those have a non-null areaId).
  */
 export async function getRouteOptimization(deliveryDate: Date) {
   const startOfDay = new Date(deliveryDate);
@@ -382,11 +391,42 @@ export async function getRouteOptimization(deliveryDate: Date) {
         gte: startOfDay,
         lte: endOfDay,
       },
+      areaId: null,
     },
     orderBy: {
       optimizedAt: "desc",
     },
   });
+}
+
+/**
+ * Resolve the set of area names that are manually locked for a delivery date.
+ * Used by the optimizer to avoid touching admin-set packing sequences.
+ */
+async function getLockedAreaNamesForDate(
+  startOfDay: Date,
+  endOfDay: Date
+): Promise<Set<string>> {
+  const lockedRecords = await prisma.routeOptimization.findMany({
+    where: {
+      deliveryDate: { gte: startOfDay, lte: endOfDay },
+      routeType: 'packing',
+      manuallyLocked: true,
+      areaId: { not: null },
+    },
+    select: { areaId: true },
+  });
+
+  if (lockedRecords.length === 0) return new Set();
+
+  const areas = await prisma.area.findMany({
+    where: {
+      id: { in: lockedRecords.map((r) => r.areaId!).filter(Boolean) },
+    },
+    select: { name: true },
+  });
+
+  return new Set(areas.map((a) => a.name));
 }
 
 /**
@@ -398,6 +438,10 @@ export async function checkIfRouteNeedsReoptimization(
 ): Promise<boolean> {
   const route = await getRouteOptimization(deliveryDate);
   if (!route) return true;
+
+  // Honor explicit flag (set when an admin resets a manual lock so the
+  // optimizer reconsiders the area on the next refetch).
+  if (route.needsReoptimization) return true;
 
   const startOfDay = new Date(deliveryDate);
   const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000 - 1);

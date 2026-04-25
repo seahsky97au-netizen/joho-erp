@@ -2164,7 +2164,14 @@
     "unit": "Unit",
     "orderReferences": "Orders",
     "totalProducts": "Total Products",
-    "generatedAt": "Generated at"
+    "generatedAt": "Generated at",
+    "dragToReorder": "Drag to reorder packing sequence",
+    "manualSequenceLocked": "Manual order locked",
+    "resetToOptimized": "Reset to optimized",
+    "areaSequenceUpdated": "Packing sequence updated",
+    "areaSequenceReset": "Packing sequence reset to optimized",
+    "reorderSelectAreaHint": "Select a single area to reorder its packing sequence",
+    "readyForDeliverySection": "Ready for Delivery"
   },
   "settings": {
     "title": "Settings",
