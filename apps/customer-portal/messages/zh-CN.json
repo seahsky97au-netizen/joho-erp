@@ -599,6 +599,8 @@
       "minDateTomorrow": "最早配送为明天",
       "sundayNotAvailable": "周日不提供配送服务",
       "selectWeekday": "请选择工作日（周一至周六）",
+      "dayNotAvailable": "{day}不提供配送服务",
+      "selectWorkingDay": "请选择工作日",
       "invalidDay": "所选配送日期不可用"
     },
     "minimumOrder": {

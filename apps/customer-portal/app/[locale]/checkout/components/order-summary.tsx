@@ -38,7 +38,7 @@ export function OrderSummary() {
 
   // State for delivery date
   const [deliveryDate, setDeliveryDate] = React.useState<string>('');
-  const [isSundayError, setIsSundayError] = React.useState<boolean>(false);
+  const [isNonWorkingDayError, setIsNonWorkingDayError] = React.useState<boolean>(false);
 
   // Fetch customer profile for delivery address
   const { data: customer, isLoading: isLoadingCustomer } = api.customer.getProfile.useQuery();
@@ -146,13 +146,18 @@ export function OrderSummary() {
       return;
     }
 
-    // Check if selected delivery date is Sunday
+    // Check if selected delivery date is a working day per company config
     if (deliveryDate) {
       const selectedDate = new Date(deliveryDate);
-      if (selectedDate.getDay() === 0) {
+      const effectiveWorkingDays =
+        Array.isArray(cutoffInfo?.workingDays) && cutoffInfo!.workingDays.length > 0
+          ? cutoffInfo!.workingDays
+          : [1, 2, 3, 4, 5, 6];
+      if (!effectiveWorkingDays.includes(selectedDate.getDay())) {
+        const dayName = selectedDate.toLocaleDateString('en-AU', { weekday: 'long' });
         toast({
           title: t('error'),
-          description: `${tDelivery('sundayNotAvailable')}. ${tDelivery('selectWeekday')}`,
+          description: `${tDelivery('dayNotAvailable', { day: dayName })}. ${tDelivery('selectWorkingDay')}`,
           variant: 'destructive',
         });
         return;
@@ -450,16 +455,22 @@ export function OrderSummary() {
                 const selectedDate = e.target.value;
                 setDeliveryDate(selectedDate);
 
-                // Check if selected date is Sunday (getDay() returns 0 for Sunday)
+                // Check selected date against configured working days
                 const date = new Date(selectedDate);
-                const isSunday = date.getDay() === 0;
-                setIsSundayError(isSunday);
+                const effectiveWorkingDays =
+                  Array.isArray(cutoffInfo?.workingDays) && cutoffInfo!.workingDays.length > 0
+                    ? cutoffInfo!.workingDays
+                    : [1, 2, 3, 4, 5, 6];
+                setIsNonWorkingDayError(!effectiveWorkingDays.includes(date.getDay()));
               }}
-              className={`mt-1 ${isSundayError ? 'border-destructive' : ''}`}
+              className={`mt-1 ${isNonWorkingDayError ? 'border-destructive' : ''}`}
             />
-            {isSundayError && (
+            {isNonWorkingDayError && deliveryDate && (
               <p className="text-sm text-destructive mt-1">
-                {tDelivery('sundayNotAvailable')}. {tDelivery('selectWeekday')}
+                {tDelivery('dayNotAvailable', {
+                  day: new Date(deliveryDate).toLocaleDateString('en-AU', { weekday: 'long' }),
+                })}
+                . {tDelivery('selectWorkingDay')}
               </p>
             )}
           </div>
@@ -588,7 +599,7 @@ export function OrderSummary() {
         className="w-full"
         size="lg"
         onClick={handlePlaceOrder}
-        disabled={createOrder.isPending || cart.items.length === 0 || exceedsCredit || belowMinimum || !deliveryDate || isSundayError}
+        disabled={createOrder.isPending || cart.items.length === 0 || exceedsCredit || belowMinimum || !deliveryDate || isNonWorkingDayError}
       >
         {createOrder.isPending ? (
           <>

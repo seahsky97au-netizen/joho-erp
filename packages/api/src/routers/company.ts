@@ -256,6 +256,10 @@ export const companyRouter = router({
         }),
         orderCutoffTime: z.string().regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/, 'Invalid time format (HH:mm)').default('14:00'),
         cutoffByArea: z.record(z.string()).optional(),
+        workingDays: z
+          .array(z.number().int().min(0).max(6))
+          .min(1, 'At least one working day must be selected')
+          .optional(),
         defaultDeliveryWindow: z.string().optional(),
         minimumOrderAmount: z.number().int().positive().optional(), // In cents
       })
@@ -284,11 +288,34 @@ export const companyRouter = router({
           newValue: input.minimumOrderAmount,
         });
       }
+      const oldWorkingDays = Array.isArray(oldSettings?.workingDays)
+        ? (oldSettings.workingDays as number[])
+        : undefined;
+      const newWorkingDays = input.workingDays;
+      const workingDaysChanged =
+        newWorkingDays !== undefined &&
+        (oldWorkingDays === undefined ||
+          oldWorkingDays.length !== newWorkingDays.length ||
+          !oldWorkingDays.every((d) => newWorkingDays.includes(d)));
+      if (workingDaysChanged) {
+        changes.push({
+          field: 'workingDays',
+          oldValue: oldWorkingDays,
+          newValue: newWorkingDays,
+        });
+      }
 
       // Extract old warehouse coordinates for change detection
       const oldWarehouse = oldSettings?.warehouseAddress as { latitude?: number; longitude?: number } | undefined;
       const oldLatitude = oldWarehouse?.latitude;
       const oldLongitude = oldWarehouse?.longitude;
+
+      // Preserve existing workingDays if not provided in this update
+      const persistedWorkingDays =
+        input.workingDays ??
+        (Array.isArray(oldSettings?.workingDays)
+          ? (oldSettings.workingDays as number[])
+          : [1, 2, 3, 4, 5, 6]); // Default Mon-Sat for new/legacy companies
 
       // Update company with delivery settings
       const updated = await prisma.company.update({
@@ -298,6 +325,7 @@ export const companyRouter = router({
             warehouseAddress: input.warehouseAddress,
             orderCutoffTime: input.orderCutoffTime,
             cutoffByArea: input.cutoffByArea || null,
+            workingDays: persistedWorkingDays,
             defaultDeliveryWindow: input.defaultDeliveryWindow || null,
             minimumOrderAmount: input.minimumOrderAmount || null,
           },

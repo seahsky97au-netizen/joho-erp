@@ -2762,7 +2762,19 @@
       "searchPlaceholder": "Search for warehouse address...",
       "tokenPlaceholder": "pk.eyJ1IjoieW91ciIsImEiOiJjbHh4eHh4eHh4In0...",
       "cutoffDescription": "Orders placed after this time will be scheduled for next-day delivery",
-      "clickMap": "Click anywhere on the map to set warehouse location"
+      "clickMap": "Click anywhere on the map to set warehouse location",
+      "workingDays": {
+        "title": "Working Days",
+        "description": "Select the days of the week deliveries can be made.",
+        "atLeastOneRequired": "At least one working day must be selected.",
+        "mon": "Monday",
+        "tue": "Tuesday",
+        "wed": "Wednesday",
+        "thu": "Thursday",
+        "fri": "Friday",
+        "sat": "Saturday",
+        "sun": "Sunday"
+      }
     }
   },
   "landing": {
@@ -3975,7 +3987,19 @@
       "noPod": "No proof of delivery uploaded",
       "returned": "Order Returned",
       "returnReason": "Return Reason",
-      "returnNotes": "Return Notes"
+      "returnNotes": "Return Notes",
+      "reschedule": {
+        "button": "Reschedule",
+        "dialogTitle": "Reschedule Delivery",
+        "newDateLabel": "New delivery date",
+        "reasonLabel": "Reason (optional)",
+        "save": "Save",
+        "cancel": "Cancel",
+        "success": "Delivery rescheduled",
+        "failed": "Failed to reschedule",
+        "notWorkingDay": "Selected day is not a configured working day.",
+        "statusNotEditable": "Delivery date can only be changed while the order is awaiting approval or confirmed."
+      }
     },
     "driverAssignment": {
       "title": "Assign Driver",

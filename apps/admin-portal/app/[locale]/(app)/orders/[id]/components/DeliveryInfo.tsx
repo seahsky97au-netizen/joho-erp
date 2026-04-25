@@ -13,10 +13,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@joho-erp/ui';
-import { Truck, MapPin, User, Camera, Calendar, FileImage } from 'lucide-react';
+import { Truck, MapPin, User, Camera, Calendar, FileImage, Pencil } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { formatDate } from '@joho-erp/shared';
 import Image from 'next/image';
+import { RescheduleDeliveryDialog } from './RescheduleDeliveryDialog';
 
 interface DeliveryAddress {
   street: string;
@@ -52,16 +53,28 @@ interface DeliveryInfoProps {
   deliveryAddress: DeliveryAddress;
   requestedDeliveryDate: Date | string;
   delivery?: Delivery | null;
+  orderId?: string;
+  orderStatus?: string;
+  workingDays?: number[];
 }
+
+const RESCHEDULABLE_STATUSES = new Set(['awaiting_approval', 'confirmed']);
 
 export function DeliveryInfo({
   deliveryAddress,
   requestedDeliveryDate,
   delivery,
+  orderId,
+  orderStatus,
+  workingDays,
 }: DeliveryInfoProps) {
   const t = useTranslations('orderDetail');
   const tCommon = useTranslations('common');
   const [isPodDialogOpen, setIsPodDialogOpen] = useState(false);
+  const [isRescheduleOpen, setIsRescheduleOpen] = useState(false);
+
+  const canReschedule =
+    !!orderId && !!orderStatus && RESCHEDULABLE_STATUSES.has(orderStatus);
 
   return (
     <>
@@ -105,7 +118,20 @@ export function DeliveryInfo({
                 <Calendar className="h-4 w-4" />
                 {t('delivery.requestedDate')}
               </p>
-              <p className="text-sm font-medium">{formatDate(requestedDeliveryDate)}</p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-medium">{formatDate(requestedDeliveryDate)}</p>
+                {canReschedule && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2"
+                    onClick={() => setIsRescheduleOpen(true)}
+                    aria-label={t('delivery.reschedule.button')}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+              </div>
             </div>
             {delivery?.deliveredAt && (
               <div>
@@ -170,6 +196,17 @@ export function DeliveryInfo({
           )}
         </CardContent>
       </Card>
+
+      {/* Reschedule Dialog */}
+      {canReschedule && orderId && (
+        <RescheduleDeliveryDialog
+          open={isRescheduleOpen}
+          onOpenChange={setIsRescheduleOpen}
+          orderId={orderId}
+          currentDeliveryDate={requestedDeliveryDate}
+          workingDays={workingDays ?? [1, 2, 3, 4, 5, 6]}
+        />
+      )}
 
       {/* POD Dialog */}
       <Dialog open={isPodDialogOpen} onOpenChange={setIsPodDialogOpen}>

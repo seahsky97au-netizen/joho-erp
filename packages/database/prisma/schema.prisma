@@ -1157,6 +1157,7 @@ type DeliverySettings {
   mapboxAccessToken   String?
   orderCutoffTime     String              @default("14:00") // HH:mm format
   cutoffByArea        Json?               // Custom cutoff times per area
+  workingDays         Int[]               // 0=Sun ... 6=Sat. Default [1,2,3,4,5,6] (Mon-Sat)
   defaultDeliveryWindow String?           // e.g., "9:00-17:00"
   minimumOrderAmount  Int?                // In cents, null = no minimum
 }

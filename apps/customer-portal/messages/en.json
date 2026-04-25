@@ -1178,6 +1178,8 @@
       "minDateTomorrow": "Earliest delivery is tomorrow",
       "sundayNotAvailable": "Sunday delivery is not available",
       "selectWeekday": "Please select a weekday (Monday-Saturday)",
+      "dayNotAvailable": "{day} deliveries are not available",
+      "selectWorkingDay": "Please select a working day",
       "invalidDay": "The selected delivery day is not available"
     },
     "minimumOrder": {

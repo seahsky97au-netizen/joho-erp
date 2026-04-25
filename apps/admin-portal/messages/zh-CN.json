@@ -2762,7 +2762,19 @@
       "searchPlaceholder": "搜索仓库地址...",
       "tokenPlaceholder": "pk.eyJ1IjoieW91ciIsImEiOiJjbHh4eHh4eHh4In0...",
       "cutoffDescription": "在此时间之后下的订单将安排次日配送",
-      "clickMap": "点击地图上的任意位置设置仓库位置"
+      "clickMap": "点击地图上的任意位置设置仓库位置",
+      "workingDays": {
+        "title": "工作日",
+        "description": "选择可以配送的工作日。",
+        "atLeastOneRequired": "至少需要选择一个工作日。",
+        "mon": "星期一",
+        "tue": "星期二",
+        "wed": "星期三",
+        "thu": "星期四",
+        "fri": "星期五",
+        "sat": "星期六",
+        "sun": "星期日"
+      }
     }
   },
   "landing": {
@@ -3975,7 +3987,19 @@
       "noPod": "暂无配送证明",
       "returned": "订单已退回",
       "returnReason": "退回原因",
-      "returnNotes": "退回备注"
+      "returnNotes": "退回备注",
+      "reschedule": {
+        "button": "改期",
+        "dialogTitle": "重新安排配送",
+        "newDateLabel": "新的配送日期",
+        "reasonLabel": "原因（可选）",
+        "save": "保存",
+        "cancel": "取消",
+        "success": "配送日期已重新安排",
+        "failed": "重新安排失败",
+        "notWorkingDay": "所选日期不是已配置的工作日。",
+        "statusNotEditable": "仅在订单待批准或已确认时可更改配送日期。"
+      }
     },
     "driverAssignment": {
       "title": "分配司机",

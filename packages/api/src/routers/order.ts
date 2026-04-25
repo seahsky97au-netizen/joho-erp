@@ -24,6 +24,7 @@ import {
   validateOrderCutoffTime,
   isValidDeliveryDate,
   getMinDeliveryDate,
+  getCompanyCutoffSettings,
 } from '../services/order-validation';
 import {
   logOrderCreated,
@@ -2669,6 +2670,93 @@ export const orderRouter = router({
       });
 
       return cancelledOrder;
+    }),
+
+  // ============================================================================
+  // ADMIN RESCHEDULE DELIVERY DATE
+  // ============================================================================
+
+  // Reschedule the requested delivery date on an existing order (Admin only)
+  // Allowed only while the order is in 'awaiting_approval' or 'confirmed' status.
+  rescheduleDelivery: requirePermission('orders:edit')
+    .input(
+      z.object({
+        orderId: z.string(),
+        newDeliveryDate: z.coerce.date(),
+        reason: z.string().max(500).optional(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const { orderId, newDeliveryDate, reason } = input;
+
+      const order = await prisma.order.findUnique({
+        where: { id: orderId },
+      });
+
+      if (!order) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Order not found',
+        });
+      }
+
+      const reschedulableStatuses = ['awaiting_approval', 'confirmed'];
+      if (!reschedulableStatuses.includes(order.status)) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: `Cannot reschedule delivery for order with status '${order.status}'. Only orders awaiting approval or confirmed can be rescheduled.`,
+        });
+      }
+
+      // Validate the new delivery date is a working day per company settings
+      const { workingDays } = await getCompanyCutoffSettings();
+      if (!workingDays.includes(newDeliveryDate.getDay())) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'New delivery date must be a configured working day.',
+        });
+      }
+
+      // Reject past dates (compare at day granularity, Sydney midnight)
+      const requestedDay = new Date(newDeliveryDate);
+      requestedDay.setHours(0, 0, 0, 0);
+      const today = new Date(
+        new Date().toLocaleString('en-US', { timeZone: 'Australia/Sydney' })
+      );
+      today.setHours(0, 0, 0, 0);
+      if (requestedDay < today) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'New delivery date cannot be in the past.',
+        });
+      }
+
+      const oldDate = order.requestedDeliveryDate;
+      const oldDateStr = oldDate.toISOString().slice(0, 10);
+      const newDateStr = newDeliveryDate.toISOString().slice(0, 10);
+      const noteSuffix = reason ? ` — ${reason}` : '';
+      const notes = `Rescheduled from ${oldDateStr} to ${newDateStr}${noteSuffix}`;
+
+      const userDetails = await getUserDetails(ctx.userId);
+
+      const updated = await prisma.order.update({
+        where: { id: orderId },
+        data: {
+          requestedDeliveryDate: newDeliveryDate,
+          statusHistory: {
+            push: {
+              status: 'delivery_rescheduled',
+              changedAt: new Date(),
+              changedBy: ctx.userId,
+              changedByName: userDetails.changedByName,
+              changedByEmail: userDetails.changedByEmail,
+              notes,
+            },
+          },
+        },
+      });
+
+      return updated;
     }),
 
   // ============================================================================

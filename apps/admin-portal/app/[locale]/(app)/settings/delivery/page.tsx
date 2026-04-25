@@ -32,10 +32,22 @@ import {
   CardHeader,
   CardTitle,
   Button,
+  Checkbox,
   Input,
   Label,
   useToast,
 } from '@joho-erp/ui';
+
+const DEFAULT_WORKING_DAYS: number[] = [1, 2, 3, 4, 5, 6];
+const WEEKDAYS: Array<{ value: number; key: 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun' }> = [
+  { value: 1, key: 'mon' },
+  { value: 2, key: 'tue' },
+  { value: 3, key: 'wed' },
+  { value: 4, key: 'thu' },
+  { value: 5, key: 'fri' },
+  { value: 6, key: 'sat' },
+  { value: 0, key: 'sun' },
+];
 
 /** Geocode search result from Mapbox API */
 interface GeocodeResult {
@@ -61,6 +73,7 @@ export default function DeliverySettingsPage() {
   const [cutoffTime, setCutoffTime] = useState('14:00');
   const [deliveryWindow, setDeliveryWindow] = useState('9:00-17:00');
   const [minimumOrderAmount, setMinimumOrderAmount] = useState('');
+  const [workingDays, setWorkingDays] = useState<number[]>(DEFAULT_WORKING_DAYS);
 
   // UI state
   const [addressSearch, setAddressSearch] = useState('');
@@ -98,6 +111,9 @@ export default function DeliverySettingsPage() {
       if (ds.minimumOrderAmount !== null && ds.minimumOrderAmount !== undefined) {
         setMinimumOrderAmount(formatCentsForInput(ds.minimumOrderAmount));
       }
+      if (Array.isArray(ds.workingDays) && ds.workingDays.length > 0) {
+        setWorkingDays(ds.workingDays);
+      }
     }
   }, [settings]);
 
@@ -113,9 +129,18 @@ export default function DeliverySettingsPage() {
     const savedCutoffTime = settings?.deliverySettings?.orderCutoffTime || '14:00';
     const savedDeliveryWindow = settings?.deliverySettings?.defaultDeliveryWindow || '9:00-17:00';
     const savedMinimumOrder = settings?.deliverySettings?.minimumOrderAmount ?? null;
+    const savedWorkingDays =
+      Array.isArray(settings?.deliverySettings?.workingDays) &&
+      settings!.deliverySettings!.workingDays!.length > 0
+        ? settings!.deliverySettings!.workingDays!
+        : DEFAULT_WORKING_DAYS;
 
     // Convert current input to cents for comparison
     const currentMinimumCents = minimumOrderAmount ? parseToCents(minimumOrderAmount) : null;
+
+    const workingDaysChanged =
+      workingDays.length !== savedWorkingDays.length ||
+      !savedWorkingDays.every((d) => workingDays.includes(d));
 
     // Compare current form values against saved/default values
     const hasModifications =
@@ -127,10 +152,11 @@ export default function DeliverySettingsPage() {
       longitude !== savedLongitude ||
       cutoffTime !== savedCutoffTime ||
       deliveryWindow !== savedDeliveryWindow ||
-      currentMinimumCents !== savedMinimumOrder;
+      currentMinimumCents !== savedMinimumOrder ||
+      workingDaysChanged;
 
     setHasChanges(hasModifications);
-  }, [street, suburb, state, postcode, latitude, longitude, cutoffTime, deliveryWindow, minimumOrderAmount, settings]);
+  }, [street, suburb, state, postcode, latitude, longitude, cutoffTime, deliveryWindow, minimumOrderAmount, workingDays, settings]);
 
   // Geocode search
   const handleSearch = async () => {
@@ -197,6 +223,15 @@ export default function DeliverySettingsPage() {
       return;
     }
 
+    if (workingDays.length === 0) {
+      toast({
+        title: t('validationError'),
+        description: t('workingDays.atLeastOneRequired'),
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
       await saveSettingsMutation.mutateAsync({
         warehouseAddress: {
@@ -209,6 +244,7 @@ export default function DeliverySettingsPage() {
           longitude,
         },
         orderCutoffTime: cutoffTime,
+        workingDays,
         defaultDeliveryWindow: deliveryWindow || undefined,
         minimumOrderAmount: minimumOrderCents || undefined,
       });
@@ -254,7 +290,22 @@ export default function DeliverySettingsPage() {
       } else {
         setMinimumOrderAmount('');
       }
+      if (Array.isArray(ds.workingDays) && ds.workingDays.length > 0) {
+        setWorkingDays(ds.workingDays);
+      } else {
+        setWorkingDays(DEFAULT_WORKING_DAYS);
+      }
     }
+  };
+
+  const toggleWorkingDay = (day: number, checked: boolean) => {
+    setWorkingDays((prev) => {
+      if (checked) {
+        if (prev.includes(day)) return prev;
+        return [...prev, day].sort((a, b) => a - b);
+      }
+      return prev.filter((d) => d !== day);
+    });
   };
 
   if (loadingSettings) {
@@ -491,6 +542,31 @@ export default function DeliverySettingsPage() {
                 <p className="text-xs text-muted-foreground">
                   {t('minimumOrderDescription')}
                 </p>
+              </div>
+
+              <div className="space-y-2 pt-2 border-t">
+                <Label>{t('workingDays.title')}</Label>
+                <p className="text-xs text-muted-foreground">
+                  {t('workingDays.description')}
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+                  {WEEKDAYS.map(({ value, key }) => (
+                    <label
+                      key={value}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <Checkbox
+                        checked={workingDays.includes(value)}
+                        onCheckedChange={(checked) =>
+                          toggleWorkingDay(value, checked)
+                        }
+                      />
+                      <span className="text-sm">
+                        {t(`workingDays.${key}`)}
+                      </span>
+                    </label>
+                  ))}
+                </div>
               </div>
             </CardContent>
           </Card>

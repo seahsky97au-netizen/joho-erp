@@ -39,6 +39,12 @@ export default function OrderDetailPage({ params }: PageProps) {
     error,
   } = api.order.getById.useQuery({ orderId: resolvedParams.id });
 
+  const { data: cutoffInfo } = api.order.getCutoffInfo.useQuery();
+  const workingDays =
+    Array.isArray(cutoffInfo?.workingDays) && cutoffInfo!.workingDays.length > 0
+      ? cutoffInfo!.workingDays
+      : [1, 2, 3, 4, 5, 6];
+
   const handleBack = () => {
     router.push(`/${resolvedParams.locale}/orders`);
   };
@@ -229,6 +235,9 @@ export default function OrderDetailPage({ params }: PageProps) {
             deliveryAddress={deliveryAddress}
             requestedDeliveryDate={order.requestedDeliveryDate}
             delivery={delivery}
+            orderId={order.id}
+            orderStatus={order.status}
+            workingDays={workingDays}
           />
 
           {/* Xero Sync Status */}
