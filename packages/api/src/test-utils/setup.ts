@@ -75,15 +75,61 @@ vi.mock('../services/xero', () => ({
   ensureXeroItemsExist: vi.fn().mockResolvedValue(undefined),
   disconnect: vi.fn().mockResolvedValue(undefined),
   clearInvoiceCache: vi.fn(),
+  fetchContactBalance: vi.fn().mockResolvedValue({
+    outstandingCents: 0,
+    overdueCents: 0,
+    currency: 'AUD',
+  }),
+  fetchInvoiceContactId: vi.fn().mockResolvedValue(null),
+  fetchOpenInvoicesForContact: vi.fn().mockResolvedValue([]),
+  xeroApiRequest: vi.fn().mockResolvedValue({ Invoices: [] }),
+  getValidAccessToken: vi.fn().mockResolvedValue({
+    accessToken: 'mock-access-token',
+    tenantId: 'mock-tenant-id',
+  }),
+  XeroApiError: class XeroApiError extends Error {
+    statusCode: number;
+    endpoint: string;
+    responseBody: string;
+    isRetryable: boolean;
+    constructor(statusCode: number, endpoint: string, responseBody: string) {
+      super(`Xero API error: ${statusCode}`);
+      this.statusCode = statusCode;
+      this.endpoint = endpoint;
+      this.responseBody = responseBody;
+      this.isRetryable = statusCode === 429 || statusCode >= 500;
+    }
+  },
 }));
 
 // Mock Xero Queue
 vi.mock('../services/xero-queue', () => ({
-  enqueueXeroJob: vi.fn().mockResolvedValue(undefined),
+  enqueueXeroJob: vi.fn().mockResolvedValue('mock-job-id'),
   getSyncJobs: vi.fn().mockResolvedValue([]),
   getSyncStats: vi.fn().mockResolvedValue({ pending: 0, processing: 0, completed: 0, failed: 0 }),
   processJob: vi.fn().mockResolvedValue(undefined),
   retryJob: vi.fn().mockResolvedValue(undefined),
+}));
+
+// Mock Xero Webhook (downstream of xero + xero-queue)
+vi.mock('../services/xero-webhook', () => ({
+  verifyXeroWebhookSignature: vi.fn().mockReturnValue(true),
+  persistXeroWebhookEvents: vi.fn().mockResolvedValue({
+    persistedIds: [],
+    totalEvents: 0,
+    skippedNonInvoice: 0,
+    skippedDuplicate: 0,
+    skippedWrongTenant: 0,
+    rawBodyHash: 'mock-hash',
+  }),
+  processPersistedWebhookEvent: vi.fn().mockResolvedValue({ status: 'completed' }),
+  processXeroWebhookPayload: vi.fn().mockResolvedValue({
+    persistedIds: [],
+    totalEvents: 0,
+    skippedNonInvoice: 0,
+    skippedDuplicate: 0,
+    skippedWrongTenant: 0,
+  }),
 }));
 
 // Mock Route Optimizer

@@ -523,6 +523,10 @@
     "area": "区域",
     "creditStatus": "信用状态",
     "creditLimit": "信用额度",
+    "cols": {
+      "outstanding": "未结款",
+      "overdue": "逾期"
+    },
     "orders": "订单",
     "approved": "已核准",
     "pending": "待审核",
@@ -3756,6 +3760,41 @@
       "generateSuccess": "PDF 已生成",
       "generateSuccessDescription": "信用申请 PDF 已成功生成。",
       "generateError": "生成失败"
+    },
+    "creditAndAr": {
+      "title": "信用与应收账款",
+      "creditLimit": "信用额度",
+      "xeroOutstanding": "未结款（Xero）",
+      "xeroOverdue": "逾期",
+      "inFlightOrders": "进行中订单",
+      "inFlightHelp": "尚未生成发票的订单（待审批、已确认或正在打包）。",
+      "availableCredit": "可用信用",
+      "lastSyncedAgo": "最后同步于 {time}（来源：{source}）",
+      "neverSynced": "尚未同步",
+      "refresh": "从 Xero 刷新",
+      "refreshing": "正在刷新…",
+      "refreshSuccess": "已加入余额刷新队列",
+      "refreshError": "无法刷新余额",
+      "staleWarning": "余额可能已过期",
+      "noXeroContact": "客户尚未同步到 Xero",
+      "sourceWebhook": "Webhook",
+      "sourcePoll": "定时同步",
+      "sourceManual": "手动刷新"
+    },
+    "openInvoices": {
+      "title": "未结发票",
+      "description": "实时来自 Xero",
+      "empty": "Xero 中没有未结发票。",
+      "loadError": "无法从 Xero 加载发票。",
+      "notSynced": "客户尚未同步到 Xero。",
+      "cols": {
+        "number": "发票号",
+        "date": "开票日期",
+        "dueDate": "到期日",
+        "amount": "金额",
+        "daysOverdue": "逾期天数",
+        "viewInXero": "在 Xero 中查看"
+      }
     },
     "stats": {
       "title": "账户统计",

@@ -523,6 +523,10 @@
     "area": "Area",
     "creditStatus": "Credit Status",
     "creditLimit": "Credit Limit",
+    "cols": {
+      "outstanding": "Outstanding",
+      "overdue": "Overdue"
+    },
     "orders": "Orders",
     "approved": "Approved",
     "pending": "Pending",
@@ -3756,6 +3760,41 @@
       "generateSuccess": "PDF Generated",
       "generateSuccessDescription": "Credit application PDF has been generated successfully.",
       "generateError": "Generation Failed"
+    },
+    "creditAndAr": {
+      "title": "Credit & Accounts Receivable",
+      "creditLimit": "Credit Limit",
+      "xeroOutstanding": "Outstanding (Xero)",
+      "xeroOverdue": "Overdue",
+      "inFlightOrders": "In-flight orders",
+      "inFlightHelp": "Orders that haven't been invoiced yet (awaiting approval, confirmed, or being packed).",
+      "availableCredit": "Available Credit",
+      "lastSyncedAgo": "Last synced {time} via {source}",
+      "neverSynced": "Never synced",
+      "refresh": "Refresh from Xero",
+      "refreshing": "Refreshing…",
+      "refreshSuccess": "Balance refresh queued",
+      "refreshError": "Could not refresh balance",
+      "staleWarning": "Balance may be stale",
+      "noXeroContact": "Customer not synced to Xero",
+      "sourceWebhook": "webhook",
+      "sourcePoll": "scheduled sync",
+      "sourceManual": "manual refresh"
+    },
+    "openInvoices": {
+      "title": "Open Invoices",
+      "description": "Live from Xero",
+      "empty": "No open invoices in Xero.",
+      "loadError": "Could not load invoices from Xero.",
+      "notSynced": "Customer is not synced to Xero.",
+      "cols": {
+        "number": "Invoice #",
+        "date": "Date",
+        "dueDate": "Due",
+        "amount": "Amount",
+        "daysOverdue": "Days overdue",
+        "viewInXero": "View in Xero"
+      }
     },
     "stats": {
       "title": "Account Statistics",

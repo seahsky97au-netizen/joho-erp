@@ -25,7 +25,8 @@
     "test:e2e:headed": "pnpm --filter @joho-erp/e2e test:headed",
     "test:e2e:ui": "pnpm --filter @joho-erp/e2e test:ui",
     "test:e2e:debug": "pnpm --filter @joho-erp/e2e test:debug",
-    "i18n:audit": "tsx scripts/i18n-audit.ts"
+    "i18n:audit": "tsx scripts/i18n-audit.ts",
+    "xero:backfill-balances": "tsx --env-file=.env packages/api/src/scripts/backfill-xero-balances.ts"
   },
   "packageManager": "pnpm@10.22.0",
   "devDependencies": {
@@ -39,7 +40,7 @@
     "typescript": "^5.3.3"
   },
   "engines": {
-    "node": ">=18.17.0",
+    "node": ">=20.6.0",
     "npm": ">=9.0.0"
   },
   "pnpm": {

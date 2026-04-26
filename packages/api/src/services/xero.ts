@@ -713,6 +713,8 @@ export async function xeroApiRequest<T>(
   options: {
     method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
     body?: unknown;
+    /** Extra request headers (e.g. If-Modified-Since for incremental polling). */
+    headers?: Record<string, string>;
   } = {}
 ): Promise<T> {
   // Enforce rate limiting before making the request
@@ -731,6 +733,7 @@ export async function xeroApiRequest<T>(
       'xero-tenant-id': tenantId,
       'Content-Type': 'application/json',
       'Accept': 'application/json',
+      ...(options.headers ?? {}),
     },
     body: options.body ? JSON.stringify(options.body) : undefined,
   });
@@ -780,6 +783,16 @@ export interface XeroContact {
     Sales?: {
       Day: number;
       Type: 'DAYSAFTERBILLDATE' | 'DAYSAFTERBILLMONTH' | 'OFCURRENTMONTH' | 'OFFOLLOWINGMONTH';
+    };
+  };
+  Balances?: {
+    AccountsReceivable?: {
+      Outstanding: number; // In dollars (Xero uses decimal)
+      Overdue: number;     // In dollars
+    };
+    AccountsPayable?: {
+      Outstanding: number;
+      Overdue: number;
     };
   };
 }
@@ -2010,3 +2023,122 @@ export function clearInvoiceCache(invoiceId?: string): void {
     invoiceCache.clear();
   }
 }
+
+// ============================================================================
+// AR Balance + Open Invoices (Read-only)
+// ============================================================================
+
+/**
+ * Convert Xero decimal dollars to integer cents.
+ * Uses Math.round to handle floating-point representation (e.g., 25.49 → 2549).
+ */
+function dollarsToCents(dollars: number): number {
+  return Math.round(dollars * 100);
+}
+
+export interface XeroContactBalance {
+  outstandingCents: number;
+  overdueCents: number;
+  currency: string;
+}
+
+/**
+ * Fetch a contact's AR balance from Xero.
+ * Reads Contacts.Balances.AccountsReceivable.{Outstanding, Overdue}.
+ */
+export async function fetchContactBalance(xeroContactId: string): Promise<XeroContactBalance> {
+  const response = await xeroApiRequest<XeroContactsResponse>(
+    `/Contacts/${xeroContactId}`
+  );
+
+  const contact = response.Contacts?.[0];
+  if (!contact) {
+    throw new Error(`Xero contact ${xeroContactId} not found`);
+  }
+
+  const ar = contact.Balances?.AccountsReceivable;
+  return {
+    outstandingCents: ar ? dollarsToCents(ar.Outstanding) : 0,
+    overdueCents: ar ? dollarsToCents(ar.Overdue) : 0,
+    currency: contact.DefaultCurrency || 'AUD',
+  };
+}
+
+/**
+ * Resolve the contact ID for a given invoice. Used by webhook handlers when
+ * the payload only contains an invoice resource ID.
+ */
+export async function fetchInvoiceContactId(invoiceResourceId: string): Promise<string | null> {
+  const response = await xeroApiRequest<XeroInvoicesResponse & { Invoices: Array<XeroInvoice & { Contact?: { ContactID?: string } }> }>(
+    `/Invoices/${invoiceResourceId}`
+  );
+  const invoice = response.Invoices?.[0];
+  return invoice?.Contact?.ContactID || null;
+}
+
+export interface XeroOpenInvoice {
+  invoiceId: string;
+  invoiceNumber: string;
+  dateIso: string;        // YYYY-MM-DD
+  dueDateIso: string;     // YYYY-MM-DD
+  amountDueCents: number;
+  totalCents: number;
+  status: string;
+  reference?: string;
+}
+
+/**
+ * Fetch a contact's open invoices (status=AUTHORISED with non-zero AmountDue).
+ * Returns a lightweight summary suitable for admin display.
+ */
+export async function fetchOpenInvoicesForContact(
+  xeroContactId: string
+): Promise<XeroOpenInvoice[]> {
+  // Xero returns dates as `/Date(<unix-ms>+<tz>)/` strings; we need a robust parser.
+  type RawInvoice = {
+    InvoiceID: string;
+    InvoiceNumber?: string;
+    Date?: string;
+    DueDate?: string;
+    AmountDue?: number;
+    Total?: number;
+    Status?: string;
+    Reference?: string;
+  };
+  const response = await xeroApiRequest<{ Invoices: RawInvoice[] }>(
+    `/Invoices?ContactIDs=${xeroContactId}&Statuses=AUTHORISED&summaryOnly=true`
+  );
+
+  return (response.Invoices || []).map((inv) => ({
+    invoiceId: inv.InvoiceID,
+    invoiceNumber: inv.InvoiceNumber || '',
+    dateIso: parseXeroDateToIso(inv.Date),
+    dueDateIso: parseXeroDateToIso(inv.DueDate),
+    amountDueCents: dollarsToCents(inv.AmountDue ?? 0),
+    totalCents: dollarsToCents(inv.Total ?? 0),
+    status: inv.Status || 'AUTHORISED',
+    reference: inv.Reference,
+  }));
+}
+
+/**
+ * Parse Xero's `/Date(<unix-ms>+<tz>)/` date format into a YYYY-MM-DD string.
+ * Returns empty string if input is empty/unparseable.
+ */
+function parseXeroDateToIso(input?: string): string {
+  if (!input) return '';
+  // Match /Date(1234567890000+1100)/ or /Date(1234567890000)/
+  const match = input.match(/\/Date\((-?\d+)/);
+  if (!match) {
+    // Maybe an ISO string already
+    const d = new Date(input);
+    return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
+  }
+  const ms = parseInt(match[1], 10);
+  return new Date(ms).toISOString().slice(0, 10);
+}
+
+// fetchContactIdsModifiedSince — added in Phase 2 with proper If-Modified-Since
+// support on xeroApiRequest. Intentionally not stubbed here to avoid a footgun
+// (the previous draft silently ignored its timestamp argument).
+

@@ -773,6 +773,8 @@ export const customerRouter = router({
         status: 'status',
         creditLimit: 'creditApplication.creditLimit',
         creditStatus: 'creditApplication.status',
+        outstanding: 'arBalance.outstandingCents',
+        overdue: 'arBalance.overdueCents',
       };
 
       const orderBy =
@@ -2339,5 +2341,153 @@ export const customerRouter = router({
       });
 
       return updated;
+    }),
+
+  // Admin: Combined Credit & AR summary for the customer detail card.
+  // Returns the cached Xero AR balance, in-flight (not-yet-invoiced) order total,
+  // and the resulting available credit. Cheap; safe to fetch on every page open.
+  getCreditSummary: requirePermission('customers:view')
+    .input(z.object({ customerId: z.string() }))
+    .query(async ({ input }) => {
+      const resolvedCustomerId = await resolveCustomerId(input.customerId);
+      const customer = await prisma.customer.findUnique({
+        where: { id: resolvedCustomerId },
+        select: {
+          id: true,
+          xeroContactId: true,
+          arBalance: true,
+          creditApplication: true,
+        },
+      });
+      if (!customer) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Customer not found' });
+      }
+
+      // Pre-invoice in-flight: orders not yet pushed to Xero as invoices.
+      // Orders in ready_for_delivery and later are assumed represented in
+      // xeroOutstanding via the invoice-create flow.
+      // TODO(phase-2): until the Xero webhook ships, there is a window between
+      // "order moves to ready_for_delivery" (invoice job enqueued) and "Xero
+      // balance refreshed" where the order is invisible to this calculation.
+      // Phase 2's webhook + reconciler closes that gap. If the window proves
+      // problematic before then, widen this filter to include
+      // ready_for_delivery + out_for_delivery.
+      const inFlight = await prisma.order.aggregate({
+        where: {
+          customerId: customer.id,
+          status: { in: ['awaiting_approval', 'confirmed', 'packing'] },
+        },
+        _sum: { totalAmount: true },
+      });
+
+      const creditLimitCents = customer.creditApplication?.creditLimit ?? 0;
+      // Defensive: only use cached arBalance when the customer is currently
+      // linked to a Xero contact. If xeroContactId was cleared but arBalance
+      // wasn't (legacy data, manual DB edit), ignore it rather than gate
+      // credit on a stale snapshot from a deleted/swapped contact.
+      const hasXeroContact = !!customer.xeroContactId;
+      const xeroOutstandingCents = hasXeroContact
+        ? customer.arBalance?.outstandingCents ?? 0
+        : 0;
+      const xeroOverdueCents = hasXeroContact
+        ? customer.arBalance?.overdueCents ?? 0
+        : 0;
+      const preInvoiceInFlightCents = inFlight._sum.totalAmount ?? 0;
+      const availableCreditCents =
+        creditLimitCents - xeroOutstandingCents - preInvoiceInFlightCents;
+
+      return {
+        creditLimitCents,
+        xeroOutstandingCents,
+        xeroOverdueCents,
+        preInvoiceInFlightCents,
+        availableCreditCents,
+        currency: customer.arBalance?.currency ?? 'AUD',
+        lastSyncedAt: hasXeroContact ? customer.arBalance?.lastSyncedAt ?? null : null,
+        lastSyncSource: hasXeroContact ? customer.arBalance?.lastSyncSource ?? null : null,
+        hasXeroContact,
+      };
+    }),
+
+  // Admin: Lightweight job status check for the refreshArBalance flow.
+  // Returns the XeroSyncJob status so the UI can poll until the worker has
+  // landed before invalidating queries — replaces the previous racy
+  // setTimeout(1500) pattern.
+  getRefreshJobStatus: requirePermission('customers:view')
+    .input(z.object({ jobId: z.string() }))
+    .query(async ({ input }) => {
+      const job = await prisma.xeroSyncJob.findUnique({
+        where: { id: input.jobId },
+        select: { id: true, status: true, error: true, completedAt: true },
+      });
+      if (!job) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Sync job not found' });
+      }
+      return job;
+    }),
+
+  // Admin: Trigger an immediate AR balance sync from Xero.
+  // Returns immediately; the actual fetch happens via the xero-queue worker.
+  // Gated on customers:edit because it consumes the shared Xero rate limit
+  // and writes Customer.arBalance — read-only roles must not enqueue.
+  refreshArBalance: requirePermission('customers:edit')
+    .input(z.object({ customerId: z.string() }))
+    .mutation(async ({ input }) => {
+      const resolvedCustomerId = await resolveCustomerId(input.customerId);
+      const customer = await prisma.customer.findUnique({
+        where: { id: resolvedCustomerId },
+        select: { id: true, xeroContactId: true },
+      });
+
+      if (!customer) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Customer not found' });
+      }
+      if (!customer.xeroContactId) {
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message: 'Customer is not synced to Xero yet',
+        });
+      }
+
+      const { enqueueXeroJob } = await import('../services/xero-queue');
+      const jobId = await enqueueXeroJob('balance_sync', 'customer', customer.id, {
+        xeroContactId: customer.xeroContactId,
+        trigger: 'manual',
+      });
+
+      return { jobId, queued: jobId !== null };
+    }),
+
+  // Admin: Fetch the customer's open invoices live from Xero.
+  // Read-only; does not mutate local state.
+  getOpenInvoices: requirePermission('customers:view')
+    .input(z.object({ customerId: z.string() }))
+    .query(async ({ input }) => {
+      const resolvedCustomerId = await resolveCustomerId(input.customerId);
+      const customer = await prisma.customer.findUnique({
+        where: { id: resolvedCustomerId },
+        select: { xeroContactId: true },
+      });
+
+      if (!customer) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Customer not found' });
+      }
+      if (!customer.xeroContactId) {
+        return { invoices: [], synced: false };
+      }
+
+      const { fetchOpenInvoicesForContact, isConnected } = await import('../services/xero');
+      if (!(await isConnected())) {
+        return { invoices: [], synced: false };
+      }
+
+      try {
+        const invoices = await fetchOpenInvoicesForContact(customer.xeroContactId);
+        return { invoices, synced: true };
+      } catch (error) {
+        // Don't fail the page load if Xero is temporarily unreachable.
+        const message = error instanceof Error ? error.message : String(error);
+        return { invoices: [], synced: false, error: message };
+      }
     }),
 });

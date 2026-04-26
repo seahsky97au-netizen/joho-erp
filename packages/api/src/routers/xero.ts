@@ -28,7 +28,7 @@ export const xeroRouter = router({
           .enum(['pending', 'processing', 'completed', 'failed'])
           .optional(),
         type: z
-          .enum(['sync_contact', 'create_invoice', 'create_credit_note', 'update_invoice'])
+          .enum(['sync_contact', 'create_invoice', 'create_credit_note', 'update_invoice', 'balance_sync'])
           .optional(),
         page: z.number().int().min(1).default(1),
         limit: z.number().int().min(1).max(100).default(20),
@@ -695,5 +695,94 @@ export const xeroRouter = router({
       }
 
       return job;
+    }),
+
+  /**
+   * List XeroWebhookEvent rows for the admin webhook dashboard.
+   * Used to surface "webhooks have stopped firing" or "events are stuck failed"
+   * before the operator notices balances drifting.
+   */
+  getWebhookEvents: requirePermission('settings.xero:view')
+    .input(
+      z.object({
+        status: z.enum(['pending', 'processing', 'completed', 'failed']).optional(),
+        page: z.number().int().min(1).default(1),
+        limit: z.number().int().min(1).max(100).default(20),
+      })
+    )
+    .query(async ({ input }) => {
+      const where = input.status ? { status: input.status } : {};
+      const skip = (input.page - 1) * input.limit;
+      const [events, total] = await Promise.all([
+        prisma.xeroWebhookEvent.findMany({
+          where,
+          orderBy: { createdAt: 'desc' },
+          skip,
+          take: input.limit,
+        }),
+        prisma.xeroWebhookEvent.count({ where }),
+      ]);
+      return {
+        events,
+        total,
+        page: input.page,
+        totalPages: Math.ceil(total / input.limit),
+      };
+    }),
+
+  /**
+   * Counts of webhook events by status, for the dashboard summary card.
+   * Plus the timestamp of the most recent successful event — if this stops
+   * advancing, webhooks have stopped firing.
+   */
+  getWebhookStats: requirePermission('settings.xero:view').query(async () => {
+    const [pending, processing, completed, failed, mostRecent] = await Promise.all([
+      prisma.xeroWebhookEvent.count({ where: { status: 'pending' } }),
+      prisma.xeroWebhookEvent.count({ where: { status: 'processing' } }),
+      prisma.xeroWebhookEvent.count({ where: { status: 'completed' } }),
+      prisma.xeroWebhookEvent.count({ where: { status: 'failed' } }),
+      prisma.xeroWebhookEvent.findFirst({
+        where: { status: 'completed' },
+        orderBy: { processedAt: 'desc' },
+        select: { processedAt: true },
+      }),
+    ]);
+    return {
+      pending,
+      processing,
+      completed,
+      failed,
+      lastSuccessfulAt: mostRecent?.processedAt ?? null,
+    };
+  }),
+
+  /**
+   * Retry a failed XeroWebhookEvent. Resets status to `pending` and re-runs
+   * the per-event processor. Idempotent — the processor handles existing
+   * customer/contact lookups gracefully.
+   */
+  retryWebhookEvent: requirePermission('settings.xero:sync')
+    .input(z.object({ eventId: z.string() }))
+    .mutation(async ({ input }) => {
+      const event = await prisma.xeroWebhookEvent.findUnique({
+        where: { id: input.eventId },
+      });
+      if (!event) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Webhook event not found' });
+      }
+      if (event.status !== 'failed') {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Only failed webhook events can be retried',
+        });
+      }
+      const { processPersistedWebhookEvent } = await import('../services/xero-webhook');
+      // Reset to pending; the processor sets it to processing on entry.
+      await prisma.xeroWebhookEvent.update({
+        where: { id: input.eventId },
+        data: { status: 'pending', error: null },
+      });
+      const result = await processPersistedWebhookEvent(input.eventId);
+      return result;
     }),
 });

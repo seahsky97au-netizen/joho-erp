@@ -20,6 +20,14 @@ interface CreateTestCustomerOptions {
   areaId?: string;
   areaName?: string;
   onboardingComplete?: boolean;
+  xeroContactId?: string;
+  arBalance?: {
+    outstandingCents?: number;
+    overdueCents?: number;
+    currency?: string;
+    lastSyncedAt?: Date;
+    lastSyncSource?: string;
+  };
 }
 
 let customerCounter = 0;
@@ -57,6 +65,16 @@ export async function createTestCustomer(options: CreateTestCustomerOptions = {}
       },
       status: options.status ?? 'active',
       onboardingComplete: options.onboardingComplete ?? true,
+      xeroContactId: options.xeroContactId,
+      arBalance: options.arBalance
+        ? {
+            outstandingCents: options.arBalance.outstandingCents ?? 0,
+            overdueCents: options.arBalance.overdueCents ?? 0,
+            currency: options.arBalance.currency ?? 'AUD',
+            lastSyncedAt: options.arBalance.lastSyncedAt ?? new Date(),
+            lastSyncSource: options.arBalance.lastSyncSource ?? 'manual',
+          }
+        : undefined,
     },
   });
 }

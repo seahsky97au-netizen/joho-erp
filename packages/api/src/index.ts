@@ -48,6 +48,14 @@ export {
   isSmsConfigured,
 } from './services/sms';
 
+export { runBalanceReconciler } from './services/xero-balance-reconciler';
+export {
+  verifyXeroWebhookSignature,
+  persistXeroWebhookEvents,
+  processPersistedWebhookEvent,
+  processXeroWebhookPayload,
+} from './services/xero-webhook';
+
 // Table query schemas for sorting/filtering/pagination
 export {
   sortInputSchema,

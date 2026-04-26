@@ -198,6 +198,62 @@ export default function CustomerDetailPage({ params }: PageProps) {
     { customerId: resolvedParams.id, limit: 10 },
   );
 
+  // Credit & AR summary (cached snapshot from Xero + in-flight order total)
+  const { data: creditSummary } = api.customer.getCreditSummary.useQuery(
+    { customerId: resolvedParams.id },
+  );
+
+  // Live open invoices from Xero (only fetched when card is mounted)
+  const {
+    data: openInvoicesData,
+    isLoading: openInvoicesLoading,
+    error: openInvoicesError,
+  } = api.customer.getOpenInvoices.useQuery(
+    { customerId: resolvedParams.id },
+    { staleTime: 60_000 }, // cache 60s — matches plan
+  );
+
+  const refreshArBalanceMutation = api.customer.refreshArBalance.useMutation({
+    onSuccess: async ({ jobId }) => {
+      if (!jobId) {
+        toast({ title: t('creditAndAr.refreshSuccess') });
+        void utils.customer.getCreditSummary.invalidate({ customerId: resolvedParams.id });
+        return;
+      }
+      // Poll the job status until it lands (or times out at ~10s) before
+      // invalidating, so the UI shows the freshly-written arBalance instead of
+      // the stale snapshot.
+      const startedAt = Date.now();
+      const TIMEOUT_MS = 10_000;
+      const POLL_MS = 500;
+      while (Date.now() - startedAt < TIMEOUT_MS) {
+        const job = await utils.customer.getRefreshJobStatus.fetch({ jobId });
+        if (job.status === 'completed') {
+          toast({ title: t('creditAndAr.refreshSuccess') });
+          break;
+        }
+        if (job.status === 'failed') {
+          toast({
+            title: t('creditAndAr.refreshError'),
+            description: job.error ?? undefined,
+            variant: 'destructive',
+          });
+          return;
+        }
+        await new Promise((r) => setTimeout(r, POLL_MS));
+      }
+      void utils.customer.getCreditSummary.invalidate({ customerId: resolvedParams.id });
+      void utils.customer.getById.invalidate({ customerId: resolvedParams.id });
+    },
+    onError: (err) => {
+      toast({
+        title: t('creditAndAr.refreshError'),
+        description: err.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
   // Fetch areas for dropdown
   const { data: areas } = api.area.list.useQuery();
 
@@ -1952,12 +2008,12 @@ export default function CustomerDetailPage({ params }: PageProps) {
 
         {/* Right Column - Credit & Stats */}
         <div className="space-y-6">
-          {/* Credit Information */}
+          {/* Credit & Accounts Receivable */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <CreditCard className="h-5 w-5" />
-                {t('credit.title')}
+                {t('creditAndAr.title')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -1970,16 +2026,83 @@ export default function CustomerDetailPage({ params }: PageProps) {
                 <span className="font-bold text-lg">{formatAUD(creditApp.creditLimit)}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">{t('credit.balance')}</span>
+                <span className="text-sm text-muted-foreground">
+                  {t('creditAndAr.xeroOutstanding')}
+                </span>
                 <span className="font-medium">
-                  {formatAUD((customer as { outstandingBalance?: number }).outstandingBalance || 0)}
+                  {formatAUD(creditSummary?.xeroOutstandingCents ?? 0)}
+                </span>
+              </div>
+              {(creditSummary?.xeroOverdueCents ?? 0) > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">
+                    {t('creditAndAr.xeroOverdue')}
+                  </span>
+                  <span className="font-medium text-destructive">
+                    {formatAUD(creditSummary?.xeroOverdueCents ?? 0)}
+                  </span>
+                </div>
+              )}
+              <div className="flex justify-between items-center">
+                <span
+                  className="text-sm text-muted-foreground"
+                  title={t('creditAndAr.inFlightHelp')}
+                >
+                  {t('creditAndAr.inFlightOrders')}
+                </span>
+                <span className="font-medium">
+                  {formatAUD(creditSummary?.preInvoiceInFlightCents ?? 0)}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">{t('credit.available')}</span>
-                <span className="font-medium text-success">
-                  {formatAUD(creditApp.creditLimit - ((customer as { outstandingBalance?: number }).outstandingBalance || 0))}
+                <span className="text-sm text-muted-foreground">
+                  {t('creditAndAr.availableCredit')}
                 </span>
+                <span
+                  className={
+                    (creditSummary?.availableCreditCents ?? 0) >= 0
+                      ? 'font-medium text-success'
+                      : 'font-medium text-destructive'
+                  }
+                >
+                  {formatAUD(creditSummary?.availableCreditCents ?? 0)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center pt-2 border-t">
+                <span className="text-xs text-muted-foreground">
+                  {creditSummary?.lastSyncedAt
+                    ? t('creditAndAr.lastSyncedAgo', {
+                        time: formatDate(creditSummary.lastSyncedAt),
+                        source: t(
+                          creditSummary.lastSyncSource === 'webhook'
+                            ? 'creditAndAr.sourceWebhook'
+                            : creditSummary.lastSyncSource === 'poll'
+                            ? 'creditAndAr.sourcePoll'
+                            : 'creditAndAr.sourceManual'
+                        ),
+                      })
+                    : creditSummary?.hasXeroContact
+                    ? t('creditAndAr.neverSynced')
+                    : t('creditAndAr.noXeroContact')}
+                </span>
+                {creditSummary?.hasXeroContact && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    aria-label={t('creditAndAr.refresh')}
+                    title={t('creditAndAr.refresh')}
+                    disabled={refreshArBalanceMutation.isPending}
+                    onClick={() =>
+                      refreshArBalanceMutation.mutate({ customerId: resolvedParams.id })
+                    }
+                  >
+                    {refreshArBalanceMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-4 w-4" />
+                    )}
+                  </Button>
+                )}
               </div>
               {creditApp.paymentTerms && (
                 <div className="flex justify-between items-center">
@@ -2028,6 +2151,79 @@ export default function CustomerDetailPage({ params }: PageProps) {
                   </Button>
                 )}
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Open Invoices (live from Xero) */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                {t('openInvoices.title')}
+              </CardTitle>
+              <CardDescription>{t('openInvoices.description')}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {openInvoicesLoading ? (
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                </div>
+              ) : openInvoicesError ? (
+                <p className="text-sm text-muted-foreground">
+                  {t('openInvoices.loadError')}
+                </p>
+              ) : !openInvoicesData?.synced ? (
+                <p className="text-sm text-muted-foreground">
+                  {t('openInvoices.notSynced')}
+                </p>
+              ) : openInvoicesData.invoices.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  {t('openInvoices.empty')}
+                </p>
+              ) : (
+                <div className="space-y-2 text-sm">
+                  {openInvoicesData.invoices.map((inv) => {
+                    const dueDate = inv.dueDateIso ? new Date(inv.dueDateIso) : null;
+                    const today = new Date();
+                    const daysOverdue =
+                      dueDate && dueDate.getTime() < today.getTime()
+                        ? Math.floor(
+                            (today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24)
+                          )
+                        : 0;
+                    return (
+                      <div
+                        key={inv.invoiceId}
+                        className="flex items-center justify-between border-b pb-2 last:border-0"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <a
+                            href={`https://go.xero.com/AccountsReceivable/Edit.aspx?InvoiceID=${inv.invoiceId}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="font-medium text-primary hover:underline"
+                          >
+                            {inv.invoiceNumber || inv.invoiceId.slice(0, 8)}
+                          </a>
+                          <div className="text-xs text-muted-foreground">
+                            {inv.dateIso} · {t('openInvoices.cols.dueDate')}: {inv.dueDateIso || '—'}
+                            {daysOverdue > 0 && (
+                              <span className="ml-2 text-destructive">
+                                {daysOverdue} {t('openInvoices.cols.daysOverdue')}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <span className="font-medium tabular-nums">
+                          {formatAUD(inv.amountDueCents)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </CardContent>
           </Card>
 

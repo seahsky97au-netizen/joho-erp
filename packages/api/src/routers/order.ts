@@ -124,9 +124,84 @@ async function getUserDetails(userId: string): Promise<UserDetails> {
   }
 }
 
+/**
+ * Phase 3 cutover flag. When true, calculateAvailableCredit / getOutstandingBalance
+ * use the cached Xero AR balance + pre-invoice in-flight orders. When false,
+ * legacy behavior (sum of confirmed → out_for_delivery orders) is used.
+ *
+ * Off by default. Flip to true once accounting has reconciled balances against
+ * the customer detail Credit & AR card and is happy with the figures.
+ *
+ * SEMANTIC CHANGE under the new formula (call out to accounting before flip):
+ *   Bypassed-credit historical orders (orders placed with `bypassCreditLimit:
+ *   true` that have shipped + been invoiced) now count against the customer's
+ *   available credit via arBalance.outstandingCents. Under the legacy formula
+ *   they stopped counting once delivered. This is intentional — Xero is the
+ *   source of truth — but it means the customer's "available credit" can drop
+ *   relative to the legacy view as soon as the flag flips.
+ */
+function isXeroArCreditEnforcementEnabled(): boolean {
+  return process.env.XERO_AR_CREDIT_ENFORCEMENT === 'true';
+}
+
+/**
+ * Threshold (minutes) past which arBalance is considered stale and a
+ * non-blocking refresh is enqueued. Webhook + reconciler should keep this
+ * fresh in normal operation; this is a belt-and-braces check for when
+ * either is briefly broken. A malformed env var falls back to 60 minutes.
+ */
+function getStaleThresholdMs(): number {
+  const raw = Number(process.env.XERO_BALANCE_STALE_THRESHOLD_MINUTES);
+  const minutes = Number.isFinite(raw) && raw > 0 ? raw : 60;
+  return minutes * 60 * 1000;
+}
+
+/**
+ * Fire-and-forget refresh of a customer's arBalance if it's stale or missing.
+ * Never blocks; never throws. Safe to call from credit-check paths, including
+ * inside `prisma.$transaction(...)` — the enqueue happens regardless of
+ * whether the outer transaction commits, which is fine because balance_sync
+ * is idempotent and coalesced inside enqueueXeroJob.
+ */
+function maybeRefreshStaleArBalance(
+  customerId: string,
+  arBalance: { lastSyncedAt: Date | null } | null,
+  xeroContactId: string | null
+): void {
+  if (!isXeroArCreditEnforcementEnabled()) return;
+  if (!xeroContactId) return; // can't refresh without a contact id
+  const lastSynced = arBalance?.lastSyncedAt?.getTime() ?? 0;
+  const isStale = Date.now() - lastSynced > getStaleThresholdMs();
+  if (!isStale) return;
+
+  void import('../services/xero-queue')
+    .then(({ enqueueXeroJob }) =>
+      enqueueXeroJob('balance_sync', 'customer', customerId, {
+        xeroContactId,
+        trigger: 'manual',
+      })
+    )
+    .catch((error: unknown) => {
+      // Best-effort path; log but never throw. Operators want this signal
+      // when the queue or import is broken.
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(
+        `[order] stale arBalance refresh enqueue failed for customer ${customerId}: ${message}`
+      );
+    });
+}
+
 // Helper: Calculate available credit for a customer
 // Pending backorders don't count against credit limit (only approved ones do)
-// Accepts optional transaction context for atomic credit checking
+// Accepts optional transaction context for atomic credit checking.
+//
+// Two modes (flag-gated):
+//   off (legacy):    available = creditLimit − sum(confirmed/packing/ready/out_for_delivery)
+//   on  (Xero AR):   available = creditLimit − arBalance.outstandingCents
+//                                            − sum(awaiting_approval/confirmed/packing)
+//   In Xero-AR mode, ready_for_delivery and out_for_delivery orders are assumed
+//   already represented in arBalance.outstandingCents via the invoice push, so
+//   they are NOT counted again here.
 export async function calculateAvailableCredit(
   customerId: string,
   creditLimit: number,
@@ -134,8 +209,41 @@ export async function calculateAvailableCredit(
 ): Promise<number> {
   const db = tx || prisma;
 
-  // Use atomic aggregation instead of findMany + reduce to prevent race conditions
-  // This is a single database operation that returns the sum
+  if (isXeroArCreditEnforcementEnabled()) {
+    // Xero-AR formula. Read cached AR snapshot — does NOT call Xero (latency).
+    // Webhook + nightly reconciler keep this fresh; if it's stale, fire a
+    // non-blocking refresh and proceed with the cached value (eventual
+    // consistency is acceptable here).
+    const customer = await prisma.customer.findUnique({
+      where: { id: customerId },
+      select: { arBalance: true, xeroContactId: true },
+    });
+    // Only consume arBalance when the customer is currently linked to a Xero
+    // contact. Otherwise the cached snapshot may belong to a previous (now
+    // unlinked) contact and would gate credit on an obsolete balance.
+    const xeroOutstanding = customer?.xeroContactId
+      ? customer.arBalance?.outstandingCents ?? 0
+      : 0;
+
+    maybeRefreshStaleArBalance(
+      customerId,
+      customer?.arBalance ?? null,
+      customer?.xeroContactId ?? null
+    );
+
+    const inFlight = await db.order.aggregate({
+      where: {
+        customerId,
+        status: { in: ['awaiting_approval', 'confirmed', 'packing'] },
+      },
+      _sum: { totalAmount: true },
+    });
+    const preInvoiceInFlight = inFlight._sum.totalAmount ?? 0;
+
+    return creditLimit - xeroOutstanding - preInvoiceInFlight;
+  }
+
+  // Legacy formula — atomic aggregation prevents race conditions.
   const result = await db.order.aggregate({
     where: {
       customerId,
@@ -213,16 +321,45 @@ async function geocodeAddressCoordinates(address: {
   return { latitude, longitude };
 }
 
-// Helper: Get outstanding balance for a customer
+// Helper: Get outstanding balance for a customer (display + credit gating).
+//
+// Two modes (flag-gated, mirrors calculateAvailableCredit):
+//   off (legacy):  sum(awaiting_approval → out_for_delivery)
+//   on  (Xero AR): arBalance.outstandingCents + sum(awaiting_approval/confirmed/packing)
+//   The Xero-AR mode preserves the existing semantic — "everything the customer
+//   currently owes us, including pending backorders" — but anchors the
+//   delivered/invoiced piece to Xero rather than re-counting our own orders.
 export async function getOutstandingBalance(customerId: string): Promise<number> {
-  // Use atomic aggregation instead of findMany + reduce to prevent race conditions
+  if (isXeroArCreditEnforcementEnabled()) {
+    const [customer, inFlight] = await Promise.all([
+      prisma.customer.findUnique({
+        where: { id: customerId },
+        select: { arBalance: true, xeroContactId: true },
+      }),
+      prisma.order.aggregate({
+        where: {
+          customerId,
+          status: { in: ['awaiting_approval', 'confirmed', 'packing'] },
+        },
+        _sum: { totalAmount: true },
+      }),
+    ]);
+    const xeroOutstanding = customer?.xeroContactId
+      ? customer.arBalance?.outstandingCents ?? 0
+      : 0;
+    const preInvoiceInFlight = inFlight._sum.totalAmount ?? 0;
+    return xeroOutstanding + preInvoiceInFlight;
+  }
+
+  // Legacy: atomic aggregation prevents race conditions.
+  // Includes awaiting_approval to prevent customers from exceeding credit (Issue #9 fix).
+  // Pending backorders count to prevent over-ordering while approval is pending.
+  // Note: intentionally different from calculateAvailableCredit (legacy) which
+  // excludes awaiting_approval because that function is used during backorder
+  // approval when we need committed credit only.
   const result = await prisma.order.aggregate({
     where: {
       customerId,
-      // Include awaiting_approval to prevent customers from exceeding credit (Issue #9 fix)
-      // Pending backorders count against credit to prevent over-ordering while approval is pending
-      // Note: This is intentionally different from calculateAvailableCredit which excludes awaiting_approval
-      // because that function is used during backorder approval when we need the committed credit only
       status: {
         in: ['awaiting_approval', 'confirmed', 'packing', 'ready_for_delivery', 'out_for_delivery'],
       },

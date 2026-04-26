@@ -523,6 +523,10 @@
     "area": "區域",
     "creditStatus": "信用狀態",
     "creditLimit": "信用額度",
+    "cols": {
+      "outstanding": "未結款",
+      "overdue": "逾期"
+    },
     "orders": "訂單",
     "approved": "已核准",
     "pending": "待審核",
@@ -3756,6 +3760,41 @@
       "generateSuccess": "PDF 已生成",
       "generateSuccessDescription": "信用申請 PDF 已成功生成。",
       "generateError": "生成失敗"
+    },
+    "creditAndAr": {
+      "title": "信用與應收帳款",
+      "creditLimit": "信用額度",
+      "xeroOutstanding": "未結款（Xero）",
+      "xeroOverdue": "逾期",
+      "inFlightOrders": "進行中訂單",
+      "inFlightHelp": "尚未開立發票的訂單（待審核、已確認或正在打包）。",
+      "availableCredit": "可用信用",
+      "lastSyncedAgo": "最後同步於 {time}（來源：{source}）",
+      "neverSynced": "尚未同步",
+      "refresh": "從 Xero 重新整理",
+      "refreshing": "正在重新整理…",
+      "refreshSuccess": "已加入餘額重新整理佇列",
+      "refreshError": "無法重新整理餘額",
+      "staleWarning": "餘額可能已過期",
+      "noXeroContact": "客戶尚未同步至 Xero",
+      "sourceWebhook": "Webhook",
+      "sourcePoll": "定時同步",
+      "sourceManual": "手動重新整理"
+    },
+    "openInvoices": {
+      "title": "未結發票",
+      "description": "即時來自 Xero",
+      "empty": "Xero 中沒有未結發票。",
+      "loadError": "無法從 Xero 載入發票。",
+      "notSynced": "客戶尚未同步至 Xero。",
+      "cols": {
+        "number": "發票號碼",
+        "date": "開立日期",
+        "dueDate": "到期日",
+        "amount": "金額",
+        "daysOverdue": "逾期天數",
+        "viewInXero": "在 Xero 中檢視"
+      }
     },
     "stats": {
       "title": "帳戶統計",

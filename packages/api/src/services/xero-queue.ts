@@ -15,6 +15,8 @@ import {
   createCreditNoteInXero,
   createPartialCreditNoteInXero,
   updateInvoiceInXero,
+  fetchContactBalance,
+  fetchInvoiceContactId,
   isConnected,
   isXeroIntegrationEnabled,
   XeroApiError,
@@ -175,7 +177,7 @@ async function notifyJobFailure(
  * Returns the job ID for tracking, or null if Xero integration is disabled
  */
 export async function enqueueXeroJob(
-  type: 'sync_contact' | 'create_invoice' | 'create_credit_note' | 'update_invoice',
+  type: 'sync_contact' | 'create_invoice' | 'create_credit_note' | 'update_invoice' | 'balance_sync',
   entityType: 'customer' | 'order',
   entityId: string,
   payload?: Record<string, unknown>
@@ -184,6 +186,34 @@ export async function enqueueXeroJob(
   if (!isXeroIntegrationEnabled()) {
     xeroLogger.debug('Xero integration is disabled, skipping job creation', { type, entityType, entityId });
     return null;
+  }
+
+  // Coalescing: balance_sync jobs are idempotent — re-running them just refreshes
+  // the cached AR snapshot from Xero. A busy customer can generate dozens of
+  // webhook + reconciler enqueues per day; without coalescing they each consume
+  // a slot in the 55/min Xero rate limit. If a pending/processing balance_sync
+  // job already exists for this customer, return its id rather than create a
+  // duplicate. This is intentionally limited to balance_sync — invoice/credit-note
+  // jobs MUST run individually because each carries unique payload semantics.
+  if (type === 'balance_sync') {
+    const existing = await prisma.xeroSyncJob.findFirst({
+      where: {
+        type: 'balance_sync' as XeroSyncJobType,
+        entityType,
+        entityId,
+        status: { in: ['pending' as XeroSyncJobStatus, 'processing' as XeroSyncJobStatus] },
+      },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true },
+    });
+    if (existing) {
+      xeroLogger.debug('Coalescing balance_sync into existing in-flight job', {
+        existingJobId: existing.id,
+        entityType,
+        entityId,
+      });
+      return existing.id;
+    }
   }
 
   // Create the job record
@@ -276,6 +306,9 @@ async function processJob(job: XeroSyncJob): Promise<void> {
       case 'update_invoice':
         result = await processUpdateInvoice(job.entityId, job.id);
         break;
+      case 'balance_sync':
+        result = await processBalanceSync(job);
+        break;
       default:
         throw new Error(`Unknown job type: ${job.type}`);
     }
@@ -317,6 +350,84 @@ async function processJob(job: XeroSyncJob): Promise<void> {
 // ============================================================================
 // Job Processors
 // ============================================================================
+
+/**
+ * Process a balance_sync job.
+ * Reads the AR balance for the contact from Xero and writes it back to
+ * Customer.arBalance. The job payload may carry either {customerId, xeroContactId}
+ * (from the manual refresh path) or {resourceUrl/resourceId} from a webhook,
+ * in which case the invoice must be looked up first to resolve the contact.
+ */
+async function processBalanceSync(job: XeroSyncJob): Promise<{
+  success: boolean;
+  outstandingCents?: number;
+  overdueCents?: number;
+  error?: string;
+}> {
+  const payload = (job.payload as Record<string, unknown> | null) || {};
+  const trigger = (payload.trigger as string | undefined) || 'manual';
+
+  // Step 1: resolve customer record. entityType is always 'customer' for balance_sync.
+  let customer = await prisma.customer.findUnique({
+    where: { id: job.entityId },
+    select: { id: true, xeroContactId: true },
+  });
+
+  // Fallback: if the entityId was a placeholder (e.g. webhook hadn't resolved yet),
+  // try resolving via xeroContactId in the payload.
+  if (!customer) {
+    const payloadContactId = payload.xeroContactId as string | undefined;
+    if (payloadContactId) {
+      customer = await prisma.customer.findFirst({
+        where: { xeroContactId: payloadContactId },
+        select: { id: true, xeroContactId: true },
+      });
+    }
+  }
+
+  if (!customer) {
+    return { success: false, error: 'Customer not found' };
+  }
+
+  // Step 2: determine the Xero contact id.
+  let xeroContactId = customer.xeroContactId
+    || (payload.xeroContactId as string | undefined)
+    || null;
+
+  // Last resort: derive from an invoice resource id (webhook path).
+  if (!xeroContactId) {
+    const resourceId = payload.resourceId as string | undefined;
+    if (resourceId) {
+      xeroContactId = await fetchInvoiceContactId(resourceId);
+    }
+  }
+
+  if (!xeroContactId) {
+    return { success: false, error: 'Customer has no xeroContactId' };
+  }
+
+  // Step 3: fetch + persist.
+  const balance = await fetchContactBalance(xeroContactId);
+
+  await prisma.customer.update({
+    where: { id: customer.id },
+    data: {
+      arBalance: {
+        outstandingCents: balance.outstandingCents,
+        overdueCents: balance.overdueCents,
+        currency: balance.currency,
+        lastSyncedAt: new Date(),
+        lastSyncSource: trigger,
+      },
+    },
+  });
+
+  return {
+    success: true,
+    outstandingCents: balance.outstandingCents,
+    overdueCents: balance.overdueCents,
+  };
+}
 
 /**
  * Process a sync_contact job
@@ -368,10 +479,18 @@ async function processSyncContact(customerId: string): Promise<{
   const result = await syncContactToXero(customerForSync);
 
   if (result.success && result.contactId) {
-    // Update customer with Xero contact ID
+    // Update customer with Xero contact ID. If the contact id changes (e.g.
+    // re-link to a different Xero contact), clear the cached arBalance so we
+    // don't gate credit decisions against the previous contact's balance —
+    // the next balance_sync will populate fresh values.
+    const contactChanged =
+      customer.xeroContactId && customer.xeroContactId !== result.contactId;
+
     await prisma.customer.update({
       where: { id: customerId },
-      data: { xeroContactId: result.contactId },
+      data: contactChanged
+        ? { xeroContactId: result.contactId, arBalance: null }
+        : { xeroContactId: result.contactId },
     });
   }
 
@@ -1000,6 +1119,63 @@ export async function getSyncJobs(options: {
     page,
     totalPages: Math.ceil(total / limit),
   };
+}
+
+/**
+ * Sweep `processing` rows that have been stuck for too long.
+ *
+ * Both XeroSyncJob and XeroWebhookEvent transition into `processing`
+ * synchronously and only out of it on the same in-process call. If the Node
+ * process is killed mid-flight (Vercel function timeout, deploy, OOM), the
+ * row stays `processing` forever — and the coalescer in `enqueueXeroJob`
+ * will then skip future enqueues for that customer because it sees an
+ * "in-flight" job.
+ *
+ * Run periodically (we hook this into the nightly reconciler cron). Resets
+ * stale `processing` rows to `pending` so retries can pick them up.
+ *
+ * Returns counts of rows reset.
+ */
+export async function sweepStuckProcessing(staleMinutes = 30): Promise<{
+  jobsReset: number;
+  webhookEventsReset: number;
+}> {
+  const cutoff = new Date(Date.now() - staleMinutes * 60 * 1000);
+
+  // Stuck XeroSyncJob rows
+  const jobs = await prisma.xeroSyncJob.updateMany({
+    where: {
+      status: 'processing',
+      lastAttemptAt: { lt: cutoff },
+    },
+    data: {
+      status: 'pending',
+      nextAttemptAt: new Date(),
+      error: 'Reset by sweeper — previous attempt did not complete',
+    },
+  });
+
+  // Stuck XeroWebhookEvent rows
+  const events = await prisma.xeroWebhookEvent.updateMany({
+    where: {
+      status: 'processing',
+      lastAttemptAt: { lt: cutoff },
+    },
+    data: {
+      status: 'pending',
+      error: 'Reset by sweeper — previous attempt did not complete',
+    },
+  });
+
+  if (jobs.count > 0 || events.count > 0) {
+    xeroLogger.warn('Stuck-processing sweeper reset rows', {
+      jobsReset: jobs.count,
+      webhookEventsReset: events.count,
+      staleMinutes,
+    });
+  }
+
+  return { jobsReset: jobs.count, webhookEventsReset: events.count };
 }
 
 /**

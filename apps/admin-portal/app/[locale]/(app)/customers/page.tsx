@@ -48,6 +48,10 @@ type Customer = {
   deliveryAddress: {
     areaName?: string;
   };
+  arBalance?: {
+    outstandingCents?: number;
+    overdueCents?: number;
+  } | null;
   orders?: number;
 };
 
@@ -144,6 +148,24 @@ export default function CustomersPage() {
       render: (customer) =>
         customer.creditApplication.creditLimit > 0
           ? formatAUD(customer.creditApplication.creditLimit)
+          : '-',
+    },
+    {
+      key: 'outstanding',
+      label: t('cols.outstanding'),
+      sortable: true,
+      render: (customer) =>
+        customer.arBalance?.outstandingCents
+          ? formatAUD(customer.arBalance.outstandingCents)
+          : '-',
+    },
+    {
+      key: 'overdue',
+      label: t('cols.overdue'),
+      sortable: true,
+      render: (customer) =>
+        customer.arBalance?.overdueCents
+          ? <span className="text-destructive">{formatAUD(customer.arBalance.overdueCents)}</span>
           : '-',
     },
     {
@@ -378,7 +400,7 @@ export default function CustomersPage() {
         </CardHeader>
         <CardContent className="p-4 md:p-6">
           {isLoading ? (
-            <TableSkeleton rows={5} columns={8} />
+            <TableSkeleton rows={5} columns={10} />
           ) : customers.length > 0 ? (
             <ResponsiveTable
               data={customers}
